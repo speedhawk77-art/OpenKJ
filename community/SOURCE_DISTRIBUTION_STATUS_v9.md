@@ -27,3 +27,19 @@ The workflow `.github/workflows/stage-openkj-v9-upstream-sources.yml` is restric
 For the proprietary Windows installer, **do not publish before these items are verified or remediated**. The OpenKJ application source is already publicly available under the upstream GPL licence on branch `offline-remote-v9`.
 
 For GPL/LGPL guidance, see [Qt's official LGPL obligations](https://www.qt.io/development/open-source-lgpl-obligations) and [GStreamer's licensing advisory](https://gstreamer.freedesktop.org/documentation/plugin-development/appendix/licensing-advisory.html). This document is a technical compliance tracker, not formal legal advice.
+
+
+## Verified source mirror result — 2026-10-22
+
+The GitHub Actions job [`39873916515`](https://github.com/speedhawk77-art/OpenKJ/actions/runs/39873916515) completed **successfully**. GitHub API independently confirms these six checksum-verified archives are attached to release **421204266**, which remains **draft=true**, along with `OpenKJ-v9-Upstream-Source-Mirror-Manifest.json`:
+
+| Source archive in draft | Bytes | SHA-256 |
+| --- | ---: | --- |
+| `qt-everywhere-src-5.15.2.tar.xz` | 586690220 | `3a530d1b243b5dec00bc54937455471aaa3e56849d2593edb8ded07228202240` |
+| `gstreamer-1.26.9.tar.xz` | 1894152 | `8ee8772e468102ebe86d414d8c4c7440dd91d9f3e9396952ff23aecde80670c8` |
+| `gst-plugins-base-1.26.9.tar.xz` | 2499200 | `11db4ec9ae5be2194ff8ccf2b5fecdc069252fe4416921b083a921ef71dd000a` |
+| `gst-plugins-good-1.26.9.tar.xz` | 3007176 | `f38566fb53ae56b7019a039475311756a28eb978a781154d67813dcb551ff5fe` |
+| `gst-plugins-bad-1.26.9.tar.xz` | 7787684 | `a96bfb68c53a7c9ab1ae279eac7c101f4204fb5c0e4729683b2be64261707446` |
+| `gst-rtsp-server-1.26.9.tar.xz` | 291996 | `67e92e9a5b0f2b51eb571cc893b80da2ae2374f19b05d381d1e364393fe12654` |
+
+**Not a complete LGPL corresponding-source bundle.** The six archives are upstream snapshots. Exact Windows SDK build patches and upstream sources for other LGPL-covered DLLs are still unverified; see checklist above. Do not make this draft public on the basis of these six archives alone.
