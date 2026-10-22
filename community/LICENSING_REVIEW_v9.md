@@ -59,3 +59,9 @@ Collected evidence is not reproduced in full on GitHub yet; the review was condu
 The community tester reports that `BUILD_CLEAN_OPENKJ_INSTALLER.bat` completed with **SUCCESS** after using the working reduced-plugin distribution folder with staged licence notices. This confirms the installer builder ran successfully on the development laptop; **the built installer has not yet been independently inspected or installation-tested**. The existing GitHub draft release still contains the earlier `OpenKJ-v9-Setup.exe` and checksum rather than a verified cleaned replacement.
 
 Next checks: install the cleaned EXE on another machine (or in a controlled clean test environment), validate that the installed `licenses` directory and executable/plugin inventory match the cleaned staging folder, confirm playback and offline controls, determine precise third-party dependency licences and corresponding source delivery arrangements, and only then replace the draft asset / consider public release.
+
+## Cleaned Windows installer tested on second computer — 2026-10-22
+
+The community tester confirms that the rebuilt `OpenKJ-v9-Cleaned-Setup.exe` **works on a second Windows computer** after successful creation with the cleaned runtime and staged licence-notice folder. This is a positive installation/functional smoke test. A separately documented file-by-file check of the installed licence directory and complete binary inventory has not yet been provided, so the statement does not certify package contents or legal compliance.
+
+**Distribution remains on hold:** the remaining transitive DLL copyright/licence conditions and corresponding LGPL library source availability/relinking requirements must be resolved. The existing GitHub draft still contains the original (uncleaned) `OpenKJ-v9-Setup.exe`, not the new installer. Do not publish that draft as-is.
