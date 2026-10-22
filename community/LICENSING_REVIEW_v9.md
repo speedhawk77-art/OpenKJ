@@ -69,3 +69,10 @@ The community tester confirms that the rebuilt `OpenKJ-v9-Cleaned-Setup.exe` **w
 ## GitHub draft assets successfully replaced — 2026-10-22
 
 GitHub API confirms release **421204266** is still **draft=true** and has three cleaned candidate assets: `OpenKJ-v9-Cleaned-Setup.exe`, `OpenKJ-v9-Cleaned-Setup.sha256.txt`, and `OpenKJ-v9-Cleaned-Manifest.json`. The cleaned EXE has **205,876,054 bytes** and GitHub-recorded SHA-256 **`bc35c24ef25529b86b90bd3f5a215603de3b283d590620ec58820e02f83421ef`**. The old uncleaned draft assets were removed. GitHub assigned a temporary `untagged-*` draft identifier during the release metadata PATCH, causing the upload helper's excessively strict final tag check to print an error *after* successful replacement. This does not mean the upload failed. **The Windows binary is still not licensed/cleared for public publication.** See `community/DRAFT_CLEANED_INSTALLER_STAGING_v9.md` for details.
+
+
+## Draft source mirror confirmed — 2026-10-22
+
+Six official Qt 5.15.2 / GStreamer 1.26.9 source archives, plus a hash manifest, were mirrored into **GitHub draft release 421204266** with cryptographic checksums. See `community/SOURCE_DISTRIBUTION_STATUS_v9.md` for exact files and GitHub asset sizes/digests. The corrected release metadata now names `OpenKJ-v9-Cleaned-Setup.exe` and uses release tag `v9.0-offline-remote.1`; the draft flag is still true. Successful GitHub Actions runs: [metadata repair](https://github.com/speedhawk77-art/OpenKJ/actions/runs/39873441905) and [source mirroring](https://github.com/speedhawk77-art/OpenKJ/actions/runs/39873916515).
+
+**This does not resolve exact DLL source mapping, transitive LGPL source and licence obligations, open H.264 codec/patent issues, or installed library replacement instructions. No public binary release has been authorized.**
