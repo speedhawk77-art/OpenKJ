@@ -53,3 +53,9 @@ The following **upstream source licence files** have now been copied verbatim to
 These GitHub files are *documentation*, not proof the currently drafted installer includes them. The collected GStreamer component notices also need to accompany the final binary installer and be mapped to its contents. Other dependencies and codec patent/distribution conditions remain to be audited. LGPL-compliant corresponding source availability and end-user ability to replace the dynamically linked libraries are still required. **Do not publish the existing v9 draft installer.**
 
 Collected evidence is not reproduced in full on GitHub yet; the review was conducted against the files provided by the community tester. No personal karaoke data was collected.
+
+## Cleaned single-file Windows installer candidate built — 2026-10-22
+
+The community tester reports that `BUILD_CLEAN_OPENKJ_INSTALLER.bat` completed with **SUCCESS** after using the working reduced-plugin distribution folder with staged licence notices. This confirms the installer builder ran successfully on the development laptop; **the built installer has not yet been independently inspected or installation-tested**. The existing GitHub draft release still contains the earlier `OpenKJ-v9-Setup.exe` and checksum rather than a verified cleaned replacement.
+
+Next checks: install the cleaned EXE on another machine (or in a controlled clean test environment), validate that the installed `licenses` directory and executable/plugin inventory match the cleaned staging folder, confirm playback and offline controls, determine precise third-party dependency licences and corresponding source delivery arrangements, and only then replace the draft asset / consider public release.
