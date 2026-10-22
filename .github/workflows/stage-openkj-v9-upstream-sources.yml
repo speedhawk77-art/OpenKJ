@@ -1,0 +1,83 @@
+name: Stage reviewed upstream source archives in OpenKJ v9 draft
+
+on:
+  push:
+    branches: [offline-remote-v9]
+    paths: [.github/workflows/stage-openkj-v9-upstream-sources.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  source-mirror:
+    if: github.repository == 'speedhawk77-art/OpenKJ'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Fetch, verify and upload source archives to DRAFT only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          release_id=421204266
+          release="$(gh api "repos/${GITHUB_REPOSITORY}/releases/${release_id}")"
+          printf '%s' "$release" | jq -e '
+            .id==421204266 and .draft==true and .published_at==null and
+            ([.assets[] | select(.name=="OpenKJ-v9-Cleaned-Setup.exe")][0].digest ==
+              "sha256:bc35c24ef25529b86b90bd3f5a215603de3b283d590620ec58820e02f83421ef")
+          ' >/dev/null
+          tag="$(printf '%s' "$release" | jq -r '.tag_name')"
+          if [ "$tag" != 'v9.0-offline-remote.1' ]; then echo 'Unexpected draft release tag.' >&2; exit 2; fi
+          mkdir upstream-sources
+          cd upstream-sources
+          qt='qt-everywhere-src-5.15.2.tar.xz'
+          curl -fL --retry 3 --retry-delay 5 -o "$qt" "https://download.qt.io/archive/qt/5.15/5.15.2/single/$qt"
+          printf '%s  %s\n' 3a530d1b243b5dec00bc54937455471aaa3e56849d2593edb8ded07228202240 "$qt" | sha256sum -c -
+          for module in gstreamer gst-plugins-base gst-plugins-good gst-plugins-bad gst-rtsp-server; do
+            filename="${module}-1.26.9.tar.xz"
+            base="https://gstreamer.freedesktop.org/src/${module}"
+            curl -fL --retry 3 --retry-delay 5 -o "${filename}.sha256sum" "${base}/${filename}.sha256sum"
+            expected="$(grep -Eo '[a-fA-F0-9]{64}' "${filename}.sha256sum" | head -1 | tr 'A-F' 'a-f')"
+            if [ "${#expected}" -ne 64 ]; then echo "Cannot parse checksum for $filename" >&2; exit 3; fi
+            curl -fL --retry 3 --retry-delay 5 -o "$filename" "${base}/${filename}"
+            printf '%s  %s\n' "$expected" "$filename" | sha256sum -c -
+          done
+          python3 - <<'PY'
+          import datetime,hashlib,json,pathlib
+          files=sorted(pathlib.Path('.').glob('*.tar.xz'))
+          entries=[]
+          for p in files:
+              with p.open('rb') as f:
+                  h=hashlib.file_digest(f,'sha256').hexdigest()
+              entries.append({'filename':p.name,'sha256':h,'bytes':p.stat().st_size})
+          manifest={
+              'purpose':'PRELIMINARY upstream source mirror; not complete corresponding source compliance clearance',
+              'qt_source_version':'5.15.2','gstreamer_source_version':'1.26.9',
+              'build_patches_and_library_provenance_independently_verified':False,
+              'all_transitive_lgpl_sources_included':False,
+              'public_redistribution_approved':False,
+              'notes':'Additional LGPL libraries in the bundled Windows SDK still require exact source and patch matching, build provenance and relinking information.',
+              'collected_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              'source_archives':entries
+          }
+          pathlib.Path('OpenKJ-v9-Upstream-Source-Mirror-Manifest.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf-8')
+          PY
+          for file in ./*.tar.xz ./OpenKJ-v9-Upstream-Source-Mirror-Manifest.json; do
+            filename="$(basename "$file")"
+            digest="sha256:$(sha256sum "$file" | awk '{print $1}')"
+            latest="$(gh api "repos/${GITHUB_REPOSITORY}/releases/${release_id}")"
+            printf '%s' "$latest" | jq -e '.draft == true and .published_at == null' >/dev/null
+            old_digest="$(printf '%s' "$latest" | jq -r --arg n "$filename" '.assets[] | select(.name==$n) | .digest // empty')"
+            if [ -n "$old_digest" ]; then
+              if [ "$old_digest" != "$digest" ]; then echo "Conflicting asset: $filename" >&2; exit 4; fi
+              echo "Already staged: $filename"
+            else
+              gh release upload "$tag" "$file" --repo "$GITHUB_REPOSITORY"
+              recorded="$(gh api "repos/${GITHUB_REPOSITORY}/releases/${release_id}" | jq -r --arg n "$filename" '.assets[] | select(.name==$n) | .digest // empty')"
+              if [ "$recorded" != "$digest" ]; then echo "Upload digest mismatch: $filename" >&2; exit 5; fi
+              echo "Uploaded and SHA-256 verified: $filename"
+            fi
+          done
+          gh api "repos/${GITHUB_REPOSITORY}/releases/${release_id}" | jq -e '.draft == true and .published_at == null' >/dev/null
+          echo 'Source archives staged. GitHub release remains UNPUBLISHED.'
