@@ -29,3 +29,9 @@ Before making the EXE public:
 References: [Qt LGPL obligations](https://www.qt.io/development/open-source-lgpl-obligations), [GStreamer licensing](https://gstreamer.freedesktop.org/documentation/frequently-asked-questions/licensing.html), [existing third-party notices](../../THIRD_PARTY_NOTICES.md).
 
 **Do not mark the existing v9 draft installer as a public release on the basis of this inventory alone.**
+
+## Cleaned runtime test result — 2026-10-22
+
+The community tester reports that the separately staged `OpenKJ-Distribution-Test-v9` build **works** after the 36 optional/review-required GStreamer plugins were removed. The cleaned candidate therefore retains **340 audited runtime binaries**, including **196 GStreamer plugins** (183 reported LGPL, 10 MIT/X11 and 3 BSD). This is a functional smoke test, not a comprehensive media-format certification or a licence clearance.
+
+**Remaining blockers before publishing a binary:** The 79 bundled transitive DLL dependencies need their component-specific licence/copyright and redistribution/source obligations reviewed; corresponding Qt 5.15.2 and GStreamer 1.26.9 library and dependency sources or an adequate written offer must be arranged under the distributor's control; required licence/source notices must ship with the *installed* files; the cleaned installer must be rebuilt and tested separately. Do not replace or publish the existing v9 draft release yet.
