@@ -35,3 +35,21 @@ References: [Qt LGPL obligations](https://www.qt.io/development/open-source-lgpl
 The community tester reports that the separately staged `OpenKJ-Distribution-Test-v9` build **works** after the 36 optional/review-required GStreamer plugins were removed. The cleaned candidate therefore retains **340 audited runtime binaries**, including **196 GStreamer plugins** (183 reported LGPL, 10 MIT/X11 and 3 BSD). This is a functional smoke test, not a comprehensive media-format certification or a licence clearance.
 
 **Remaining blockers before publishing a binary:** The 79 bundled transitive DLL dependencies need their component-specific licence/copyright and redistribution/source obligations reviewed; corresponding Qt 5.15.2 and GStreamer 1.26.9 library and dependency sources or an adequate written offer must be arranged under the distributor's control; required licence/source notices must ship with the *installed* files; the cleaned installer must be rebuilt and tested separately. Do not replace or publish the existing v9 draft release yet.
+
+
+## Collected dependency-licence evidence — 2026-10-22
+
+The developer supplied `OPENKJ-LICENSE-EVIDENCE-REPORT.md` and `OPENKJ-DEPENDENCY-LICENSE-DOCUMENTS.zip` for the installed Qt 5.15.2 MSVC2019 x64 and GStreamer 1.26.9 MinGW x64 libraries. The evidence archive contains **109 documents, all under GStreamer paths**, across 66 component directories: **38 non-README licence/copyright documents** and **71 README-LICENSE-INFO.txt** reference files. The archive contains **no Qt documents**, even though Qt was installed.
+
+Several GStreamer README reference files cite umbrella licence texts (for example LGPL-2+.txt, LGPL-2.1+.txt and Apache-2.0.txt), which **were not present in the collected archive**. A README indicating the applicable licence does not substitute for its full terms. The collected documents are useful evidence but not a comprehensive bill of materials for all 79 transitive libraries. In particular, the evidence does not demonstrate which precise Windows DLL build is covered by which licence/source package.
+
+The following **upstream source licence files** have now been copied verbatim to this community fork, with version/commit provenance from their repositories:
+
+- `community/licenses/qt-5.15.2/LICENSE.LGPLv3` — `qt/qtbase` tag `v5.15.2`.
+- `community/licenses/qt-5.15.2/LICENSE.LGPL3` — same Qt source tag.
+- `community/licenses/qt-5.15.2/LICENSE.GPL3` — same Qt source tag.
+- `community/licenses/gstreamer-1.26.9/COPYING-LGPL-2.1` — `GStreamer/gstreamer` tag `1.26.9`.
+
+These GitHub files are *documentation*, not proof the currently drafted installer includes them. The collected GStreamer component notices also need to accompany the final binary installer and be mapped to its contents. Other dependencies and codec patent/distribution conditions remain to be audited. LGPL-compliant corresponding source availability and end-user ability to replace the dynamically linked libraries are still required. **Do not publish the existing v9 draft installer.**
+
+Collected evidence is not reproduced in full on GitHub yet; the review was conducted against the files provided by the community tester. No personal karaoke data was collected.
