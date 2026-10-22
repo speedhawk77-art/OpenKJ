@@ -68,11 +68,15 @@ namespace Ui {
     class MainWindow;
 }
 
+#include <QJsonObject>
+class RemoteControlServer;
+
 class MainWindow : public QMainWindow {
 Q_OBJECT
 
 private:
     Settings m_settings;
+    RemoteControlServer *m_remoteServer{nullptr};
     std::unique_ptr<Ui::MainWindow> ui;
     std::string m_loggingPrefix{"[MainWindow]"};
     std::shared_ptr<spdlog::logger> m_logger;
@@ -182,6 +186,13 @@ private slots:
     void databaseCleared();
     void buttonStopClicked();
     void buttonPauseClicked();
+    void playNextQueuedSong();
+    void remoteStartBreakAtPosition(int position);
+    void remoteBreakNext();
+    void remoteBreakPrevious();
+    QJsonObject remoteLibraryStatus();
+    QJsonObject remoteSongSearch(const QString &query);
+    QJsonObject remoteLibraryAction(const QString &command, const QJsonObject &args);
     void tableViewDbDoubleClicked(const QModelIndex &index);
     void tableViewRotationDoubleClicked(const QModelIndex &index);
     void tableViewRotationClicked(const QModelIndex &index);

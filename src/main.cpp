@@ -19,6 +19,7 @@
 */
 #include <algorithm>
 #include <QApplication>
+#include <QFileInfo>
 #include "mainwindow.h"
 #include <QStyleFactory>
 #include <QSplashScreen>
@@ -152,6 +153,25 @@ int main(int argc, char *argv[]) {
     //QLoggingCategory::setFilterRules("*.debug=true");
     qInstallMessageHandler(myMessageOutput);
     QApplication a(argc, argv);
+
+#ifdef Q_OS_WIN
+    // OPENKJ_PORTABLE_GSTREAMER_SETUP_V1
+    // Load GStreamer plug-ins from our self-contained Windows package.
+    // The Qt/GStreamer DLLs themselves are installed beside openkj.exe.
+    const QString localGstPlugins = QCoreApplication::applicationDirPath() + "/gst-plugins";
+    if (QDir(localGstPlugins).exists()) {
+        qputenv("GST_PLUGIN_SYSTEM_PATH_1_0", QDir::toNativeSeparators(localGstPlugins).toLocal8Bit());
+        const QString localScanner = QCoreApplication::applicationDirPath() + "/gst-plugin-scanner.exe";
+        if (QFileInfo::exists(localScanner)) {
+            qputenv("GST_PLUGIN_SCANNER", QDir::toNativeSeparators(localScanner).toLocal8Bit());
+            qputenv("GST_PLUGIN_SCANNER_1_0", QDir::toNativeSeparators(localScanner).toLocal8Bit());
+        }
+        const QString localGioModules = QCoreApplication::applicationDirPath() + "/gio-modules";
+        if (QDir(localGioModules).exists())
+            qputenv("GIO_EXTRA_MODULES", QDir::toNativeSeparators(localGioModules).toLocal8Bit());
+    }
+#endif
+
 
 #ifdef MAC_OVERRIDE_GST
     // This points GStreamer paths to the framework contained in the app bundle.  Not needed on brew installs.

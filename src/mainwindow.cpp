@@ -20,6 +20,11 @@
 
 #include <qglobal.h>
 #include "mainwindow.h"
+#include "remotecontrolserver.h"
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QSqlQuery>
+#include <QSqlError>
 #include "ui_mainwindow.h"
 #include <QMessageBox>
 #include <QDesktopWidget>
@@ -159,85 +164,8 @@ void MainWindow::setupShortcuts() {
 
     m_scutKPlayNextUnsung.setKey(m_settings.loadShortcutKeySequence("kPlayNextUnsung"));
     m_scutKPlayNextUnsung.setContext(Qt::ApplicationShortcut);
-    connect(&m_scutKPlayNextUnsung, &QShortcut::activated, [&]() {
-        if (auto state = m_mediaBackendKar.state(); state == MediaBackend::PlayingState ||
-                                                    state == MediaBackend::PausedState) {
-            if (m_settings.showSongInterruptionWarning()) {
-                QMessageBox msgBox(this);
-                auto *cb = new QCheckBox("Show this warning in the future");
-                cb->setChecked(m_settings.showSongInterruptionWarning());
-                msgBox.setIcon(QMessageBox::Warning);
-                msgBox.setText("Interrupt currently playing karaoke song?");
-                msgBox.setInformativeText(
-                        "There is currently a karaoke song playing.  If you continue, the current song will be stopped.  Are you sure?");
-                QPushButton *yesButton = msgBox.addButton(QMessageBox::Yes);
-                msgBox.addButton(QMessageBox::Cancel);
-                msgBox.setCheckBox(cb);
-                connect(cb, &QCheckBox::toggled, &m_settings, &Settings::setShowSongInterruptionWarning);
-                msgBox.exec();
-                if (msgBox.clickedButton() != yesButton) {
-                    return;
-                }
-            }
-            m_mediaBackendKar.stop();
-        }
-        okj::RotationSinger nextSinger;
-        QString nextSongPath;
-        bool empty{false};
-        int curSingerId{m_rotModel.currentSinger()};
-        int curPos{m_rotModel.getSinger(curSingerId).position};
-        if (curSingerId == -1)
-            curPos = static_cast<int>(m_rotModel.singerCount() - 1);
-        int loops = 0;
-        while ((nextSongPath == "") && (!empty)) {
-            if (loops > m_rotModel.singerCount()) {
-                empty = true;
-            } else {
-                if (++curPos >= m_rotModel.singerCount()) {
-                    curPos = 0;
-                }
-                nextSinger = m_rotModel.getSingerAtPosition(curPos);
-                nextSongPath = nextSinger.nextSongPath();
-                loops++;
-            }
-        }
-        if (empty) {
-            QMessageBox::information(this, "Unable to play next",
-                                     "Sorry, no unsung karaoke songs are currently in any singer's queue");
-            return;
-        }
-        m_curSinger = nextSinger.name;
-        m_curArtist = nextSinger.nextSongArtist();
-        m_curTitle = nextSinger.nextSongTitle();
-
-        if (m_settings.treatAllSingersAsRegs() || nextSinger.regular) {
-            m_historySongsModel.saveSong(
-                    nextSinger.name,
-                    nextSongPath,
-                    m_curArtist,
-                    m_curTitle,
-                    nextSinger.nextSongSongId(),
-                    nextSinger.nextSongKeyChg()
-            );
-        }
-        m_karaokeSongsModel.updateSongHistory(m_karaokeSongsModel.getIdForPath(nextSongPath));
-        play(nextSongPath);
-        m_mediaBackendKar.setPitchShift(nextSinger.nextSongKeyChg());
-        m_qModel.setPlayed(nextSinger.nextSongQueueId());
-        m_rotModel.setCurrentSinger(nextSinger.id);
-        m_rotDelegate.setCurrentSinger(nextSinger.id);
-        if (m_settings.rotationAltSortOrder()) {
-            auto curSingerPos = nextSinger.position;
-            m_curSingerOriginalPosition = curSingerPos;
-            if (curSingerPos != 0)
-                m_rotModel.singerMove(curSingerPos, 0);
-        }
-        ui->labelArtist->setText(m_curArtist);
-        ui->labelTitle->setText(m_curTitle);
-        ui->labelSinger->setText(nextSinger.name);
-        ui->tableViewRotation->clearSelection();
-        ui->tableViewRotation->selectRow(m_rotModel.getSinger(m_rotModel.currentSinger()).position);
-    });
+    connect(&m_scutKPlayNextUnsung, &QShortcut::activated,
+            this, &MainWindow::playNextQueuedSong);
 
     m_scutAddSinger.setKey(m_settings.loadShortcutKeySequence("addSinger"));
     m_scutAddSinger.setContext(Qt::ApplicationShortcut);
@@ -724,6 +652,157 @@ MainWindow::MainWindow(QWidget *parent) :
     loadSettings();
     setupShortcuts();
     setupConnections();
+    // Start the local embedded remote. No PHP, Internet, or shell script required.
+    m_remoteServer = new RemoteControlServer(this);
+    connect(m_remoteServer, &RemoteControlServer::playRequested, this, [this]() {
+        const auto state = m_mediaBackendKar.state();
+        if (state == MediaBackend::PausedState) m_mediaBackendKar.play();
+        else if (state == MediaBackend::StoppedState) playNextQueuedSong();
+    });
+    connect(m_remoteServer, &RemoteControlServer::pauseRequested, this, [this]() {
+        if (m_mediaBackendKar.state() == MediaBackend::PlayingState) m_mediaBackendKar.pause();
+    });
+    connect(m_remoteServer, &RemoteControlServer::playPauseRequested, this, [this]() {
+        const auto state = m_mediaBackendKar.state();
+        if (state == MediaBackend::PlayingState) m_mediaBackendKar.pause();
+        else if (state == MediaBackend::PausedState) m_mediaBackendKar.play();
+        else if (state == MediaBackend::StoppedState) playNextQueuedSong();
+    });
+    connect(m_remoteServer, &RemoteControlServer::nextRequested,
+            this, &MainWindow::playNextQueuedSong);
+    connect(m_remoteServer, &RemoteControlServer::stopRequested,
+            this, &MainWindow::buttonStopClicked);
+    connect(m_remoteServer, &RemoteControlServer::volumeUpRequested, this, [this]() {
+        m_mediaBackendKar.setVolume(qMin(100, m_mediaBackendKar.getVolume() + 5));
+    });
+    connect(m_remoteServer, &RemoteControlServer::volumeDownRequested, this, [this]() {
+        m_mediaBackendKar.setVolume(qMax(0, m_mediaBackendKar.getVolume() - 5));
+    });
+
+    connect(m_remoteServer, &RemoteControlServer::breakPlayRequested, this, [this]() {
+        const auto state = m_mediaBackendBm.state();
+        if (state == MediaBackend::PausedState) {
+            m_mediaBackendBm.play();
+            ui->buttonBmPause->setChecked(false);
+        } else if (state == MediaBackend::StoppedState) {
+            const auto current = m_tableModelPlaylistSongs.getCurrentSong();
+            remoteStartBreakAtPosition(current.has_value() ? current->get().position : 0);
+        }
+    });
+    connect(m_remoteServer, &RemoteControlServer::breakPauseRequested, this, [this]() {
+        if (m_mediaBackendBm.state() == MediaBackend::PlayingState) {
+            m_mediaBackendBm.pause();
+            ui->buttonBmPause->setChecked(true);
+        }
+    });
+    connect(m_remoteServer, &RemoteControlServer::breakToggleRequested, this, [this]() {
+        const auto state = m_mediaBackendBm.state();
+        if (state == MediaBackend::PlayingState) {
+            m_mediaBackendBm.pause();
+            ui->buttonBmPause->setChecked(true);
+        } else if (state == MediaBackend::PausedState) {
+            m_mediaBackendBm.play();
+            ui->buttonBmPause->setChecked(false);
+        } else if (state == MediaBackend::StoppedState) {
+            const auto current = m_tableModelPlaylistSongs.getCurrentSong();
+            remoteStartBreakAtPosition(current.has_value() ? current->get().position : 0);
+        }
+    });
+    connect(m_remoteServer, &RemoteControlServer::breakNextRequested,
+            this, &MainWindow::remoteBreakNext);
+    connect(m_remoteServer, &RemoteControlServer::breakPreviousRequested,
+            this, &MainWindow::remoteBreakPrevious);
+    connect(m_remoteServer, &RemoteControlServer::breakStopRequested, this, [this]() {
+        buttonBmStopClicked();
+        ui->buttonBmPause->setChecked(false);
+    });
+    connect(m_remoteServer, &RemoteControlServer::breakVolumeUpRequested, this, [this]() {
+        ui->sliderBmVolume->setValue(qMin(100, ui->sliderBmVolume->value() + 5));
+    });
+    connect(m_remoteServer, &RemoteControlServer::breakVolumeDownRequested, this, [this]() {
+        ui->sliderBmVolume->setValue(qMax(0, ui->sliderBmVolume->value() - 5));
+    });
+    connect(m_remoteServer, &RemoteControlServer::breakFadeOutRequested, this, [this]() {
+        if (m_mediaBackendBm.state() == MediaBackend::PlayingState)
+            m_mediaBackendBm.fadeOut(false);
+    });
+    connect(m_remoteServer, &RemoteControlServer::breakFadeInRequested, this, [this]() {
+        if (m_mediaBackendBm.state() == MediaBackend::PlayingState &&
+            m_mediaBackendKar.state() != MediaBackend::PlayingState)
+            m_mediaBackendBm.fadeIn(false);
+    });
+
+    // JSON state is read on the GUI thread and polled at 1 Hz by the phone.
+    m_remoteServer->setStatusProvider([this]() -> QJsonObject {
+        const auto stateName = [](MediaBackend::State state) -> QString {
+            if (state == MediaBackend::PlayingState) return QStringLiteral("Playing");
+            if (state == MediaBackend::PausedState) return QStringLiteral("Paused");
+            return QStringLiteral("Stopped");
+        };
+        const auto karaokeState = m_mediaBackendKar.state();
+        const auto breakState = m_mediaBackendBm.state();
+        const auto karaokeDuration = qMax(qint64(0), m_mediaBackendKar.duration());
+        const auto breakDuration = qMax(qint64(0), m_mediaBackendBm.duration());
+        const bool kActive = karaokeState == MediaBackend::PlayingState ||
+                             karaokeState == MediaBackend::PausedState;
+        const bool bActive = breakState == MediaBackend::PlayingState ||
+                             breakState == MediaBackend::PausedState;
+        QString breakTitle, breakArtist;
+        if (bActive) {
+            const auto track = m_tableModelPlaylistSongs.getCurrentSong();
+            if (track.has_value()) {
+                breakTitle = track->get().title;
+                breakArtist = track->get().artist;
+            }
+        }
+        QJsonObject karaoke{
+            {QStringLiteral("state"), stateName(karaokeState)},
+            {QStringLiteral("singer"), kActive ? m_curSinger : QString()},
+            {QStringLiteral("title"), kActive ? m_curTitle : QString()},
+            {QStringLiteral("artist"), kActive ? m_curArtist : QString()},
+            {QStringLiteral("elapsed_ms"), kActive ? double(qMax(qint64(0), m_mediaBackendKar.position())) : 0.0},
+            {QStringLiteral("duration_ms"), kActive ? double(karaokeDuration) : 0.0},
+            {QStringLiteral("volume"), m_mediaBackendKar.getVolume()}
+        };
+        QJsonObject breakMusic{
+            {QStringLiteral("state"), stateName(breakState)},
+            {QStringLiteral("title"), breakTitle},
+            {QStringLiteral("artist"), breakArtist},
+            {QStringLiteral("elapsed_ms"), bActive ? double(qMax(qint64(0), m_mediaBackendBm.position())) : 0.0},
+            {QStringLiteral("duration_ms"), bActive ? double(breakDuration) : 0.0},
+            {QStringLiteral("volume"), m_mediaBackendBm.getVolume()}
+        };
+        QJsonObject result = remoteLibraryStatus();
+        result.insert(QStringLiteral("karaoke"), karaoke);
+        result.insert(QStringLiteral("break_music"), breakMusic);
+        return result;
+    });
+
+    m_remoteServer->setSongSearchProvider([this](const QString &query) {
+        return remoteSongSearch(query);
+    });
+    m_remoteServer->setLibraryActionHandler([this](const QString &command, const QJsonObject &args) {
+        return remoteLibraryAction(command, args);
+    });
+
+    if (m_remoteServer->start()) {
+        auto *remoteStatus = new QLabel(ui->statusBar);
+        ui->statusBar->addPermanentWidget(remoteStatus);
+        const auto refreshRemoteAddress = [this, remoteStatus]() {
+            const auto urls = m_remoteServer->localUrls();
+            remoteStatus->setText(QStringLiteral("Remote %1  PIN %2")
+                                      .arg(urls.first(), m_remoteServer->accessPin()));
+            remoteStatus->setToolTip(QStringLiteral("Local remote URLs:\n%1")
+                                         .arg(urls.join(QStringLiteral("\n"))));
+        };
+        refreshRemoteAddress();
+        auto *remoteRefreshTimer = new QTimer(this);
+        connect(remoteRefreshTimer, &QTimer::timeout, this, refreshRemoteAddress);
+        remoteRefreshTimer->start(3000);
+    } else {
+        m_logger->warn("{} Remote server could not listen: {}", m_loggingPrefix,
+                       m_remoteServer->errorString().toStdString());
+    }
     m_timerSlowUiUpdate.start(10000);
 }
 
@@ -1278,6 +1357,579 @@ void MainWindow::dbInit(const QDir &okjDataDir) {
     }
 }
 
+
+QJsonObject MainWindow::remoteLibraryStatus() {
+    QJsonArray rotation;
+    const int count = static_cast<int>(m_rotModel.singerCount());
+    for (int position = 0; position < count; ++position) {
+        const auto &singer = m_rotModel.getSingerAtPosition(position);
+        rotation.append(QJsonObject{
+            {QStringLiteral("id"), singer.id},
+            {QStringLiteral("name"), singer.name},
+            {QStringLiteral("current"), singer.id == m_rotModel.currentSinger()},
+            {QStringLiteral("has_song"), singer.numSongsUnsung() > 0},
+            {QStringLiteral("next_song"), singer.numSongsUnsung() > 0 ? singer.nextSongArtistTitle() : QString()}
+        });
+    }
+
+    int selectedId = -1;
+    const QModelIndexList rows = ui->tableViewRotation->selectionModel()->selectedRows();
+    if (rows.size() == 1) {
+        const int row = rows.first().row();
+        if (row >= 0 && row < count) selectedId = m_rotModel.getSingerAtPosition(row).id;
+    }
+
+    QJsonArray queue;
+    if (selectedId > 0) {
+        QSqlQuery query;
+        query.prepare(QStringLiteral(
+            "SELECT q.qsongid, s.artist, s.title, q.played, q.keychg "
+            "FROM queuesongs q INNER JOIN dbsongs s ON s.songid = q.song "
+            "WHERE q.singer = :singer ORDER BY q.position"));
+        query.bindValue(QStringLiteral(":singer"), selectedId);
+        if (query.exec()) {
+            while (query.next()) {
+                queue.append(QJsonObject{
+                    {QStringLiteral("id"), query.value(0).toInt()},
+                    {QStringLiteral("artist"), query.value(1).toString()},
+                    {QStringLiteral("title"), query.value(2).toString()},
+                    {QStringLiteral("played"), query.value(3).toBool()},
+                    {QStringLiteral("key_change"), query.value(4).toInt()}
+                });
+            }
+        }
+    }
+    // OKJ_REMOTE_V5_GUEST_REQUESTS: pending requests stored in the existing local SQLite file.
+    QJsonArray requests;
+    QSqlQuery createGuestTable;
+    if (createGuestTable.exec(QStringLiteral(
+          "CREATE TABLE IF NOT EXISTS remote_guest_requests ("
+          "id INTEGER PRIMARY KEY AUTOINCREMENT, singer_name TEXT NOT NULL,"
+          "song_id INTEGER NOT NULL, requested_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+          "status TEXT NOT NULL DEFAULT 'pending')"))) {
+        QSqlQuery pending;
+        if (pending.exec(QStringLiteral(
+            "SELECT r.id, r.singer_name, r.song_id, s.artist, s.title "
+            "FROM remote_guest_requests r JOIN dbsongs s ON s.songid = r.song_id "
+            "WHERE r.status = 'pending' ORDER BY r.id DESC LIMIT 60"))) {
+            while (pending.next()) {
+                requests.append(QJsonObject{
+                    {QStringLiteral("id"), pending.value(0).toInt()},
+                    {QStringLiteral("singer"), pending.value(1).toString()},
+                    {QStringLiteral("song_id"), pending.value(2).toInt()},
+                    {QStringLiteral("artist"), pending.value(3).toString()},
+                    {QStringLiteral("title"), pending.value(4).toString()}
+                });
+            }
+        }
+    }
+    QJsonObject output{
+        {QStringLiteral("rotation"), rotation},
+        {QStringLiteral("selected_singer_id"), selectedId},
+        {QStringLiteral("selected_queue"), queue}
+    };
+    output.insert(QStringLiteral("guest_requests"), requests);
+    return output;
+}
+
+// OKJ_REMOTE_V4_SINGER_QUEUE_SEARCH
+QJsonObject MainWindow::remoteSongSearch(const QString &term) {
+    // Every word must occur somewhere across artist + title + disc ID.
+    // "journey dont stop" matches Journey / Don't Stop Believin' even
+    // though the individual words belong to different columns.
+    QString normalized = term.simplified().toLower();
+    normalized.remove(QChar(0x0027)); // straight apostrophe
+    normalized.remove(QChar(0x2019)); // curly apostrophe
+    normalized.replace(QLatin1Char('-'), QLatin1Char(' '));
+    const QStringList words = normalized.simplified().split(QLatin1Char(' '), Qt::SkipEmptyParts);
+    QJsonArray results;
+    if (words.isEmpty())
+        return QJsonObject{{QStringLiteral("results"), results},
+                           {QStringLiteral("more"), false}};
+
+    QString sql = QStringLiteral(
+        "SELECT songid, artist, title, discid FROM dbsongs WHERE 1=1");
+    for (int i = 0; i < words.size(); ++i) {
+        sql += QStringLiteral(
+            " AND instr(lower(replace(replace(replace(coalesce(artist,'') || ' ' || "
+            "coalesce(title,'') || ' ' || coalesce(discid,''), char(39), ''), "
+            "char(8217), ''), '-', ' ')), :word%1) > 0").arg(i);
+    }
+    sql += QStringLiteral(" ORDER BY artist COLLATE NOCASE, title COLLATE NOCASE LIMIT 41");
+
+    QSqlQuery query;
+    if (!query.prepare(sql))
+        return QJsonObject{{QStringLiteral("results"), results},
+                           {QStringLiteral("more"), false},
+                           {QStringLiteral("error"), QStringLiteral("Search preparation failed")}};
+    for (int i = 0; i < words.size(); ++i)
+        query.bindValue(QStringLiteral(":word%1").arg(i), words.at(i));
+    if (!query.exec())
+        return QJsonObject{{QStringLiteral("results"), results},
+                           {QStringLiteral("more"), false},
+                           {QStringLiteral("error"), QStringLiteral("Song search failed")}};
+    bool more = false;
+    while (query.next()) {
+        if (results.size() == 40) { more = true; break; }
+        results.append(QJsonObject{
+            {QStringLiteral("id"), query.value(0).toInt()},
+            {QStringLiteral("artist"), query.value(1).toString()},
+            {QStringLiteral("title"), query.value(2).toString()},
+            {QStringLiteral("disc_id"), query.value(3).toString()}
+        });
+    }
+    return QJsonObject{{QStringLiteral("results"), results},
+                       {QStringLiteral("more"), more}};
+}
+
+QJsonObject MainWindow::remoteLibraryAction(const QString &command, const QJsonObject &args) {
+    // OKJ_REMOTE_V5_GUEST_REQUESTS
+    if (command == QStringLiteral("guest_submit") ||
+        command == QStringLiteral("approve_guest_request") ||
+        command == QStringLiteral("reject_guest_request")) {
+        QSqlQuery createGuestTable;
+        if (!createGuestTable.exec(QStringLiteral(
+            "CREATE TABLE IF NOT EXISTS remote_guest_requests ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT, singer_name TEXT NOT NULL,"
+            "song_id INTEGER NOT NULL, requested_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+            "status TEXT NOT NULL DEFAULT 'pending')")))
+            return QJsonObject{{QStringLiteral("ok"), false},
+                               {QStringLiteral("error"), QStringLiteral("Could not initialize request queue")}};
+        if (command == QStringLiteral("guest_submit")) {
+            const QString name = args.value(QStringLiteral("singer_name")).toString().simplified();
+            if (name.isEmpty() || name.size() > 70)
+                return QJsonObject{{QStringLiteral("ok"), false},
+                                   {QStringLiteral("error"), QStringLiteral("Enter a singer name (1-70 characters)")}};
+            for (const QChar &ch : name)
+                if (ch.isNull() || ch.category() == QChar::Other_Control)
+                    return QJsonObject{{QStringLiteral("ok"), false},
+                                       {QStringLiteral("error"), QStringLiteral("Invalid singer name")}};
+            const QJsonValue songValue = args.value(QStringLiteral("song_id"));
+            const int songId = songValue.isDouble() ? songValue.toInt(-1) : -1;
+            if (songId <= 0)
+                return QJsonObject{{QStringLiteral("ok"), false},
+                                   {QStringLiteral("error"), QStringLiteral("Invalid song")}};
+            QSqlQuery exists;
+            exists.prepare(QStringLiteral("SELECT 1 FROM dbsongs WHERE songid = :id"));
+            exists.bindValue(QStringLiteral(":id"), songId);
+            if (!exists.exec() || !exists.next())
+                return QJsonObject{{QStringLiteral("ok"), false},
+                                   {QStringLiteral("error"), QStringLiteral("Song is not in the local catalog")}};
+            QSqlQuery limit;
+            if (!limit.exec(QStringLiteral("SELECT count(*) FROM remote_guest_requests WHERE status = 'pending'")) ||
+                !limit.next() || limit.value(0).toInt() >= 100)
+                return QJsonObject{{QStringLiteral("ok"), false},
+                                   {QStringLiteral("error"), QStringLiteral("Request queue is full; ask the DJ")}};
+            QSqlQuery duplicate;
+            duplicate.prepare(QStringLiteral(
+                "SELECT 1 FROM remote_guest_requests WHERE status = 'pending' "
+                "AND lower(singer_name) = lower(:name) AND song_id = :song LIMIT 1"));
+            duplicate.bindValue(QStringLiteral(":name"), name);
+            duplicate.bindValue(QStringLiteral(":song"), songId);
+            if (duplicate.exec() && duplicate.next())
+                return QJsonObject{{QStringLiteral("ok"), false},
+                                   {QStringLiteral("error"), QStringLiteral("You already requested that song")}};
+            QSqlQuery insert;
+            insert.prepare(QStringLiteral(
+                "INSERT INTO remote_guest_requests (singer_name,song_id,status) "
+                "VALUES (:name, :song, 'pending')"));
+            insert.bindValue(QStringLiteral(":name"), name);
+            insert.bindValue(QStringLiteral(":song"), songId);
+            if (!insert.exec())
+                return QJsonObject{{QStringLiteral("ok"), false},
+                                   {QStringLiteral("error"), QStringLiteral("Could not save request")}};
+            return QJsonObject{{QStringLiteral("ok"), true},
+                               {QStringLiteral("message"), QStringLiteral("Sent to DJ for approval!")}};
+        }
+        const QJsonValue idValue = args.value(QStringLiteral("guest_request_id"));
+        const int requestId = idValue.isDouble() ? idValue.toInt(-1) : -1;
+        if (requestId <= 0)
+            return QJsonObject{{QStringLiteral("ok"), false},
+                               {QStringLiteral("error"), QStringLiteral("Invalid request ID")}};
+        QSqlQuery incoming;
+        incoming.prepare(QStringLiteral(
+            "SELECT singer_name, song_id FROM remote_guest_requests "
+            "WHERE id = :id AND status = 'pending'"));
+        incoming.bindValue(QStringLiteral(":id"), requestId);
+        if (!incoming.exec() || !incoming.next())
+            return QJsonObject{{QStringLiteral("ok"), false},
+                               {QStringLiteral("error"), QStringLiteral("Request is no longer pending")}};
+        const QString singerName = incoming.value(0).toString();
+        const int songId = incoming.value(1).toInt();
+        if (command == QStringLiteral("approve_guest_request")) {
+            QSqlQuery validSong;
+            validSong.prepare(QStringLiteral("SELECT path FROM dbsongs WHERE songid = :id"));
+            validSong.bindValue(QStringLiteral(":id"), songId);
+            if (!validSong.exec() || !validSong.next())
+                return QJsonObject{{QStringLiteral("ok"), false},
+                                   {QStringLiteral("error"), QStringLiteral("Song is missing from the catalog")}};
+            if (!QFile::exists(validSong.value(0).toString()))
+                return QJsonObject{{QStringLiteral("ok"), false},
+                                   {QStringLiteral("error"), QStringLiteral("Song file not found on laptop")}};
+            int singerId = -1;
+            const int count = static_cast<int>(m_rotModel.singerCount());
+            for (int row = 0; row < count; ++row) {
+                const auto &singer = m_rotModel.getSingerAtPosition(row);
+                if (singer.name.compare(singerName, Qt::CaseInsensitive) == 0) {
+                    singerId = singer.id;
+                    break;
+                }
+            }
+            if (singerId <= 0) singerId = m_rotModel.singerAdd(singerName, TableModelRotation::ADD_BOTTOM);
+            if (singerId <= 0)
+                return QJsonObject{{QStringLiteral("ok"), false},
+                                   {QStringLiteral("error"), QStringLiteral("Could not create singer")}};
+            // Use OpenKJ's own queue model so disk and UI stay in sync.
+            // Verify that THIS request created a new queue row, not an older matching entry.
+            QSqlQuery lastEntry;
+            lastEntry.prepare(QStringLiteral(
+                "SELECT coalesce(MAX(qsongid),0) FROM queuesongs "
+                "WHERE singer = :singer AND song = :song"));
+            lastEntry.bindValue(QStringLiteral(":singer"), singerId);
+            lastEntry.bindValue(QStringLiteral(":song"), songId);
+            if (!lastEntry.exec() || !lastEntry.next())
+                return QJsonObject{{QStringLiteral("ok"), false},
+                                   {QStringLiteral("error"), QStringLiteral("Cannot inspect singer queue")}};
+            const qint64 lastQueueSongId = lastEntry.value(0).toLongLong();
+            m_qModel.songAddSlot(songId, singerId, 0);
+            if (!lastEntry.exec() || !lastEntry.next() ||
+                lastEntry.value(0).toLongLong() <= lastQueueSongId)
+                return QJsonObject{{QStringLiteral("ok"), false},
+                                   {QStringLiteral("error"), QStringLiteral("Could not add song to queue")}};
+            // Force model refresh if added for a singer not currently selected.
+            if (m_qModel.getSingerId() == singerId) m_qModel.loadSinger(singerId);
+            rotationDataChanged();
+        }
+        QSqlQuery update;
+        update.prepare(QStringLiteral("UPDATE remote_guest_requests SET status = :status WHERE id = :id AND status = 'pending'"));
+        update.bindValue(QStringLiteral(":status"), command == QStringLiteral("approve_guest_request") ?
+                         QStringLiteral("approved") : QStringLiteral("declined"));
+        update.bindValue(QStringLiteral(":id"), requestId);
+        if (!update.exec())
+            return QJsonObject{{QStringLiteral("ok"), false},
+                               {QStringLiteral("error"), QStringLiteral("Could not update request status")}};
+        return QJsonObject{{QStringLiteral("ok"), true},
+                           {QStringLiteral("message"), command == QStringLiteral("approve_guest_request") ?
+                            QStringLiteral("Added to singer queue") : QStringLiteral("Request declined")}};
+    }
+
+    if (command == QStringLiteral("add_singer")) {
+        // Use OpenKJ's rotation model so the GUI, SQLite database and
+        // singer ordering are updated together.
+        const QString name = args.value(QStringLiteral("singer_name")).toString().simplified();
+        if (name.isEmpty() || name.size() > 70)
+            return QJsonObject{{QStringLiteral("ok"), false},
+                               {QStringLiteral("error"), QStringLiteral("Singer name must be 1-70 characters")}};
+        for (const QChar &ch : name) {
+            if (ch.isNull() || ch.category() == QChar::Other_Control)
+                return QJsonObject{{QStringLiteral("ok"), false},
+                                   {QStringLiteral("error"), QStringLiteral("Invalid characters in singer name")}};
+        }
+        if (m_rotModel.singerExists(name))
+            return QJsonObject{{QStringLiteral("ok"), false},
+                               {QStringLiteral("error"), QStringLiteral("Singer is already in rotation")}};
+        const int newId = m_rotModel.singerAdd(name, TableModelRotation::ADD_BOTTOM);
+        if (newId <= 0)
+            return QJsonObject{{QStringLiteral("ok"), false},
+                               {QStringLiteral("error"), QStringLiteral("OpenKJ could not add the singer")}};
+        const auto &created = m_rotModel.getSinger(newId);
+        if (created.isValid() && created.position >= 0) {
+            ui->tableViewRotation->setCurrentIndex(
+                m_rotModel.index(created.position, TableModelRotation::COL_NAME));
+            ui->tableViewRotation->selectRow(created.position);
+        }
+        return QJsonObject{{QStringLiteral("ok"), true},
+                           {QStringLiteral("singer_id"), newId},
+                           {QStringLiteral("message"), QStringLiteral("Singer added to rotation")}};
+    }
+
+    // OKJ_REMOTE_V7_REMOVE_SINGER - use the same rotation deletion API as the desktop.
+    if (command == QStringLiteral("remove_singer")) {
+        const QJsonValue value = args.value(QStringLiteral("singer_id"));
+        const int removeId = value.isDouble() ? value.toInt(-1) : -1;
+        const auto &removeTarget = m_rotModel.getSinger(removeId);
+        if (removeId <= 0 || !removeTarget.isValid())
+            return QJsonObject{{QStringLiteral("ok"), false},
+                               {QStringLiteral("error"), QStringLiteral("Singer no longer exists in rotation")}};
+        const int activeId = m_rotModel.currentSinger();
+        const auto karaokeState = m_mediaBackendKar.state();
+        if (activeId == removeId &&
+            (karaokeState == MediaBackend::PlayingState ||
+             karaokeState == MediaBackend::PausedState))
+            return QJsonObject{{QStringLiteral("ok"), false},
+                               {QStringLiteral("error"), QStringLiteral("Cannot remove the current performer while a song is active. Stop karaoke or finish the song first.")}};
+
+        // Preserve the name before deleting the model's singer object.
+        const QString removedName = removeTarget.name;
+        if (m_qModel.getSingerId() == removeId)
+            m_qModel.loadSinger(-1);
+        if (activeId == removeId) {
+            m_rotModel.setCurrentSinger(-1);
+            m_rotDelegate.setCurrentSinger(-1);
+        }
+        m_rotModel.singerDelete(removeId);
+        ui->tableViewRotation->clearSelection();
+        ui->tableViewQueue->clearSelection();
+        return QJsonObject{{QStringLiteral("ok"), true},
+                           {QStringLiteral("message"), QStringLiteral("Removed %1 from the singer rotation").arg(removedName)}};
+    }
+
+    // OKJ_REMOTE_V8_REORDER_SINGERS - use native position-based singerMove().
+    if (command == QStringLiteral("move_singer")) {
+        const QJsonValue value = args.value(QStringLiteral("singer_id"));
+        const int moveId = value.isDouble() ? value.toInt(-1) : -1;
+        const QString direction = args.value(QStringLiteral("move_direction")).toString();
+        if (direction != QStringLiteral("up") && direction != QStringLiteral("down"))
+            return QJsonObject{{QStringLiteral("ok"), false},
+                               {QStringLiteral("error"), QStringLiteral("Choose up or down")}};
+        const auto &moveTarget = m_rotModel.getSinger(moveId);
+        if (moveId <= 0 || !moveTarget.isValid())
+            return QJsonObject{{QStringLiteral("ok"), false},
+                               {QStringLiteral("error"), QStringLiteral("Singer no longer exists in rotation")}};
+        const int oldPosition = moveTarget.position;
+        const int newPosition = oldPosition + (direction == QStringLiteral("up") ? -1 : 1);
+        const int count = static_cast<int>(m_rotModel.singerCount());
+        if (newPosition < 0 || newPosition >= count)
+            return QJsonObject{{QStringLiteral("ok"), false},
+                               {QStringLiteral("error"), QStringLiteral("Singer is already at the top or bottom")}};
+
+        const QString movedName = moveTarget.name;
+        m_rotModel.singerMove(oldPosition, newPosition);
+        return QJsonObject{{QStringLiteral("ok"), true},
+                           {QStringLiteral("message"),
+                            QStringLiteral("Moved %1 %2 in the rotation").arg(movedName).arg(direction)}};
+    }
+
+    const QJsonValue idValue = args.value(QStringLiteral("singer_id"));
+    const int singerId = idValue.isDouble() ? idValue.toInt(-1) : -1;
+    const auto &singer = m_rotModel.getSinger(singerId);
+    if (singerId <= 0 || !singer.isValid())
+        return QJsonObject{{QStringLiteral("ok"), false},
+                           {QStringLiteral("error"), QStringLiteral("Singer not found")}};
+    const int position = singer.position;
+
+    if (command == QStringLiteral("select_singer")) {
+        ui->tableViewRotation->setCurrentIndex(
+            m_rotModel.index(position, TableModelRotation::COL_NAME));
+        ui->tableViewRotation->selectRow(position);
+        return QJsonObject{{QStringLiteral("ok"), true},
+                           {QStringLiteral("message"), QStringLiteral("Singer selected")}};
+    }
+    if (command == QStringLiteral("play_queue_song")) {
+        // Queue ID is the row's qsongid, NOT the underlying catalog song ID.
+        const QJsonValue queueValue = args.value(QStringLiteral("queue_song_id"));
+        const int queueId = queueValue.isDouble() ? queueValue.toInt(-1) : -1;
+        if (queueId <= 0)
+            return QJsonObject{{QStringLiteral("ok"), false},
+                               {QStringLiteral("error"), QStringLiteral("Invalid queue song ID")}};
+        QSqlQuery check;
+        check.prepare(QStringLiteral(
+            "SELECT s.path FROM queuesongs q JOIN dbsongs s ON s.songid = q.song "
+            "WHERE q.qsongid = :queue AND q.singer = :singer"));
+        check.bindValue(QStringLiteral(":queue"), queueId);
+        check.bindValue(QStringLiteral(":singer"), singerId);
+        if (!check.exec() || !check.next())
+            return QJsonObject{{QStringLiteral("ok"), false},
+                               {QStringLiteral("error"), QStringLiteral("Song is not in that singer's queue")}};
+        if (!QFile::exists(check.value(0).toString()))
+            return QJsonObject{{QStringLiteral("ok"), false},
+                               {QStringLiteral("error"), QStringLiteral("Karaoke file is missing on this laptop")}};
+        // Deferred to let the HTTP response finish before any desktop warning dialog.
+        QTimer::singleShot(0, this, [this, singerId, queueId]() {
+            const auto &target = m_rotModel.getSinger(singerId);
+            if (!target.isValid() || target.position < 0) return;
+            ui->tableViewRotation->setCurrentIndex(
+                m_rotModel.index(target.position, TableModelRotation::COL_NAME));
+            ui->tableViewRotation->selectRow(target.position);
+            if (m_qModel.getSingerId() != singerId) m_qModel.loadSinger(singerId);
+            for (int row = 0; row < m_qModel.rowCount(); ++row) {
+                const QModelIndex index = m_qModel.index(row, TableModelQueueSongs::COL_ID);
+                const auto song = qvariant_cast<okj::QueueSong>(index.data(Qt::UserRole));
+                if (song.id == queueId && song.singerId == singerId) {
+                    // Reuse desktop exact-song playback. It handles history,
+                    // key change, singer rotation and interruption warnings.
+                    tableViewQueueDoubleClicked(index);
+                    break;
+                }
+            }
+        });
+        return QJsonObject{{QStringLiteral("ok"), true},
+                           {QStringLiteral("message"), QStringLiteral("Queued song sent to OpenKJ for playback")}};
+    }
+    if (command == QStringLiteral("play_singer")) {
+        if (singer.nextSongPath().isEmpty())
+            return QJsonObject{{QStringLiteral("ok"), false},
+                               {QStringLiteral("error"), QStringLiteral("Singer has no unplayed songs")}};
+        QTimer::singleShot(0, this, [this, singerId]() {
+            const auto &selected = m_rotModel.getSinger(singerId);
+            if (!selected.isValid() || selected.position < 0) return;
+            ui->tableViewRotation->setCurrentIndex(
+                m_rotModel.index(selected.position, TableModelRotation::COL_NAME));
+            ui->tableViewRotation->selectRow(selected.position);
+            tableViewRotationDoubleClicked(
+                m_rotModel.index(selected.position, TableModelRotation::COL_NAME));
+        });
+        return QJsonObject{{QStringLiteral("ok"), true},
+                           {QStringLiteral("message"), QStringLiteral("Play request sent to OpenKJ")}};
+    }
+    if (command == QStringLiteral("add_song")) {
+        const QJsonValue songValue = args.value(QStringLiteral("song_id"));
+        const int songId = songValue.isDouble() ? songValue.toInt(-1) : -1;
+        if (songId <= 0)
+            return QJsonObject{{QStringLiteral("ok"), false},
+                               {QStringLiteral("error"), QStringLiteral("Invalid song ID")}};
+        QSqlQuery exists;
+        exists.prepare(QStringLiteral("SELECT 1 FROM dbsongs WHERE songid = :id"));
+        exists.bindValue(QStringLiteral(":id"), songId);
+        if (!exists.exec() || !exists.next())
+            return QJsonObject{{QStringLiteral("ok"), false},
+                               {QStringLiteral("error"), QStringLiteral("Song not found in local catalog")}};
+
+        const auto lastQueueId = [singerId, songId]() -> int {
+            QSqlQuery find;
+            find.prepare(QStringLiteral(
+                "SELECT coalesce(MAX(qsongid), 0) FROM queuesongs "
+                "WHERE singer = :singer AND song = :song"));
+            find.bindValue(QStringLiteral(":singer"), singerId);
+            find.bindValue(QStringLiteral(":song"), songId);
+            if (!find.exec() || !find.next()) return -1;
+            return find.value(0).toInt();
+        };
+        const int before = lastQueueId();
+        if (before < 0)
+            return QJsonObject{{QStringLiteral("ok"), false},
+                               {QStringLiteral("error"), QStringLiteral("Queue database unavailable")}};
+        m_qModel.songAddSlot(songId, singerId, 0);
+        const int after = lastQueueId();
+        if (after <= before)
+            return QJsonObject{{QStringLiteral("ok"), false},
+                               {QStringLiteral("error"), QStringLiteral("Song could not be added")}};
+        rotationDataChanged();
+        return QJsonObject{{QStringLiteral("ok"), true},
+                           {QStringLiteral("message"), QStringLiteral("Song added to singer queue")}};
+    }
+    return QJsonObject{{QStringLiteral("ok"), false},
+                       {QStringLiteral("error"), QStringLiteral("Unknown library action")}};
+}
+
+void MainWindow::remoteStartBreakAtPosition(int position) {
+    // Same playlist/current-song API as OpenKJ's own double-click handler.
+    const auto track = m_tableModelPlaylistSongs.getPlSongByPosition(position);
+    if (!track.has_value()) return;
+    const QString path = track->get().path;
+    if (!QFile::exists(path)) {
+        m_logger->warn("{} Remote break music file not found: {}", m_loggingPrefix, path.toStdString());
+        return;
+    }
+    m_mediaBackendBm.stop(true);
+    m_tableModelPlaylistSongs.setCurrentPosition(position);
+    m_mediaBackendBm.setMedia(path);
+    m_mediaBackendBm.play();
+    ui->buttonBmPause->setChecked(false);
+    // Karaoke has priority: if it is playing, don't unexpectedly unmute break music.
+    if (m_mediaBackendKar.state() == MediaBackend::PlayingState)
+        m_mediaBackendBm.fadeOutImmediate();
+    else
+        m_mediaBackendBm.fadeInImmediate();
+}
+
+void MainWindow::remoteBreakNext() {
+    const auto next = m_tableModelPlaylistSongs.getNextPlSong();
+    if (next.has_value()) remoteStartBreakAtPosition(next->get().position);
+}
+
+void MainWindow::remoteBreakPrevious() {
+    const int count = m_tableModelPlaylistSongs.rowCount();
+    if (count <= 0) return;
+    const auto current = m_tableModelPlaylistSongs.getCurrentSong();
+    const int pos = current.has_value() ? ((current->get().position + count - 1) % count) : count - 1;
+    remoteStartBreakAtPosition(pos);
+}
+
+void MainWindow::playNextQueuedSong() {
+        if (m_rotModel.singerCount() == 0) {
+            QMessageBox::information(this, "Unable to play next",
+                                     "There are no singers in the rotation.");
+            return;
+        }
+        if (auto state = m_mediaBackendKar.state(); state == MediaBackend::PlayingState ||
+                                                    state == MediaBackend::PausedState) {
+            if (m_settings.showSongInterruptionWarning()) {
+                QMessageBox msgBox(this);
+                auto *cb = new QCheckBox("Show this warning in the future");
+                cb->setChecked(m_settings.showSongInterruptionWarning());
+                msgBox.setIcon(QMessageBox::Warning);
+                msgBox.setText("Interrupt currently playing karaoke song?");
+                msgBox.setInformativeText(
+                        "There is currently a karaoke song playing.  If you continue, the current song will be stopped.  Are you sure?");
+                QPushButton *yesButton = msgBox.addButton(QMessageBox::Yes);
+                msgBox.addButton(QMessageBox::Cancel);
+                msgBox.setCheckBox(cb);
+                connect(cb, &QCheckBox::toggled, &m_settings, &Settings::setShowSongInterruptionWarning);
+                msgBox.exec();
+                if (msgBox.clickedButton() != yesButton) {
+                    return;
+                }
+            }
+            m_mediaBackendKar.stop();
+        }
+        okj::RotationSinger nextSinger;
+        QString nextSongPath;
+        bool empty{false};
+        int curSingerId{m_rotModel.currentSinger()};
+        int curPos = (curSingerId == -1)
+            ? static_cast<int>(m_rotModel.singerCount() - 1)
+            : m_rotModel.getSinger(curSingerId).position;
+        int loops = 0;
+        while ((nextSongPath == "") && (!empty)) {
+            if (loops > m_rotModel.singerCount()) {
+                empty = true;
+            } else {
+                if (++curPos >= m_rotModel.singerCount()) {
+                    curPos = 0;
+                }
+                nextSinger = m_rotModel.getSingerAtPosition(curPos);
+                nextSongPath = nextSinger.nextSongPath();
+                loops++;
+            }
+        }
+        if (empty) {
+            QMessageBox::information(this, "Unable to play next",
+                                     "Sorry, no unsung karaoke songs are currently in any singer's queue");
+            return;
+        }
+        m_curSinger = nextSinger.name;
+        m_curArtist = nextSinger.nextSongArtist();
+        m_curTitle = nextSinger.nextSongTitle();
+
+        if (m_settings.treatAllSingersAsRegs() || nextSinger.regular) {
+            m_historySongsModel.saveSong(
+                    nextSinger.name,
+                    nextSongPath,
+                    m_curArtist,
+                    m_curTitle,
+                    nextSinger.nextSongSongId(),
+                    nextSinger.nextSongKeyChg()
+            );
+        }
+        m_karaokeSongsModel.updateSongHistory(m_karaokeSongsModel.getIdForPath(nextSongPath));
+        play(nextSongPath);
+        m_mediaBackendKar.setPitchShift(nextSinger.nextSongKeyChg());
+        m_qModel.setPlayed(nextSinger.nextSongQueueId());
+        m_rotModel.setCurrentSinger(nextSinger.id);
+        m_rotDelegate.setCurrentSinger(nextSinger.id);
+        if (m_settings.rotationAltSortOrder()) {
+            auto curSingerPos = nextSinger.position;
+            m_curSingerOriginalPosition = curSingerPos;
+            if (curSingerPos != 0)
+                m_rotModel.singerMove(curSingerPos, 0);
+        }
+        ui->labelArtist->setText(m_curArtist);
+        ui->labelTitle->setText(m_curTitle);
+        ui->labelSinger->setText(nextSinger.name);
+        ui->tableViewRotation->clearSelection();
+        ui->tableViewRotation->selectRow(m_rotModel.getSinger(m_rotModel.currentSinger()).position);
+}
 
 void MainWindow::play(const QString &karaokeFilePath, const bool &k2k) {
     m_mediaTempDir = std::make_unique<QTemporaryDir>();

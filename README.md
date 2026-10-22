@@ -1,3 +1,8 @@
+<!-- OFFLINE_REMOTE_COMMUNITY_V9 -->
+> **Unofficial OpenKJ Offline Remote Community Edition (Windows v9).** Not an official release by the OpenKJ maintainers. See [offline remote features, installation, source and security information](OFFLINE_REMOTE_README.md). For an installation package, see [Releases](https://github.com/speedhawk77-art/OpenKJ/releases).
+
+---
+
 [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/OpenKJ/OpenKJ.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/OpenKJ/OpenKJ/context:cpp)
 [![Copr build status](https://copr.fedorainfracloud.org/coprs/openkj/OpenKJ-unstable/package/openkjtools/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/openkj/OpenKJ-unstable/package/openkjtools/)
 [![Windows Build](https://github.com/OpenKJ/OpenKJ/actions/workflows/windows-test.yml/badge.svg)](https://github.com/OpenKJ/OpenKJ/actions/workflows/windows-test.yml)

@@ -417,6 +417,7 @@ set(SOURCE_FILES
         src/okjtypes.cpp
         src/dlgvideopreview.cpp
         src/mainwindow.cpp
+        src/remotecontrolserver.cpp
         src/dbupdater.cpp
         src/directorymonitor.cpp
         src/dlgkeychange.cpp
@@ -472,6 +473,7 @@ set(SOURCE_FILES
         src/durationlazyupdater.cpp
         src/idledetect.cpp
         src/mainwindow.h
+        src/remotecontrolserver.h
         src/dlgaddsong.h
         src/dlgvideopreview.h
         src/mediabackend.h
