@@ -1,0 +1,55 @@
+name: Repair OpenKJ v9 draft release metadata
+
+on:
+  push:
+    branches:
+      - offline-remote-v9
+    paths:
+      - .github/workflows/repair-openkj-v9-draft.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair-draft:
+    if: github.repository == 'speedhawk77-art/OpenKJ'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate assets and correct draft-only metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="${GITHUB_REPOSITORY}"
+          release_id="421204266"
+          releasedata="$(gh api "repos/${repo}/releases/${release_id}")"
+          printf '%s' "$releasedata" | jq -e '
+            .id == 421204266 and .draft == true and .published_at == null and
+            ([.assets[].name] | sort) ==
+            (["OpenKJ-v9-Cleaned-Manifest.json", "OpenKJ-v9-Cleaned-Setup.exe", "OpenKJ-v9-Cleaned-Setup.sha256.txt"] | sort) and
+            ([.assets[] | select(.name=="OpenKJ-v9-Cleaned-Setup.exe")][0].digest ==
+              "sha256:bc35c24ef25529b86b90bd3f5a215603de3b283d590620ec58820e02f83421ef")
+          ' >/dev/null
+          old_body="$(printf '%s' "$releasedata" | jq -r '.body // ""')"
+          fixed_body="${old_body//OpenKJ-v9-Setup.exe/OpenKJ-v9-Cleaned-Setup.exe}"
+          fixed_body="${fixed_body//at the tag corresponding to this release/at the exact source revision described in the attached manifest}"
+          payload="$(jq -n --arg body "$fixed_body" '{
+            tag_name: "v9.0-offline-remote.1",
+            target_commitish: "offline-remote-v9",
+            name: "OpenKJ - Offline Remote Community v9 (cleaned candidate; licensing review)",
+            draft: true,
+            prerelease: true,
+            body: $body
+          }')"
+          printf '%s' "$payload" | gh api --method PATCH "repos/${repo}/releases/${release_id}" --input - > updated-release.json
+          cat updated-release.json | jq -e '
+            .id == 421204266 and .draft == true and .published_at == null and
+            ([.assets[].name] | sort) ==
+            (["OpenKJ-v9-Cleaned-Manifest.json", "OpenKJ-v9-Cleaned-Setup.exe", "OpenKJ-v9-Cleaned-Setup.sha256.txt"] | sort) and
+            ([.assets[] | select(.name=="OpenKJ-v9-Cleaned-Setup.exe")][0].digest ==
+              "sha256:bc35c24ef25529b86b90bd3f5a215603de3b283d590620ec58820e02f83421ef") and
+            (.body | contains("OpenKJ-v9-Cleaned-Setup.exe"))
+          ' >/dev/null
+          echo "DRAFT-ONLY metadata repaired; binary remains unpublished."
