@@ -53,3 +53,15 @@ The official `GStreamer/cerbero` **annotated tag `1.26.9`** (tag SHA `477c21ce40
 - `OpenKJ-v9-Cerbero-Source-Manifest.json`: **588 bytes**, SHA-256 `3f172257bf93981cabb8c138f47af0de0bdd1966a037c7e54522d431ead93f23`.
 
 **Limit:** Cerbero includes build recipes and patches but **not necessarily the full third-party source tarballs** used to build the Windows MinGW SDK, and it does not establish the exact build recipe was used for the user-installed DLL hashes. Corresponding library source and legal compliance work remain open. This is documented and checksum-verified source **build metadata**, not a public release clearance.
+
+
+## proxy-libintl corresponding upstream source mirrored — 2026-10-22
+
+The **official GStreamer Cerbero tag `1.26.9`** recipe `recipes/proxy-libintl.recipe` identifies `proxy-libintl` **v0.4** as LGPLv2-or-later, producing `libintl`, with upstream source `https://github.com/frida/proxy-libintl/archive/refs/tags/0.4.tar.gz`, SHA-256 `13ef3eea0a3bc0df55293be368dfbcff5a8dd5f4759280f28e030d1494a5dffb`, and Cerbero patch `recipes/proxy-libintl/0001-Rename-symbols-for-compatibility-with-gettext.patch`. This is a strong recipe-to-module match for `libintl-8.dll` sourced byte-identically from the GStreamer MinGW SDK.
+
+[GitHub Actions run `39881106017`](https://github.com/speedhawk77-art/OpenKJ/actions/runs/39881106017) successfully downloaded the checksum-pinned upstream source, verified it, and attached it to draft release 421204266:
+
+- `proxy-libintl-0.4-source.tar.gz`: **13,033 bytes**, SHA-256 `13ef3eea0a3bc0df55293be368dfbcff5a8dd5f4759280f28e030d1494a5dffb`;
+- `OpenKJ-v9-Proxy-Libintl-Source-Manifest.json`: **493 bytes**, SHA-256 `d5c64f826f6177d164bfdb60406e5e1ee4b742ea41fdb12b16f4ad093e2b01d3`.
+
+The separately mirrored Cerbero 1.26.9 archive also contains the corresponding patch, but the exact GStreamer Windows SDK build commit and whether its `libintl-8.dll` used this particular recipe remain to be proven; do **not** call that DLL's complete corresponding-source obligations cleared based on these two archives alone.
