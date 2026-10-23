@@ -29,3 +29,6 @@ The read-only `OpenKJ_v9_Origin_Check_Kit.zip` contains `RUN_OPENKJ_ORIGIN_CHECK
 ## Release decision
 
 The six are **identified as likely known components**, not six established infringing DLLs. Microsoft explicitly allows an SDK D3DCompiler_47 to ship side-by-side. Their exact origin, source availability, and some third-party copyright notices are still unverified. Keep the Windows installer **draft-only** until this and the wider 79-DLL provenance, complete corresponding LGPL sources/patches, and installed notices are resolved.
+
+
+**Further source progress:** the pinned GStreamer Cerbero tag 1.26.9, with build recipes and patch descriptions, is now SHA-256 verified in the GitHub draft. This improves the evidence for `libintl-8.dll` and other GStreamer-side binaries once their hashes are matched, but is not the complete corresponding source itself. See [source-distribution status](SOURCE_DISTRIBUTION_STATUS_v9.md).
