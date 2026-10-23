@@ -1,0 +1,132 @@
+name: Audit 79 OpenKJ DLLs against pinned Cerbero recipes
+
+on:
+  push:
+    branches: [offline-remote-v9]
+    paths: [.github/workflows/audit-openkj-v9-79-recipe-licenses.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  audit-source-metadata:
+    if: github.repository == 'speedhawk77-art/OpenKJ'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: offline-remote-v9
+      - name: Retrieve pinned original build recipes
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 3 -o /tmp/cerbero.tar.gz https://codeload.github.com/GStreamer/cerbero/tar.gz/c8981c6e66a7c877a9a9a9cdc7a14668296f3f64
+          printf '%s  %s\n' 1a5732762e29b3db189ddc0ac68f6efba7bc31d7e8f73d4f0fd61ca4a991d86a /tmp/cerbero.tar.gz | sha256sum -c -
+          mkdir -p /tmp/cerbero
+          tar -xzf /tmp/cerbero.tar.gz -C /tmp/cerbero
+      - name: Verify 56 mapped recipe files and extract source licences
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import collections, pathlib, re
+          quote = chr(96)
+          src = pathlib.Path('community/ALL_79_DLL_CERBERO_RECIPE_MAP_v9.md').read_text()
+          p = re.compile(r'^\| \[' + quote + r'([^' + quote + r']+)' + quote + r'\]\([^)]*\) \| (\d+) \| (.*?) \|$', re.M)
+          items = p.findall(src)
+          if len(items) != 56 or sum(int(n) for _,n,_ in items) != 74:
+              raise RuntimeError('Unexpected source map: expected 56 recipes covering 74 DLLs')
+          candidates = list(pathlib.Path('/tmp/cerbero').glob('*/recipes'))
+          if len(candidates) != 1:
+              raise RuntimeError('Upstream Cerbero recipes path not found')
+          root = candidates[0]
+          out = [
+              '# OpenKJ v9 — source and declared licences of 74 GStreamer-side transitive DLLs',
+              '',
+              'Generated from upstream GStreamer/Cerbero **1.26.9**, commit c8981c6e66a7c877a9a9a9cdc7a14668296f3f64,',
+              'verified against official-tag archive SHA-256 1a5732762e29b3db189ddc0ac68f6efba7bc31d7e8f73d4f0fd61ca4a991d86a.',
+              '',
+              '**Important: This extracts licence declarations and source archive pins from upstream build recipes.',
+              'It does not prove byte-for-byte correspondence of all compiled DLLs, discharge LGPL source obligations,',
+              'or authorize publication of the Windows installer.**',
+              '',
+              '| Recipe | Installed DLLs | Declared version | Recipe licence tags | Declared upstream source SHA-256 | Referenced patches |',
+              '| --- | ---: | --- | --- | --- | ---: |'
+          ]
+          licence_counts = collections.Counter()
+          missing_sha = []
+          for name, count, dll_list in items:
+              path = root / (name + '.recipe')
+              if not path.is_file():
+                  raise RuntimeError('Missing tagged recipe: '+name)
+              contents = path.read_text(encoding='utf-8')
+              def quoted_field(key):
+                  match = re.search(r'^\s*' + key + r'\s*=\s*[\x27\x22]([^\x27\x22\n]+)', contents, re.M)
+                  return match.group(1) if match else 'not explicitly declared'
+              ver = quoted_field('version')
+              sha = quoted_field('tarball_checksum')
+              lm = re.search(r'^\s*licenses\s*=\s*', contents, re.M)
+              tokens = []
+              if lm:
+                  expr = ''
+                  depth = 0
+                  for char in contents[lm.end():lm.end()+4000]:
+                      expr += char
+                      depth += (char == '[') - (char == ']')
+                      if expr.startswith('[') and depth == 0:
+                          break
+                      if len(expr)>1200 and depth <= 0:
+                          break
+                  tokens = sorted(set(re.findall(r'License\.([A-Za-z0-9_]+)', expr)))
+              if not tokens:
+                  tokens = ['not explicit; inspect upstream']
+              for token in tokens:
+                  licence_counts[token] += int(count)
+              patches = set(re.findall(r'[A-Za-z0-9_./-]+\.patch', contents))
+              if sha == 'not explicitly declared':
+                  missing_sha.append(name)
+              link = 'https://github.com/GStreamer/cerbero/blob/1.26.9/recipes/'+name+'.recipe'
+              out.append('| ['+name+']('+link+') | '+count+' | '+ver+' | '+', '.join(tokens)+' | '+sha+' | '+str(len(patches))+' |')
+          out += [
+              '',
+              '## Explicit scope limitations',
+              '',
+              'These **56 upstream recipes** are plausible source-family matches for **74 installed DLLs**. The remaining five',
+              'of the 79 transitive DLLs came from Qt 5.15.2 and Microsoft Windows SDK, with previous direct SDK hash matches.',
+              'Some version fields are recipe metadata placeholders (notably MinGW runtimes), not the underlying source revision.',
+              'The licence token count below overlaps for dual/multi-licensed packages.',
+              '',
+              '## Declared licence families (installed DLLs associated with the recipe; may overlap)',
+              ''
+          ]
+          for tag, count in sorted(licence_counts.items()):
+              out.append('- '+tag+': '+str(count))
+          out += [
+              '',
+              '## Recipes without an explicitly declared source tarball SHA-256',
+              ''
+          ]
+          out += ['- '+name for name in missing_sha] if missing_sha else ['- None']
+          out += [
+              '',
+              'This report does not contain the actual corresponding sources for all LGPL-covered DLLs, or any legal',
+              'review of the Microsoft redistributables or codec patent conditions. Source and licensing work remains open.',
+              'See RELEASE_READINESS_CHECKLIST_v9.md, SOURCE_DISTRIBUTION_STATUS_v9.md, and INSTALLED_BINARY_AUDIT_RESULT_v9.md.',
+              ''
+          ]
+          dest = pathlib.Path('community/ALL_79_DLL_RECIPE_LICENCES_v9.md')
+          dest.write_text('\n'.join(out), encoding='utf-8')
+          print('Generated matrix for 56 recipes and 74 installed GStreamer-side DLLs.')
+          PY
+      - name: Commit resulting documentation only
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add community/ALL_79_DLL_RECIPE_LICENCES_v9.md
+          if git diff --cached --quiet; then
+            echo 'Already current'
+          else
+            git commit -m 'docs: inventory source versions and licence tags from pinned Cerbero recipes'
+            git push origin HEAD:offline-remote-v9
+          fi
+          echo 'No binary release published.'
