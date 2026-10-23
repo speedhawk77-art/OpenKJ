@@ -31,7 +31,7 @@ jobs:
           test "$source_commit" = 'c8981c6e66a7c877a9a9a9cdc7a14668296f3f64'
           archive='GStreamer-cerbero-1.26.9-source-and-recipes.tar.gz'
           curl -fsSL --retry 3 -o "$archive" "https://codeload.github.com/GStreamer/cerbero/tar.gz/${source_commit}"
-          tar -tzf "$archive" | grep -q '/recipes/' || { echo "Archive missing Cerbero recipes"; exit 3; }
+          tar -tzf "$archive" | grep '/recipes/' >/dev/null || { echo "Archive missing Cerbero recipes"; exit 3; }
           sha="$(sha256sum "$archive" | awk '{print $1}')"
           jq -n --arg tag "$tag" --arg commit "$source_commit" --arg sha "$sha" --argjson bytes "$(stat -c%s "$archive")" '{
             provenance:"GitHub mirror of upstream GStreamer/Cerbero annotated tag 1.26.9",
