@@ -52,3 +52,20 @@ The Microsoft D3D DLL is specifically from the **Windows SDK Redist D3D x64 fold
 The user supplied two **byte-identical**, **Valid Microsoft-signed** Visual Studio 2026 Community `vc_redist.x64.exe` candidates in `VC\Redist\MSVC\14.51.36231` and `VC\Redist\MSVC\v145`. Both have SHA-256 `843068991daaa1f73ad9f6239bce4d0f6a07a51f18c37ea2a867e9beca71295c`, size **18,731,856 bytes**, version **14.51.36247.0**. Microsoft’s [2026 distributable list](https://learn.microsoft.com/en-us/visualstudio/releases/2026/redistribution) explicitly includes `[VisualStudioFolder]\VC\redist` for validly licensed Visual Studio Community users distributing unmodified files with an application. **Important:** these candidates do not prove which EXE was actually *embedded* in the Inno installer; verify that separately before checking off the redist package subcheck. No private licence/account data was supplied.
 
 **New conclusion:** the **six installed DLLs' direct SDK byte-origin check is complete**. The six DLLs are not simply “unidentified unknown binaries.” **Neither exact upstream third-party source code nor all component notice obligations are proven by this hash comparison.** The broader remaining DLL/source audit and release hold still apply.
+
+
+## Additional upstream notices and embedded-redist inspection — 2026-10-22
+
+The exact original **Qt 5.15.2 ANGLE** copyright and licence files have now been copied, **unmodified**, from `qt/qtbase` tag `v5.15.2` into:
+
+- `community/licenses/qt-5.15.2/angle/LICENSE` (ANGLE project BSD-style notice);
+- `community/licenses/qt-5.15.2/angle/KHRONOS_LICENSE` (Khronos MIT permission);
+- `community/licenses/qt-5.15.2/angle/SYSTEMINFO_LICENSE` (Apple BSD);
+- `community/licenses/qt-5.15.2/angle/TRACEEVENT_LICENSE` (Chromium BSD);
+- `community/licenses/qt-5.15.2/angle/qt_attribution.json` (Qt's original 5.15.2 attribution metadata).
+
+Qt documents `opengl32sw.dll` as a Mesa llvmpipe software renderer, with an [MIT third-party attribution](https://qthub.com/static/doc/qt5/qtdoc/qt-attribution-llvmpipe.html). The original Mesa/LLVM binary's exact build revisions remain to be identified. Adding notices to the GitHub source branch **does not automatically add them to the already-built Windows installer**. A future revised installer must ship the applicable notices, source and modifications if required.
+
+The **draft installer EXE itself** (SHA-256 `bc35c24ef25529b86b90bd3f5a215603de3b283d590620ec58820e02f83421ef`) was downloaded and independently hash-verified in GitHub Actions. The first extraction attempt used Linux `innoextract` v1.9 (workflow `39880549278`), which could not parse its newer **Inno Setup 7** format. A second attempt with 7-Zip (workflow `39880728389`) also could not read this archive. **Neither failure is evidence that the installer is corrupt:** it successfully installed on Windows and matched all installed runtime hashes. Crucially, **neither tool retrieved the embedded temporary `vc_redist.x64.exe`**; therefore the embedded redistributable's hash/actual source **is still unverified**. The two VS 2026 Community candidates had matching hash `843068991daaa1f73ad9f6239bce4d0f6a07a51f18c37ea2a867e9beca71295c`, but may not be the actual payload selected when the installer was compiled. This requires build provenance or a rebuild that deliberately pins and records the exact Microsoft-signed redist.
+
+Microsoft's official [VS 2026 redistribution list](https://learn.microsoft.com/en-us/visualstudio/releases/2026/redistribution) allows licensed VS 2026 users to distribute **unmodified** files within their `VC\redist` tree subject to licence terms. Microsoft's [Windows SDK D3DCompiler guidance](https://learn.microsoft.com/en-us/windows/win32/directx-sdk--august-2009-) allows SDK `D3DCompiler_47.dll` application-local distribution; the installed file hash exactly matches the developer's Windows Kit `Redist\D3D\x64` copy.
