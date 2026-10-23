@@ -1,0 +1,57 @@
+name: Mirror proxy-libintl 0.4 source for GStreamer Windows DLL
+
+on:
+  push:
+    branches: [offline-remote-v9]
+    paths:
+      - .github/workflows/mirror-openkj-v9-proxy-libintl-source.yml
+
+permissions:
+  contents: write
+
+jobs:
+  stage-source:
+    if: github.repository == 'speedhawk77-art/OpenKJ'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Validate source recipe checksum and mirror to draft only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="${GITHUB_REPOSITORY}"
+          release="$(gh api "repos/${repo}/releases/421204266")"
+          printf '%s' "$release" | jq -e '.draft==true and .published_at==null and .tag_name=="v9.0-offline-remote.1"' >/dev/null
+          file="proxy-libintl-0.4-source.tar.gz"
+          curl -fL --retry 4 --retry-delay 3 -o "$file" "https://github.com/frida/proxy-libintl/archive/refs/tags/0.4.tar.gz"
+          # This hash is pinned in official GStreamer Cerbero tag 1.26.9,
+          # recipes/proxy-libintl.recipe
+          printf '%s  %s\n' '13ef3eea0a3bc0df55293be368dfbcff5a8dd5f4759280f28e030d1494a5dffb' "$file" | sha256sum -c -
+          jq -n '{
+            source:"https://github.com/frida/proxy-libintl/archive/refs/tags/0.4.tar.gz",
+            version:"0.4",
+            cerbero_tag:"1.26.9",
+            cerbero_recipe:"recipes/proxy-libintl.recipe",
+            upstream_sha256:"13ef3eea0a3bc0df55293be368dfbcff5a8dd5f4759280f28e030d1494a5dffb",
+            cerbero_patch:"recipes/proxy-libintl/0001-Rename-symbols-for-compatibility-with-gettext.patch",
+            recipe_license:"LGPL-2.0-or-later",
+            exact_built_binary_verified:false,
+            public_release_clearance:false
+          }' > OpenKJ-v9-Proxy-Libintl-Source-Manifest.json
+          for item in "$file" OpenKJ-v9-Proxy-Libintl-Source-Manifest.json; do
+            r="$(gh api "repos/${repo}/releases/421204266")"
+            printf '%s' "$r" | jq -e '.draft==true and .published_at==null' >/dev/null
+            expected="sha256:$(sha256sum "$item" | awk '{print $1}')"
+            found="$(printf '%s' "$r" | jq -r --arg name "$item" '.assets[] | select(.name==$name) | .digest // empty')"
+            if [ -n "$found" ]; then
+              test "$found" = "$expected" || { echo "Conflicting asset $item"; exit 3; }
+            else
+              gh release upload 'v9.0-offline-remote.1' "$item" --repo "$repo"
+              check="$(gh api "repos/${repo}/releases/421204266" | jq -r --arg name "$item" '.assets[] | select(.name==$name) | .digest // empty')"
+              test "$check" = "$expected" || { echo "Checksum mismatch $item"; exit 4; }
+            fi
+          done
+          gh api "repos/${repo}/releases/421204266" | jq -e '.draft==true and .published_at==null' >/dev/null
+          echo 'proxy-libintl source mirrored in private DRAFT; exact binary identification and LGPL source compliance still require build provenance.'
