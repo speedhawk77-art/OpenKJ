@@ -1,0 +1,62 @@
+name: Mirror pinned Cerbero 1.26.9 build recipes to draft
+
+on:
+  push:
+    branches: [offline-remote-v9]
+    paths: [.github/workflows/stage-openkj-v9-cerbero-sources.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  archive-cerbero:
+    if: github.repository == 'speedhawk77-art/OpenKJ'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Verify pinned upstream tag and stage build recipes draft-only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          release_id=421204266
+          release="$(gh api "repos/${GITHUB_REPOSITORY}/releases/${release_id}")"
+          printf '%s' "$release" | jq -e '.id == 421204266 and .draft == true and .published_at == null' >/dev/null
+          tag='1.26.9'
+          # Annotated tag is pinned, not a moving branch.
+          tag_object="$(gh api repos/GStreamer/cerbero/git/ref/tags/${tag} | jq -r '.object.sha')"
+          test "$tag_object" = '477c21ce40a3d304fa2cf43f39bc01d832f1ce20'
+          source_commit="$(gh api "repos/GStreamer/cerbero/git/tags/${tag_object}" | jq -r '.object.sha')"
+          test "$source_commit" = 'c8981c6e66a7c877a9a9a9cdc7a14668296f3f64'
+          archive='GStreamer-cerbero-1.26.9-source-and-recipes.tar.gz'
+          curl -fsSL --retry 3 -o "$archive" "https://codeload.github.com/GStreamer/cerbero/tar.gz/${source_commit}"
+          tar -tzf "$archive" | grep -q '/recipes/' || { echo "Archive missing Cerbero recipes"; exit 3; }
+          sha="$(sha256sum "$archive" | awk '{print $1}')"
+          jq -n --arg tag "$tag" --arg commit "$source_commit" --arg sha "$sha" --argjson bytes "$(stat -c%s "$archive")" '{
+            provenance:"GitHub mirror of upstream GStreamer/Cerbero annotated tag 1.26.9",
+            upstream_repository:"https://github.com/GStreamer/cerbero",
+            upstream_tag:$tag,
+            commit:$commit,
+            archive_sha256:$sha,
+            archive_bytes:$bytes,
+            contains_sources_for_every_binary:false,
+            completeness:"Build recipes and patches; actual third-party upstream source tarballs must still be acquired and matched to Windows binary build",
+            cleared_for_public_release:false
+          }' > OpenKJ-v9-Cerbero-Source-Manifest.json
+          for f in "$archive" OpenKJ-v9-Cerbero-Source-Manifest.json; do
+            refreshed="$(gh api "repos/${GITHUB_REPOSITORY}/releases/${release_id}")"
+            printf '%s' "$refreshed" | jq -e '.draft==true and .published_at==null' >/dev/null
+            name="$(basename "$f")"
+            expected="sha256:$(sha256sum "$f" | awk '{print $1}')"
+            present="$(printf '%s' "$refreshed" | jq -r --arg name "$name" '.assets[] | select(.name==$name) | .digest // empty')"
+            if [ -n "$present" ]; then
+              test "$present" = "$expected" || { echo "Conflicting existing asset: $name" >&2; exit 4; }
+            else
+              gh release upload v9.0-offline-remote.1 "$f" --repo "$GITHUB_REPOSITORY"
+              got="$(gh api "repos/${GITHUB_REPOSITORY}/releases/${release_id}" | jq -r --arg name "$name" '.assets[] | select(.name==$name) | .digest // empty')"
+              test "$got" = "$expected" || { echo "Asset checksum mismatch: $name" >&2; exit 5; }
+            fi
+          done
+          gh api "repos/${GITHUB_REPOSITORY}/releases/${release_id}" | jq -e '.draft==true and .published_at==null' >/dev/null
+          echo 'Cerbero recipes & source/patch descriptions archived successfully; public release remains HOLD.'
