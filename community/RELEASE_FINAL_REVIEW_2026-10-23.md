@@ -1,0 +1,29 @@
+# OpenKJ v9 — final available-evidence review (2026-10-23)
+
+**DECISION: RELEASE BLOCKED. This is a documented technical/licence due-diligence result, not legal clearance.** The source is already public, but GitHub Windows binary draft release **421204266** must remain unpublished until the conditions below are fulfilled.
+
+## Completed checks supported by recorded evidence
+
+1. The cleaned Inno Setup candidate was installed and exercised on a second Windows machine. The clean installed app has **340 runtime program EXE/DLL files**, all 340 SHA-256 hashes match the tested portable build, with **36 intentionally removed** GStreamer plugins, and no extra runtime binaries (apart from the expected Inno uninstaller). [Installed audit](INSTALLED_BINARY_AUDIT_RESULT_v9.md).
+2. The remaining **196** GStreamer plug-ins consist of **183 LGPL, 10 MIT/X11 and 3 BSD**, per the recorded plug-in metadata and byte-matched original binaries. Metadata is not a licence grant for each dependent DLL.
+3. All **79** other DLLs have byte-identical SDK copies: GStreamer bin 73, GStreamer lib 1, Qt bin 3, Qt plugins 1, Microsoft Windows SDK 1. The developer's 79-row uploaded CSV showed `identical_sdk_copy=YES` for every entry and valid SHA-256 values. [Provenance record](LICENSING_REVIEW_v9.md#79-transitive-dll-provenance-check--2026-10-23).
+4. Installed candidate has **118** notices (109 GStreamer component docs and nine core license/notice documents). This verifies *presence*, not legal completeness.
+5. Official source mirrors are already attached to **draft 421204266**: Qt 5.15.2, GStreamer core/base/good/bad/RTSP 1.26.9, Cerbero recipes/patches, and proxy-libintl source. [Source evidence](SOURCE_DISTRIBUTION_STATUS_v9.md).
+6. Missing eight generic Cerbero licence texts, Qt ANGLE notices and ZBar notice/source texts were **recovered to the GitHub public source branch**, not yet added to installed files. [Evidence](LICENCE_TEXT_COVERAGE_v9.md).
+7. `d3dcompiler_47.dll` was byte-identical to the signed Windows SDK Redist D3D x64 copy; Microsoft explicitly permits app-local redistribution, subject to SDK terms. [D3D and VC review](OPENH264_REDISTRIBUTION_REVIEW_v9.md).
+8. Two **Microsoft-signed** VS2026 Community `vc_redist.x64.exe` candidates were byte-identical (SHA-256 `843068991daaa1f73ad9f6239bce4d0f6a07a51f18c37ea2a867e9beca71295c`). Microsoft lists unmodified VC/Redist as redistributable for a properly licensed VS Community user. **The hash of the copy embedded in the existing Inno installer is NOT proven.**
+
+## Release-blocking checks NOT yet fulfilled
+
+1. **OpenH264 and H.264 patent distribution.** The current draft bundles `libopenh264-7.dll` and `gst-plugins/libgstopenh264.dll` from the GStreamer SDK. Cisco's BSD source-code licence does not automatically confer the separate *Cisco-delivered binary* patent arrangement; that arrangement explicitly requires the Cisco binary to be downloaded **separately by the end user**, rather than combined into a third-party installer. Investigate other remaining codecs and jurisdictional rights. Options: test and release a new candidate omitting *both* OpenH264 DLLs, or obtain sufficient rights. **No blanket patent clearance has been established.** [Review](OPENH264_REDISTRIBUTION_REVIEW_v9.md).
+2. **LGPL corresponding source and build traceability.** Although official Qt, GStreamer, Cerbero and proxy-libintl sources are mirrored in the draft, the many other LGPL libraries (GLib, Pango, MinGW and others) need their *corresponding versions, patches/build provenance* and a compliant source distribution/offer under the distributor's control. Recipe declarations and SHA-matching SDK DLLs are not full corresponding-source delivery. Exact application source revision used for the EXE build is not attested. Official terms: https://www.qt.io/development/open-source-lgpl-obligations .
+3. **Rebuild installer with complete notices.** The eight Cerbero texts, Qt ANGLE/ZBar originals, updated third-party notices and library-replacement/source instructions on GitHub need to be staged into the **installed** licence folder, with full component notices and copyright where necessary. The existing installer carries 118 older documents and lacks the later recovered originals.
+4. **Explicit VC redistributable selection.** Rebuild using the Microsoft-signed, checksum-pinned redist. The old build chose a local redistributable implicitly, so its temporary embedded payload is unverified even though Windows installation worked.
+5. **Final regression test after changes.** Build from a separate candidate, test H.264/MP4 and MP3+CDG media, singer/guest requests and break music, reinstall on a second Windows machine, compare binary/notices inventories, hash the new installer and update draft asset + source manifest. Keep `draft=true` throughout.
+6. **Distribution rights beyond copyright.** OpenH264 is a specific red flag; other codec-patent or local regulations may require a qualified legal decision rather than a technical hash test.
+
+## Why the 79/79 result isn't final approval
+
+Byte matching each file to an SDK answers **where the bytes came from**. It doesn't prove the binary's software/patent licence, identify all original source packages and modifications, or confirm that a new installer contains all terms. Nor can an assistant remotely verify which temporary VC redistributable the user's original Inno build selected when the archive format cannot be extracted by the available tools.
+
+**Next practical build:** work from a separate copy of the 340-file cleaned portable tree, add the newly recovered GitHub notice texts, explicitly pin the Microsoft-signed VC installer, optionally remove the two OpenH264 components for testing, then build/reinstall/retest. Don't replace the known-good karaoke version. Do not publish the draft until the legal/source issues have been demonstrably resolved.
