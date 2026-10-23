@@ -85,3 +85,29 @@ An audit run on the **cleaned OpenKJ installed on a second Windows machine** ret
 The installed hashes also match all 79 binaries in the earlier separate transitive-dependency evidence matrix: **40** with collected component-specific notices, **33** with only short package-reference READMEs, **6** without matching SDK notices. The six are `d3dcompiler_47.dll`, `iconengines/qsvgicon.dll`, `libEGL.dll`, `libGLESv2.dll`, `libintl-8.dll`, `opengl32sw.dll`. Their absence from *GStreamer's SDK license directory* does not by itself demonstrate forbidden distribution. Corresponding library source, build patches, complete notices and Microsoft/codec rights still need independent verification.
 
 Evidence fingerprints, cross-check details and component counts are recorded in [`community/INSTALLED_BINARY_AUDIT_RESULT_v9.md`](INSTALLED_BINARY_AUDIT_RESULT_v9.md). The readiness checklist marks the installed binary hash inventory, core document presence and existing installation test as completed **subchecks**. **The DLL provenance and licensing clearance remains OPEN, and the GitHub release must remain DRAFT.**
+
+
+## 79 transitive DLL provenance check — 2026-10-23
+
+A user-supplied read-only Windows PowerShell SDK hash comparison of the final cleaned v9 build returned **79 of 79 SHA-256 identical matches, zero unmatched**. The accompanying 79-row CSV was independently checked for duplicate paths, missing hashes, and non-YES match statuses: **none found**. This records that byte-for-byte copies are present in the original development SDK locations; it does **not** alone prove individual DLL licensing, distribution rights, or corresponding-source compliance.
+
+Matches by specific source location:
+
+| SDK location | Exact matches |
+| --- | ---: |
+| GStreamer 1.26.9 `bin` | 73 |
+| GStreamer 1.26.9 `lib` | 1 (`gio-modules/libgioopenssl.dll`) |
+| Qt 5.15.2 `bin` | 3 (`libEGL.dll`, `libGLESv2.dll`, `opengl32sw.dll`) |
+| Qt 5.15.2 `plugins` | 1 (`iconengines/qsvgicon.dll`) |
+| Windows SDK Direct3D redist | 1 (`d3dcompiler_47.dll`) |
+| **Total** | **79** |
+
+No search result from the hash checker requires fetching files from unknown third-party sites. Microsoft's [DirectX SDK guidance](https://learn.microsoft.com/en-us/windows/win32/directx-sdk--august-2009-) explicitly allows distributing the Windows SDK `D3DCompiler_47.dll` side-by-side with an application; its SDK licence conditions still apply. Microsoft documents separate requirements for [Visual C++ redistribution](https://learn.microsoft.com/en-us/cpp/windows/redistributing-visual-cpp-files).
+
+**Outstanding before a binary release:**
+1. Map each redistributed Qt/GStreamer runtime library to its relevant component licence/attributions and complete corresponding source package. The GStreamer SDK package-specific licence and README files already collected are primary evidence; they include umbrella licences referenced by name but not yet all copied into the staged documents.
+2. Place all applicable licence texts and third-party notices into the final **installed** application, not merely the source repository. Verify replacement of LGPL-linked DLLs is possible.
+3. Make exact corresponding LGPL-covered source and required build/install information available under the distributor's control (or a valid written offer), consistent with [Qt's published LGPL obligations](https://www.qt.io/development/open-source-lgpl-obligations) and [GStreamer's licensing guidance](https://gstreamer.freedesktop.org/documentation/frequently-asked-questions/licensing.html).
+4. Test and inspect the final installer against the cleaned build, including the Microsoft VC++ redistributable licence and correct release commit.
+
+**Release remains on HOLD:** 79/79 binary provenance verification is passed, but this is not a redistribution licence clearance.
