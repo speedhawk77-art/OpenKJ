@@ -32,3 +32,23 @@ The six are **identified as likely known components**, not six established infri
 
 
 **Further source progress:** the pinned GStreamer Cerbero tag 1.26.9, with build recipes and patch descriptions, is now SHA-256 verified in the GitHub draft. This improves the evidence for `libintl-8.dll` and other GStreamer-side binaries once their hashes are matched, but is not the complete corresponding source itself. See [source-distribution status](SOURCE_DISTRIBUTION_STATUS_v9.md).
+
+
+## Development SDK byte-match results — 2026-10-22
+
+The developer ran the read-only comparison against the cleaned **installed** binaries, supplying `SIX-DLL-SDK-MATCHES.csv`, `VC-REDIST-CANDIDATES.csv`, and the corresponding origin report. All six requested DLLs matched byte-for-byte with copies installed in their respective supplier SDKs; the original scanner also recorded several non-matching alternative candidates for the Microsoft compiler, which is normal.
+
+| DLL | Confirmed byte-identical SDK location | Installed SHA-256 | Signature |
+| --- | --- | --- | --- |
+| `d3dcompiler_47.dll` | `Windows Kits\10\Redist\D3D\x64\d3dcompiler_47.dll` | `1da540a0ddbc54de4142570c8ec4a4566ef610fce72c181efb55a9332c480790` | Valid Microsoft |
+| `iconengines/qsvgicon.dll` | Qt 5.15.2 `plugins\iconengines\qsvgicon.dll` | `42dde60befcf1d9f96b8366a9988626b97d7d0d829ebea32f756d6ecd9ea99a8` | Valid Qt Company |
+| `libEGL.dll` | Qt 5.15.2 `bin\libEGL.dll` | `32092de077fd57b6ef355705ec46c6d21f6d72fbe3d3a5dd628f2a29185a96fa` | Valid Qt Company |
+| `libGLESv2.dll` | Qt 5.15.2 `bin\libGLESv2.dll` | `50fad5605b3d57627848b3b84a744dfb6a045609b8236b04124f2234676758d8` | Valid Qt Company |
+| `libintl-8.dll` | GStreamer 1.26.9 MinGW `bin\libintl-8.dll` | `f1da20c9a6fc686d582396f67d6c9a8aa8e12bb74aa2b35b0d009bfaff581bbf` | Not signed (not unexpected for MinGW) |
+| `opengl32sw.dll` | Qt 5.15.2 `bin\opengl32sw.dll` | `963641a718f9cae2705d5299eae9b7444e84e72ab3bef96a691510dd05fa1da4` | Not signed (not unexpected for Mesa) |
+
+The Microsoft D3D DLL is specifically from the **Windows SDK Redist D3D x64 folder**, rather than merely a system32 alternative, significantly strengthening side-by-side redistribution evidence. Qt’s [Windows deployment reference](https://qthub.com/static/doc/qt5/qtdoc/windows-deployment.html) identifies the graphics dependencies, and [Mesa attribution](https://qthub.com/static/doc/qt5/qtdoc/qt-attribution-llvmpipe.html) lists its MIT licence. Missing exact third-party licence text and source version/build provenance still need attention, however.
+
+The user supplied two **byte-identical**, **Valid Microsoft-signed** Visual Studio 2026 Community `vc_redist.x64.exe` candidates in `VC\Redist\MSVC\14.51.36231` and `VC\Redist\MSVC\v145`. Both have SHA-256 `843068991daaa1f73ad9f6239bce4d0f6a07a51f18c37ea2a867e9beca71295c`, size **18,731,856 bytes**, version **14.51.36247.0**. Microsoft’s [2026 distributable list](https://learn.microsoft.com/en-us/visualstudio/releases/2026/redistribution) explicitly includes `[VisualStudioFolder]\VC\redist` for validly licensed Visual Studio Community users distributing unmodified files with an application. **Important:** these candidates do not prove which EXE was actually *embedded* in the Inno installer; verify that separately before checking off the redist package subcheck. No private licence/account data was supplied.
+
+**New conclusion:** the **six installed DLLs' direct SDK byte-origin check is complete**. The six DLLs are not simply “unidentified unknown binaries.” **Neither exact upstream third-party source code nor all component notice obligations are proven by this hash comparison.** The broader remaining DLL/source audit and release hold still apply.
