@@ -27,24 +27,25 @@ jobs:
           test "$id" = '667394901' || { echo "Installer asset has changed"; exit 2; }
           gh api -H 'Accept: application/octet-stream' "repos/${GITHUB_REPOSITORY}/releases/assets/${id}" > OpenKJ-v9-Cleaned-Setup.exe
           printf '%s  %s\n' 'bc35c24ef25529b86b90bd3f5a215603de3b283d590620ec58820e02f83421ef' 'OpenKJ-v9-Cleaned-Setup.exe' | sha256sum -c -
-      - name: Extract embedded Microsoft redistributable and compare hash
+      - name: Inspect Inno Setup 7 embedded Microsoft redistributable with 7-Zip
         shell: bash
         run: |
           set -euo pipefail
           sudo apt-get update -qq
-          sudo apt-get install -y -qq innoextract
-          echo 'Inno installer embedded redist file listing:'
-          innoextract --list OpenKJ-v9-Cleaned-Setup.exe | grep -i 'vc_redist.x64.exe' || { echo "Redistributable absent from Inno payload"; exit 3; }
+          sudo apt-get install -y -qq 7zip
+          echo 'Looking for the embedded VC++ redistributable in the Inno archive.'
+          7z l OpenKJ-v9-Cleaned-Setup.exe > listing.txt || { echo 'Current 7-Zip cannot parse this Inno Setup archive; no conclusion about embedded redist.'; exit 3; }
+          grep -i 'vc_redist.x64.exe' listing.txt || { echo 'No matching VC++ file in archive listing; inspect manually.'; exit 4; }
           mkdir extracted
-          innoextract --extract --output-dir extracted OpenKJ-v9-Cleaned-Setup.exe >/dev/null
+          7z x -y -oextracted OpenKJ-v9-Cleaned-Setup.exe >/dev/null
           count="$(find extracted -type f -iname 'vc_redist.x64.exe' | wc -l)"
-          test "$count" -eq 1 || { echo "Expected one redistributable; found $count"; exit 4; }
+          test "$count" -eq 1 || { echo "Expected one redistributable; found $count"; exit 5; }
           path="$(find extracted -type f -iname 'vc_redist.x64.exe' -print -quit)"
           sha="$(sha256sum "$path" | awk '{print $1}')"
           bytes="$(stat -c%s "$path")"
           echo "Embedded Microsoft VC++ file size: $bytes bytes"
           echo "Embedded Microsoft VC++ SHA-256: $sha"
-          test "$bytes" -eq 18731856 || { echo "Unexpected redist size"; exit 5; }
-          test "$sha" = '843068991daaa1f73ad9f6239bce4d0f6a07a51f18c37ea2a867e9beca71295c' || { echo "EMBEDDED REDIST DOES NOT MATCH SIGNED VS2026 CANDIDATES"; exit 6; }
-          echo 'PASS: Embedded vc_redist.x64.exe is byte-identical to Microsoft-signed VS2026 Community redistributable candidates verified on developer PC.'
-          echo 'NOTE: This verifies identity only. Valid Visual Studio licensing and use terms remain applicable.'
+          test "$bytes" -eq 18731856 || { echo "Unexpected redist size"; exit 6; }
+          test "$sha" = '843068991daaa1f73ad9f6239bce4d0f6a07a51f18c37ea2a867e9beca71295c' || { echo "EMBEDDED REDIST DOES NOT MATCH SIGNED VS2026 CANDIDATES"; exit 7; }
+          echo 'PASS: Embedded vc_redist.x64.exe is byte-identical to Microsoft-signed VS2026 Community redistributable candidates.'
+          echo 'NOTE: Valid Visual Studio licensing and use terms still apply.'
