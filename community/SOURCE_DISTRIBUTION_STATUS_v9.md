@@ -43,3 +43,13 @@ The GitHub Actions job [`39873916515`](https://github.com/speedhawk77-art/OpenKJ
 | `gst-rtsp-server-1.26.9.tar.xz` | 291996 | `67e92e9a5b0f2b51eb571cc893b80da2ae2374f19b05d381d1e364393fe12654` |
 
 **Not a complete LGPL corresponding-source bundle.** The six archives are upstream snapshots. Exact Windows SDK build patches and upstream sources for other LGPL-covered DLLs are still unverified; see checklist above. Do not make this draft public on the basis of these six archives alone.
+
+
+## GStreamer/Cerbero source recipes and patches mirrored — 2026-10-22
+
+The official `GStreamer/cerbero` **annotated tag `1.26.9`** (tag SHA `477c21ce40a3d304fa2cf43f39bc01d832f1ce20`, resolved **commit `c8981c6e66a7c877a9a9a9cdc7a14668296f3f64`**) was retrieved by GitHub Actions and staged to the same **draft** release as the cleaned installer. Success confirmed in [workflow run `39878936859`](https://github.com/speedhawk77-art/OpenKJ/actions/runs/39878936859).
+
+- `GStreamer-cerbero-1.26.9-source-and-recipes.tar.gz`: **3,455,696 bytes**, SHA-256 `1a5732762e29b3db189ddc0ac68f6efba7bc31d7e8f73d4f0fd61ca4a991d86a`.
+- `OpenKJ-v9-Cerbero-Source-Manifest.json`: **588 bytes**, SHA-256 `3f172257bf93981cabb8c138f47af0de0bdd1966a037c7e54522d431ead93f23`.
+
+**Limit:** Cerbero includes build recipes and patches but **not necessarily the full third-party source tarballs** used to build the Windows MinGW SDK, and it does not establish the exact build recipe was used for the user-installed DLL hashes. Corresponding library source and legal compliance work remain open. This is documented and checksum-verified source **build metadata**, not a public release clearance.
