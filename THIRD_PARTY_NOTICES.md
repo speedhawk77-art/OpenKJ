@@ -17,3 +17,12 @@ Modified OpenKJ source code is in this repository on the `offline-remote-v9` bra
 To accompany the public **source** branch, the original Qt 5.15.2 terms are copied from `qt/qtbase` tag `v5.15.2` under `community/licenses/qt-5.15.2/` (`LICENSE.LGPLv3`, `LICENSE.LGPL3`, `LICENSE.GPL3`). The original LGPL-2.1 terms for GStreamer 1.26.9 are copied from `GStreamer/gstreamer` tag `1.26.9` under `community/licenses/gstreamer-1.26.9/COPYING-LGPL-2.1`. These texts do **not** certify that each Windows library is LGPL-licensed or that the current installer contains these files.
 
 The GStreamer SDK's component-specific `share/licenses/` documents have also been inventoried in the local licence evidence archive. The review found 109 documents from 66 component directories, but some referenced umbrella texts were not collected and no Qt installation documents appeared in that evidence archive. See `community/LICENSING_REVIEW_v9.md`. The Windows installer must remain **draft** pending the binary-specific dependency review, corresponding-source arrangements and final installed-bundle verification.
+
+
+### Windows v9: recovered Cerbero generic licence documents (not yet in existing installer)
+
+Review of the tested Windows **cleaned** binary inventory identified 33 dependency DLLs with only GStreamer SDK package README licence references in the installed notice collection. The source of the missing generic texts was found in official GStreamer/Cerbero tag `1.26.9` under `data/licenses/`. Eight original GNU GPL/LGPL, Apache and MPL full texts have been preserved unchanged in this source fork at `community/licenses/cerbero-1.26.9/`.
+
+The original copyright statement and LGPL2.1 notice for ZBar 0.23.93 are under `community/licenses/zbar-0.23.93/`; original Qt 5.15.2 ANGLE, Khronos, Apple and Chromium third-party notices are under `community/licenses/qt-5.15.2/angle/`. [Full source evidence and outstanding packager actions](community/LICENCE_TEXT_COVERAGE_v9.md).
+
+**The already-built draft EXE has not been updated with these additional notices.** This source-repository change does not alone fulfill the installed distribution's corresponding source, attributions, Microsoft/runtime or codec obligations. The release remains DRAFT until remaining gaps are resolved.
