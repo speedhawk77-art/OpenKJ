@@ -7,7 +7,7 @@ on:
       - .github/workflows/verify-openkj-v9-embedded-vc-redist.yml
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify-embedded-runtime:
