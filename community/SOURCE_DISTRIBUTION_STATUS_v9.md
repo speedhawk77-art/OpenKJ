@@ -92,3 +92,33 @@ These eight recipe families map to **15 of the original 74 GStreamer-side transi
 The literal recipe version `0.1` is a packaging placeholder, not a compiler version. The pinned [Windows bootstrap code](https://github.com/GStreamer/cerbero/blob/c8981c6e66a7c877a9a9a9cdc7a14668296f3f64/cerbero/bootstrap/windows.py) specifies `mingw-12.0.0-gcc-14.2.0-windows-multilib.tar.xz`, SHA-256 `2e9039c6404f68bfce1eecd34172b16715565a15555c76c1652ec26265d5ae89`. The [mingw-runtime recipe](https://github.com/GStreamer/cerbero/blob/c8981c6e66a7c877a9a9a9cdc7a14668296f3f64/recipes/mingw-runtime.recipe) references GCC 14.2.0 runtime paths, and [winpthreads-runtime](https://github.com/GStreamer/cerbero/blob/c8981c6e66a7c877a9a9a9cdc7a14668296f3f64/recipes/winpthreads-runtime.recipe) copies its DLL from the selected toolchain. These identify a concrete build-metadata lead; the bootstrap archive is a binary toolchain and is not a substitute for its corresponding upstream sources or evidence that this toolchain built the shipped DLLs.
 
 [libffi.recipe](https://github.com/GStreamer/cerbero/blob/c8981c6e66a7c877a9a9a9cdc7a14668296f3f64/recipes/libffi.recipe) uses Git source `https://gitlab.freedesktop.org/gstreamer/meson-ports/libffi.git` at `meson-3.2.9999.3`, rather than a missing tarball checksum. Next evidence needed is a resolved immutable Git object and archived source, followed by actual SDK build matching.
+
+
+## Remaining archive sources and libffi preserved — 2026-10-24
+
+The additional mirrors succeeded: [batch 2 run 40066585303](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40066585303), [batch 3 run 40066740913](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40066740913), and [final four-batch verification 40066904767](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40066904767). GitHub API confirms the assets below in the same unpublished draft 421204266.
+
+- Batch 2 preserves 12 more recipe-pinned source archives, covering 14 original DLL mappings.
+- Batch 3 preserves the remaining 32 archive-pinned recipe families, covering 40 original DLL mappings. Separate package directories prevent collisions between same-named archives, including the two different `v2.6.0.tar.gz` files.
+- Batch 4 preserves libffi Git source. Its recipe tag `meson-3.2.9999.3` resolves to annotated tag object `7b21e70fa237c4ee5ac465bbb6bfd8caae9219c2` and commit `258a091198308063770643cf74a0deb6e121196c`. Both are verified against the upstream Git server before downloading. The immutable commit archive SHA-256 is `184d16c0ebcfc7c4bb1e2dff5d0c16b51ea9892eadf6b0fedf0ae34a39f3e355`; this is an independently recorded archive pin, **not** a checksum declared by the Git-based recipe. Meson build files, native source and LICENSE were confirmed in the archive.
+
+The SpanDSP upstream URL returned SHA-256 `3423504100a75834033aaf6d20caa63121da3897034bc7ed41e9fe70f8b5306e`, which does not match the recipe. Those bytes were rejected. The official GStreamer fallback mirror supplied the archive matching the unchanged recipe pin `cc053ac67e8ac4bb992f258fd94f275a7872df959f6a87763965feabfdcc9465`. Downloads from every location must still pass the same expected hash.
+
+| Draft asset | Bytes | SHA-256 | Asset ID |
+| --- | ---: | --- | ---: |
+| `OpenKJ-v9-Transitive-Source-Batch2-Manifest.json` | 8,093 | `8ef40eb1b95177fde3b82a225c629bc9a8e5fbd663b0ee9fce606ec20aed7746` | 671377558 |
+| `OpenKJ-v9-Transitive-Source-Batch2.zip` | 54,866,947 | `cfaecddfcd239b21677b15e6e2fb856c0eac493ed8c27cd3b882d520762f9f61` | 671377500 |
+| `OpenKJ-v9-Transitive-Source-Batch3-Manifest.json` | 20,851 | `0859c7a5f4a1624562f7140f4ec875c6968a5432ca2892bcab883dacfbb390ab` | 671382428 |
+| `OpenKJ-v9-Transitive-Source-Batch3.zip` | 199,105,015 | `5082a5247b09761eb4d4bc7fe03a6b6220196535e40118ca3af540cb0ef0424b` | 671382258 |
+| `OpenKJ-v9-Transitive-Source-Batch4-Manifest.json` | 1,911 | `09ae2d7d4c8453e9bf51116f0ef4a1fde9a6652cf7acc383ce6a02b8f8307180` | 671385914 |
+| `OpenKJ-v9-Transitive-Source-Batch4.zip` | 3,951,617 | `c9812f67a540096f2c512f7dfda7ae4769f02d385c1ac793d9b7b842a5307525` | 671385888 |
+
+Including the earlier eight-package batch and proxy-libintl, upstream archives now exist for **54 of the 56 mapped recipe families**, associated with **71 of the original 74 GStreamer-side transitive DLLs**. This is source-family/archive coverage for the original inventory, not evidence that these exact sources produced the shipped binaries; the original OpenH264 mapping is included even though that component is omitted from the newer test candidate.
+
+The two recipe families still lacking corresponding toolchain source preservation are `mingw-runtime` (two original DLLs) and `winpthreads-runtime` (one). Additional dependency sources (including Rust crates or build-generated/subproject inputs), exact compiler/build configuration, binary-to-source provenance, application build attestation and a durable public source-delivery arrangement remain to be verified. A recipe-pinned SQLite amalgamation archive or a library's top-level source tarball alone must not be assumed to contain every build input. The manifests intentionally retain `complete_corresponding_source=false` and `binary_build_match_proven=false`. Historical manifest gap lists describe their generation-time state and are superseded by this coverage update.
+
+## Static imports after omitting OpenH264 — 2026-10-24
+
+[Windows run 40066585261](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40066585261) passed the extended candidate audit. The checksum-pinned pefile 2024.8.26 parser examined normal and delay PE imports in all 340 original and 338 retained program binaries without executing them. **Zero retained normal/delay imports name an OpenH264 component.** The full per-file hashes/import inventory is available as [text-only audit artifact 12549770611](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40066585261/artifacts/12549770611) (30-day artifact retention; reproduce with the committed workflow).
+
+This narrowly excludes static import edges to the omitted codec. It does not check dynamic library loading, forwarded exports, all Windows/system dependencies, available decoding paths, media playback or guest/phone controls. The local regression test and rebuilt installer verification remain required. No candidate program binaries were uploaded as workflow artifacts or release assets.
