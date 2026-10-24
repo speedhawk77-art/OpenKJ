@@ -24,6 +24,12 @@ BATCHES = {
         'libiconv', 'libsoup', 'pango', 'fribidi'),
     2: ('cairo', 'libnice', 'mpg123', 'lame', 'libltc', 'taglib',
         'libdv', 'librsvg', 'sbc', 'spandsp', 'zbar', 'srt'),
+    3: ('libass', 'bzip2', 'openssl', 'dav1d', 'expat', 'flac',
+        'fontconfig', 'freetype', 'graphene', 'harfbuzz', 'libjpeg-turbo',
+        'nghttp2', 'libogg', 'openh264', 'openjpeg', 'opus', 'orc',
+        'pcre2', 'pixman', 'libpng', 'libpsl', 'speex', 'sqlite3',
+        'libsrtp', 'svt-av1', 'svt-jpeg-xs', 'libtheora', 'tiff',
+        'libvorbis', 'wavpack', 'libxml2', 'zlib'),
 }
 
 
@@ -59,6 +65,19 @@ def download(urls: list[str], path: Path, expected: str) -> None:
         partial.unlink(missing_ok=True)
 
 
+def source_literal(node: ast.AST, fields: dict[str, str]) -> str:
+    # One tagged recipe uses a literal URL's .format(version). Accept only
+    # string-literal formatting with previously read literal fields, not code.
+    if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+            and node.func.attr == 'format'
+            and isinstance(node.func.value, ast.Constant)
+            and isinstance(node.func.value.value, str) and not node.keywords):
+        args = [fields[n.id] if isinstance(n, ast.Name) else ast.literal_eval(n)
+                for n in node.args]
+        return node.func.value.value.format(*args)
+    return ast.literal_eval(node)
+
+
 def read_recipe(text: str, name: str) -> dict[str, str]:
     classes = [n for n in ast.parse(text).body
                if isinstance(n, ast.ClassDef) and n.name == 'Recipe']
@@ -70,7 +89,7 @@ def read_recipe(text: str, name: str) -> dict[str, str]:
             for target in node.targets:
                 if isinstance(target, ast.Name) and target.id in (
                         'name', 'version', 'url', 'tarball_checksum'):
-                    fields[target.id] = ast.literal_eval(node.value)
+                    fields[target.id] = source_literal(node.value, fields)
     if fields.get('name') != name or len(fields.get('tarball_checksum', '')) != 64:
         raise RuntimeError('Incomplete source pin: ' + name)
     return fields
@@ -85,6 +104,10 @@ def source_url(fields: dict[str, str]) -> str:
                 '%(name)s/%(name)s-%(version)s', '.tar.xz'),
         'sf': ('https://download.sourceforge.net/',
                '%(name)s/%(name)s-%(version)s', '.tar.xz'),
+        'xiph': ('https://downloads.xiph.org/releases/',
+                 '%(name)s/%(name)s-%(version)s', '.tar.xz'),
+        'savannah': ('https://download.savannah.gnu.org/releases/',
+                     '%(name)s/%(name)s-%(version)s', '.tar.xz'),
     }
     url = fields['url']
     for scheme, (base, middle, suffix) in templates.items():
@@ -130,13 +153,17 @@ def main() -> None:
                 'source_url': url,
                 'fallback_url': f'https://gstreamer.freedesktop.org/src/mirror/{name}/{filename}',
                 'sha256': fields['tarball_checksum'],
-                'archive': 'upstream/' + filename,
+                # New batch uses package namespaces because distinct projects
+                # publish archives with identical names such as v2.6.0.tar.gz.
+                'archive': ('upstream/' + name + '/' + filename
+                            if args.batch >= 3 else 'upstream/' + filename),
                 'recipe_sha256': hashlib.sha256(raw).hexdigest(),
                 'recipe_path_in_cerbero_archive': member,
             })
 
     def fetch(item: dict) -> None:
-        path = cache / Path(item['archive']).name
+        path = cache / Path(item['archive']).relative_to('upstream')
+        path.parent.mkdir(parents=True, exist_ok=True)
         download([item['source_url'], item['fallback_url']], path, item['sha256'])
         item['bytes'] = path.stat().st_size
 
@@ -167,7 +194,7 @@ def main() -> None:
         add(manifest_name, data)
         add(manifest['cerbero_archive_in_bundle'], cerbero.read_bytes())
         for item in sources:
-            add(item['archive'], (cache / Path(item['archive']).name).read_bytes())
+            add(item['archive'], (cache / Path(item['archive']).relative_to('upstream')).read_bytes())
     print(f'PASS: {len(sources)} source archives verified and bundled with pinned recipes/patches.')
     print('Bundle SHA-256: ' + sha256(output / bundle_name))
 

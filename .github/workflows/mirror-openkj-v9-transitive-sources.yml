@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        batch: [1, 2]
+        batch: [1, 2, 3]
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
