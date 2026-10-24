@@ -1,0 +1,45 @@
+name: Preserve Qt module attribution and legal texts
+on:
+  workflow_dispatch:
+  push:
+    branches: [offline-remote-v9]
+    paths:
+      - .github/workflows/collect-openkj-v9-qt-notices.yml
+      - community/windows/COLLECT_QT_NOTICES_V9.py
+permissions:
+  contents: write
+jobs:
+  cargo-sources:
+    if: github.repository == 'speedhawk77-art/OpenKJ'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Mirror sources without executing Rust or Cargo build scripts
+        run: python3 community/windows/COLLECT_QT_NOTICES_V9.py --output qt-notice-output
+      - name: Preserve registry sources and legal texts in the same draft
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in OpenKJ-v9-Qt-Notices.zip OpenKJ-v9-Qt-Notice-Evidence.json; do
+            file="qt-notice-output/$name"
+            expected="sha256:$(sha256sum "$file" | awk '{print $1}')"
+            release="$(gh api "repos/${GITHUB_REPOSITORY}/releases/421204266")"
+            printf '%s' "$release" | jq -e '.draft==true and .published_at==null' >/dev/null
+            count="$(printf '%s' "$release" | jq --arg name "$name" '[.assets[] | select(.name==$name)]|length')"
+            if [ "$count" -eq 0 ]; then
+              curl -fLsS -X POST -H "Authorization: Bearer ${GH_TOKEN}" -H 'Content-Type: application/octet-stream' \
+                --data-binary "@$file" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/421204266/assets?name=${name}" > uploaded-cargo.json
+              jq -e --arg pin "$expected" '.digest==$pin and .state=="uploaded"' uploaded-cargo.json >/dev/null
+            elif [ "$count" -eq 1 ]; then
+              actual="$(printf '%s' "$release" | jq -r --arg name "$name" '.assets[] | select(.name==$name)|.digest')"
+              test "$actual" = "$expected" || { echo 'Conflicting existing Cargo source asset'; exit 2; }
+            else
+              exit 3
+            fi
+            gh api "repos/${GITHUB_REPOSITORY}/releases/421204266" | jq -e --arg name "$name" --arg pin "$expected" '.draft==true and .published_at==null and ([.assets[]|select(.name==$name and .digest==$pin)]|length)==1' >/dev/null
+          done
