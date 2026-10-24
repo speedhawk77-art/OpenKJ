@@ -27,3 +27,12 @@
 Byte matching each file to an SDK answers **where the bytes came from**. It doesn't prove the binary's software/patent licence, identify all original source packages and modifications, or confirm that a new installer contains all terms. Nor can an assistant remotely verify which temporary VC redistributable the user's original Inno build selected when the archive format cannot be extracted by the available tools.
 
 **Next practical build:** work from a separate copy of the 340-file cleaned portable tree, add the newly recovered GitHub notice texts, explicitly pin the Microsoft-signed VC installer, optionally remove the two OpenH264 components for testing, then build/reinstall/retest. Don't replace the known-good karaoke version. Do not publish the draft until the legal/source issues have been demonstrably resolved.
+
+
+## Follow-up evidence — 2026-10-24
+
+This update supersedes the earlier statement that the existing embedded VC redistributable could not be identified. [Run 40065659931](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40065659931) passed using checksum-pinned innounp 2.71.2 on Windows. It detected Inno Setup 7.0.0, extracted exactly one `vc_redist.x64.exe`, and verified 18,731,856 bytes with SHA-256 `843068991daaa1f73ad9f6239bce4d0f6a07a51f18c37ea2a867e9beca71295c`. A rebuild is no longer necessary merely to prove the old embedded runtime identity. Future builds should continue to pin this verified copy.
+
+[Run 40065861417](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40065861417) then successfully prepared a separate candidate from that exact installer: 338 retained runtime binaries unchanged, only the two specified OpenH264 files omitted, 21 recovered upstream notice files added, and 142 total notice/guidance files. The reusable preparation helper is now in `community/windows/STAGE_OPENKJ_COMPLIANCE_CANDIDATE_V9.py`. These are staging results, not playback or rebuilt-installer results. Candidate binaries remained on the temporary runner; no release assets changed.
+
+**Next required hands-on check:** prepare the equivalent separate folder on the maintainer's Windows PC and test representative MP4/H.264, MP3+CDG, break music, singer rotation, guest requests and offline phone control. Only after successful testing should a new installer be built and its installed binaries/notices checked. Corresponding-source/build provenance and the other outstanding distribution reviews remain open; the release stays draft.
