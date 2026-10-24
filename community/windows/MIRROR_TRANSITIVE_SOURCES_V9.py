@@ -15,6 +15,7 @@ import json
 from pathlib import Path
 import subprocess
 import tarfile
+import tempfile
 import zipfile
 
 COMMIT = 'c8981c6e66a7c877a9a9a9cdc7a14668296f3f64'
@@ -32,11 +33,14 @@ BATCHES = {
         'libvorbis', 'wavpack', 'libxml2', 'zlib'),
     4: ('libffi',),
     5: ('gcc-sources', 'mingw-w64-sources', 'binutils', 'gmp', 'mpfr', 'mpc', 'isl'),
+    6: ('windows-default-manifest',),
 }
 LIBFFI_TAG = 'meson-3.2.9999.3'
 LIBFFI_TAG_OBJECT = '7b21e70fa237c4ee5ac465bbb6bfd8caae9219c2'
 LIBFFI_COMMIT = '258a091198308063770643cf74a0deb6e121196c'
 LIBFFI_SHA = '184d16c0ebcfc7c4bb1e2dff5d0c16b51ea9892eadf6b0fedf0ae34a39f3e355'
+MANIFEST_COMMIT = 'c12b0a634b1a9d721b3e1b2220fa09e5353fe25e'
+MANIFEST_SOURCE_SHA = '9a9dd0ec00fbafda486dcd11f15c5dcdf5d16063d160d07c606ca342795842ab'
 
 
 def sha256(path: Path) -> str:
@@ -146,13 +150,14 @@ def main() -> None:
     sources = []
     with tarfile.open(cerbero, 'r:gz') as archive:
         for name in sorted(BATCHES[args.batch]):
-            recipe_dir = 'recipes-toolchain' if args.batch == 5 else 'recipes'
+            recipe_dir = 'recipes-toolchain' if args.batch in (5,6) else 'recipes'
             member = f'cerbero-{COMMIT}/{recipe_dir}/{name}.recipe'
             stream = archive.extractfile(member)
             if stream is None:
                 raise RuntimeError('Missing recipe: ' + member)
             raw = stream.read()
-            fields = read_recipe(raw.decode('utf-8'), name, git_source=name == 'libffi')
+            fields = read_recipe(raw.decode('utf-8'), name,
+                                 git_source=name in ('libffi','windows-default-manifest'))
             if name == 'libffi':
                 if fields.get('commit') != LIBFFI_TAG:
                     raise RuntimeError('Unexpected libffi recipe Git ref')
@@ -169,8 +174,13 @@ def main() -> None:
                 # This pin is independently recorded from the immutable Git
                 # commit archive, not declared as a recipe tarball checksum.
                 fields['tarball_checksum'] = LIBFFI_SHA
+            if name=='windows-default-manifest':
+                if fields.get('commit')!='release-6_4':raise RuntimeError('Unexpected manifest source Git ref')
+                fields['url']='https://sourceware.org/git/cygwin-apps/windows-default-manifest.git'
+                fields['tarball_checksum']=MANIFEST_SOURCE_SHA
             url = source_url(fields)
             filename = url.rsplit('/', 1)[1]
+            if name=='windows-default-manifest':filename=f'windows-default-manifest-{MANIFEST_COMMIT}.tar'
             sources.append({
                 'recipe': name, 'version': fields['version'],
                 'source_url': url,
@@ -189,10 +199,28 @@ def main() -> None:
                     checksum_origin='Locally verified immutable Git commit archive; not a recipe tarball checksum')
             if args.batch == 5 and name == 'gmp':
                 sources[-1]['alternate_urls'] = ['https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.bz2']
+            if name=='windows-default-manifest':
+                sources[-1].update(git_tag='release-6_4',git_commit=MANIFEST_COMMIT,
+                    acquisition='git archive of pinned source commit',
+                    checksum_origin='Independently recorded raw git archive SHA-256; not a recipe tarball checksum')
 
     def fetch(item: dict) -> None:
         path = cache / Path(item['archive']).relative_to('upstream')
         path.parent.mkdir(parents=True, exist_ok=True)
+        if item['recipe']=='windows-default-manifest':
+            with tempfile.TemporaryDirectory(prefix='openkj-manifest-source-') as directory:
+                subprocess.run(['git','init','--quiet',directory],check=True)
+                subprocess.run(['git','-C',directory,'fetch','--quiet','--depth=1',
+                    item['source_url'],'refs/tags/release-6_4'],check=True,timeout=120)
+                got=subprocess.check_output(['git','-C',directory,'rev-parse','FETCH_HEAD^{commit}'],text=True).strip()
+                if got!=MANIFEST_COMMIT:raise RuntimeError('Manifest Git source commit changed')
+                raw=subprocess.check_output(['git','-C',directory,'archive','--format=tar',
+                    f'--prefix=windows-default-manifest-{MANIFEST_COMMIT}/',got])
+                if hashlib.sha256(raw).hexdigest()!=item['sha256']:
+                    raise RuntimeError('Manifest Git archive checksum mismatch')
+                path.write_bytes(raw)
+            item['bytes']=path.stat().st_size
+            return
         download([item['source_url']] + item.get('alternate_urls', []) + [item['fallback_url']],
                  path, item['sha256'])
         item['bytes'] = path.stat().st_size
@@ -220,6 +248,8 @@ def main() -> None:
     if args.batch == 5:
         manifest['source_recipe_families_addressed'] = ['mingw-runtime', 'winpthreads-runtime']
         manifest['scope'] = 'Compiler/runtime and compiler build dependencies from recipes-toolchain; not proof of shipped DLL build matching'
+    if args.batch == 6:
+        manifest['scope']='Git-pinned windows-default-manifest compiler build dependency; not an installed runtime DLL'
     data = (json.dumps(manifest, indent=2, sort_keys=True) + '\n').encode()
     (output / manifest_name).write_bytes(data)
     with zipfile.ZipFile(output / bundle_name, 'w', compression=zipfile.ZIP_STORED) as bundle:
