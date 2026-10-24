@@ -1,0 +1,59 @@
+name: Mirror eight pinned transitive source packages to draft
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [offline-remote-v9]
+    paths:
+      - .github/workflows/mirror-openkj-v9-transitive-sources.yml
+      - community/windows/MIRROR_TRANSITIVE_SOURCES_V9.py
+
+permissions:
+  contents: write
+
+jobs:
+  mirror-sources:
+    if: github.repository == 'speedhawk77-art/OpenKJ'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify numeric draft release identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/${GITHUB_REPOSITORY}/releases/421204266" | jq -e '.id==421204266 and .draft==true and .published_at==null' >/dev/null
+      - name: Retrieve checksum-pinned upstream sources and original recipes
+        run: python3 community/windows/MIRROR_TRANSITIVE_SOURCES_V9.py --output source-output
+      - name: Upload new source evidence to the same draft without replacing assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in OpenKJ-v9-Transitive-Source-Batch1.zip OpenKJ-v9-Transitive-Source-Batch1-Manifest.json; do
+            file="source-output/$name"
+            expected="sha256:$(sha256sum "$file" | awk '{print $1}')"
+            release="$(gh api "repos/${GITHUB_REPOSITORY}/releases/421204266")"
+            printf '%s' "$release" | jq -e '.id==421204266 and .draft==true and .published_at==null' >/dev/null
+            count="$(printf '%s' "$release" | jq --arg name "$name" '[.assets[] | select(.name==$name)] | length')"
+            if [ "$count" -eq 1 ]; then
+              got="$(printf '%s' "$release" | jq -r --arg name "$name" '.assets[] | select(.name==$name) | .digest')"
+              test "$got" = "$expected" || { echo "Conflicting existing source asset: $name"; exit 2; }
+            elif [ "$count" -eq 0 ]; then
+              curl -fLsS --retry 0 -X POST \
+                -H "Authorization: Bearer ${GH_TOKEN}" \
+                -H 'Content-Type: application/octet-stream' \
+                --data-binary "@$file" \
+                "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/421204266/assets?name=${name}" > uploaded.json
+              jq -e --arg digest "$expected" --arg name "$name" '.name==$name and .digest==$digest and .state=="uploaded"' uploaded.json >/dev/null
+            else
+              echo "Duplicate source asset names; stopping safely"; exit 3
+            fi
+            fresh="$(gh api "repos/${GITHUB_REPOSITORY}/releases/421204266")"
+            printf '%s' "$fresh" | jq -e --arg name "$name" --arg digest "$expected" '.id==421204266 and .draft==true and .published_at==null and ([.assets[] | select(.name==$name and .digest==$digest)] | length)==1' >/dev/null
+            echo "Verified draft source asset: $name ($expected)"
+          done
+          echo 'Eight recipe-pinned source archives preserved. Exact binary build matching remains unproven.' >> "$GITHUB_STEP_SUMMARY"
