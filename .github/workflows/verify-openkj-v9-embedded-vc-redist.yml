@@ -17,6 +17,7 @@ on:
       - community/windows/MAKE_SINGLE_FILE_INSTALLER.py
       - community/windows/PROBE_APPLICATION_HTTP_V9.py
       - community/windows/PROBE_SOFTWARE_OPENGL_V9.py
+      - community/windows/VERIFY_QT_SOFTWARE_OPENGL_ORIGIN_V9.py
       - community/licenses/**
       - THIRD_PARTY_NOTICES.md
       - community/WINDOWS_DLL_REPLACEMENT_GUIDE_v9.md
@@ -148,6 +149,12 @@ jobs:
         run: |
           python community/windows/PROBE_SOFTWARE_OPENGL_V9.py --candidate candidate \
             --report audit-reports/OpenKJ-v9-Software-OpenGL-Probe.json
+      - name: Compare software renderer with the exact Qt-published reference
+        shell: bash
+        run: |
+          python community/windows/VERIFY_QT_SOFTWARE_OPENGL_ORIGIN_V9.py \
+            --candidate candidate --work qt-renderer-reference \
+            --report audit-reports/OpenKJ-v9-Software-OpenGL-Origin.json
       - name: Match GNU runtime DLLs to pinned compiler toolchains
         shell: bash
         run: |
