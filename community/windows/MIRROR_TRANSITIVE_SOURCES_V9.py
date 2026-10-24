@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Preserve eight recipe-pinned upstream sources; no recipe code is executed.
+"""Preserve recipe-pinned upstream source batches; no recipe code is executed.
 
 This is a partial source mirror, not proof of the shipped DLL build provenance.
 Downloads and verifies inputs, then writes a deterministic ZIP and manifest.
@@ -19,10 +19,12 @@ import zipfile
 
 COMMIT = 'c8981c6e66a7c877a9a9a9cdc7a14668296f3f64'
 CERBERO_SHA = '1a5732762e29b3db189ddc0ac68f6efba7bc31d7e8f73d4f0fd61ca4a991d86a'
-PACKAGES = ('gdk-pixbuf', 'glib', 'glib-networking', 'json-glib',
-            'libiconv', 'libsoup', 'pango', 'fribidi')
-BUNDLE = 'OpenKJ-v9-Transitive-Source-Batch1.zip'
-MANIFEST = 'OpenKJ-v9-Transitive-Source-Batch1-Manifest.json'
+BATCHES = {
+    1: ('gdk-pixbuf', 'glib', 'glib-networking', 'json-glib',
+        'libiconv', 'libsoup', 'pango', 'fribidi'),
+    2: ('cairo', 'libnice', 'mpg123', 'lame', 'libltc', 'taglib',
+        'libdv', 'librsvg', 'sbc', 'spandsp', 'zbar', 'srt'),
+}
 
 
 def sha256(path: Path) -> str:
@@ -45,10 +47,12 @@ def download(urls: list[str], path: Path, expected: str) -> None:
                 '--connect-timeout', '20', '--max-time', '180', '-o', str(partial), url])
             if result.returncode:
                 continue
-            if sha256(partial) != expected:
-                raise RuntimeError('Downloaded checksum mismatch: ' + url)
+            actual = sha256(partial)
+            if actual != expected:
+                print(f'Rejected checksum mismatch from {url}: {actual}', flush=True)
+                continue
             partial.replace(path)
-            print('Verified source: ' + path.name, flush=True)
+            print('Verified source: ' + path.name + ' from ' + url, flush=True)
             return
         raise RuntimeError('All source URLs failed: ' + path.name)
     finally:
@@ -79,6 +83,8 @@ def source_url(fields: dict[str, str]) -> str:
                   '%(name)s/%(maj_ver)s/%(name)s-%(version)s', '.tar.xz'),
         'gnu': ('https://ftp.gnu.org/gnu/',
                 '%(name)s/%(name)s-%(version)s', '.tar.xz'),
+        'sf': ('https://download.sourceforge.net/',
+               '%(name)s/%(name)s-%(version)s', '.tar.xz'),
     }
     url = fields['url']
     for scheme, (base, middle, suffix) in templates.items():
@@ -97,7 +103,10 @@ def source_url(fields: dict[str, str]) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--batch', type=int, choices=sorted(BATCHES), default=1)
     args = parser.parse_args()
+    bundle_name = f'OpenKJ-v9-Transitive-Source-Batch{args.batch}.zip'
+    manifest_name = f'OpenKJ-v9-Transitive-Source-Batch{args.batch}-Manifest.json'
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     cache = output / 'verified-inputs'
@@ -107,7 +116,7 @@ def main() -> None:
              cerbero, CERBERO_SHA)
     sources = []
     with tarfile.open(cerbero, 'r:gz') as archive:
-        for name in sorted(PACKAGES):
+        for name in sorted(BATCHES[args.batch]):
             member = f'cerbero-{COMMIT}/recipes/{name}.recipe'
             stream = archive.extractfile(member)
             if stream is None:
@@ -149,18 +158,18 @@ def main() -> None:
         ],
     }
     data = (json.dumps(manifest, indent=2, sort_keys=True) + '\n').encode()
-    (output / MANIFEST).write_bytes(data)
-    with zipfile.ZipFile(output / BUNDLE, 'w', compression=zipfile.ZIP_STORED) as bundle:
+    (output / manifest_name).write_bytes(data)
+    with zipfile.ZipFile(output / bundle_name, 'w', compression=zipfile.ZIP_STORED) as bundle:
         def add(name: str, content: bytes) -> None:
             entry = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
             entry.external_attr = 0o100644 << 16
             bundle.writestr(entry, content)
-        add(MANIFEST, data)
+        add(manifest_name, data)
         add(manifest['cerbero_archive_in_bundle'], cerbero.read_bytes())
         for item in sources:
             add(item['archive'], (cache / Path(item['archive']).name).read_bytes())
     print(f'PASS: {len(sources)} source archives verified and bundled with pinned recipes/patches.')
-    print('Bundle SHA-256: ' + sha256(output / BUNDLE))
+    print('Bundle SHA-256: ' + sha256(output / bundle_name))
 
 
 if __name__ == '__main__':

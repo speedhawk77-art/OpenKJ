@@ -7,6 +7,8 @@ on:
     paths:
       - .github/workflows/verify-openkj-v9-embedded-vc-redist.yml
       - community/windows/STAGE_OPENKJ_COMPLIANCE_CANDIDATE_V9.py
+      - community/windows/AUDIT_CANDIDATE_IMPORTS_V9.py
+      - community/windows/pe-audit-requirements.txt
       - community/licenses/**
       - THIRD_PARTY_NOTICES.md
       - community/WINDOWS_DLL_REPLACEMENT_GUIDE_v9.md
@@ -102,3 +104,22 @@ jobs:
           print(text)
           with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as f:
               f.write(text)
+      - name: Install checksum-pinned static PE parser
+        shell: bash
+        run: |
+          python -m pip install --require-hashes --only-binary=:all: --no-deps -r community/windows/pe-audit-requirements.txt
+      - name: Inspect retained binaries for imports of omitted OpenH264 components
+        shell: bash
+        run: |
+          set -euo pipefail
+          python community/windows/AUDIT_CANDIDATE_IMPORTS_V9.py \
+            --original 'extracted/{app}' --candidate candidate \
+            --report audit-reports/OpenKJ-v9-Candidate-Import-Audit.json
+      - name: Preserve text audit evidence only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenKJ-v9-Candidate-Import-Audit
+          path: audit-reports/OpenKJ-v9-Candidate-Import-Audit.json
+          if-no-files-found: warn
+          retention-days: 30

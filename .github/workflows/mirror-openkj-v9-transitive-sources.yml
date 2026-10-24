@@ -1,4 +1,4 @@
-name: Mirror eight pinned transitive source packages to draft
+name: Mirror pinned transitive source packages to draft
 
 on:
   workflow_dispatch:
@@ -16,6 +16,10 @@ jobs:
     if: github.repository == 'speedhawk77-art/OpenKJ'
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        batch: [1, 2]
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -28,12 +32,13 @@ jobs:
           set -euo pipefail
           gh api "repos/${GITHUB_REPOSITORY}/releases/421204266" | jq -e '.id==421204266 and .draft==true and .published_at==null' >/dev/null
       - name: Retrieve checksum-pinned upstream sources and original recipes
-        run: python3 community/windows/MIRROR_TRANSITIVE_SOURCES_V9.py --output source-output
+        run: python3 community/windows/MIRROR_TRANSITIVE_SOURCES_V9.py --output source-output --batch ${{ matrix.batch }}
       - name: Upload new source evidence to the same draft without replacing assets
         shell: bash
         run: |
           set -euo pipefail
-          for name in OpenKJ-v9-Transitive-Source-Batch1.zip OpenKJ-v9-Transitive-Source-Batch1-Manifest.json; do
+          batch='${{ matrix.batch }}'
+          for name in "OpenKJ-v9-Transitive-Source-Batch${batch}.zip" "OpenKJ-v9-Transitive-Source-Batch${batch}-Manifest.json"; do
             file="source-output/$name"
             expected="sha256:$(sha256sum "$file" | awk '{print $1}')"
             release="$(gh api "repos/${GITHUB_REPOSITORY}/releases/421204266")"
@@ -56,4 +61,4 @@ jobs:
             printf '%s' "$fresh" | jq -e --arg name "$name" --arg digest "$expected" '.id==421204266 and .draft==true and .published_at==null and ([.assets[] | select(.name==$name and .digest==$digest)] | length)==1' >/dev/null
             echo "Verified draft source asset: $name ($expected)"
           done
-          echo 'Eight recipe-pinned source archives preserved. Exact binary build matching remains unproven.' >> "$GITHUB_STEP_SUMMARY"
+          echo "Recipe-pinned source batch ${batch} preserved. Exact binary build matching remains unproven." >> "$GITHUB_STEP_SUMMARY"
