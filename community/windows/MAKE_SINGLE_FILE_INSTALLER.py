@@ -119,6 +119,13 @@ def find_vc_redist(source: Path) -> Path | None:
 
 def keep_file(relative: Path) -> bool:
     parts = relative.parts
+    # Licence trees contain text such as COPYING.LIB. Build-artifact suffix
+    # filters must not discard these original legal documents.
+    if parts and parts[0].lower() == 'licenses':
+        return (not any(part.startswith('.') for part in parts)
+                and relative.suffix.lower() not in {
+                    '.exe', '.dll', '.pyd', '.ocx', '.bat', '.cmd', '.ps1',
+                    '.py', '.pyc', '.zip', '.7z', '.rar'})
     if any(part.lower() in SKIP_FOLDERS or part.startswith('.') for part in parts[:-1]):
         return False
     name = relative.name
