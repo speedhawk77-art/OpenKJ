@@ -24,14 +24,23 @@ def main() -> None:
     ap.add_argument('--candidate', type=Path, required=True)
     ap.add_argument('--report', type=Path, required=True)
     ap.add_argument('--fixture', type=Path, required=True)
+    ap.add_argument('--from-codec-controller',action='store_true',help='Preserve the Qt controller-selected optional path and preload its pinned codec')
     args = ap.parse_args()
     root = args.candidate.resolve()
     reports = args.report.parent.resolve()
     reports.mkdir(parents=True, exist_ok=True)
+    optional_path=os.environ.get('GST_PLUGIN_PATH_1_0','') if args.from_codec_controller else ''
+    codec=os.environ.get('OPENKJ_OPTIONAL_CODEC_PATH','') if args.from_codec_controller else ''
+    codec_handle=codec_dir=None
+    if codec:
+        path=Path(codec)
+        if hashlib.sha256(path.read_bytes()).hexdigest()!='2076cb5675ec6c1a4c70e7a2a322552f547b6eeed649d6dfcd9e02a543b24691':raise RuntimeError('Controller codec hash mismatch')
+        codec_dir=os.add_dll_directory(str(path.parent));codec_handle=C.CDLL(str(path))
     os.environ.update({
         'GST_PLUGIN_SYSTEM_PATH_1_0': str(root / 'gst-plugins'),
-        'GST_PLUGIN_PATH_1_0': '', 'GST_REGISTRY_FORK': 'no',
+        'GST_PLUGIN_PATH_1_0': optional_path, 'GST_REGISTRY_FORK': 'no',
         'GST_REGISTRY': str(reports / 'gst-probe-registry.bin'),
+        'GST_REGISTRY_1_0': str(reports / 'gst-probe-registry.bin'),
         'GIO_EXTRA_MODULES': str(root / 'gio-modules'),
         'PATH': str(root) + os.pathsep + os.environ.get('PATH', ''),
     })

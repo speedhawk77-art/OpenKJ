@@ -19,6 +19,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     for name in ('candidate', 'work', 'report', 'unpacker'):
         ap.add_argument('--' + name, type=Path, required=True)
+    ap.add_argument('--source-attestation', type=Path, help='Verified source-built candidate manifest (339 runtime files)')
     args = ap.parse_args()
     root = args.candidate.resolve(); work = args.work.resolve()
     if work.exists(): raise RuntimeError('Refusing to reuse installer test directory')
@@ -45,9 +46,13 @@ def main():
     p = subprocess.run([str(installer), '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART',
         '/SP-', '/NOICONS', '/DIR=' + str(installed), '/LOG=' + str(work / 'install.log')])
     if p.returncode not in (0, 3010): raise RuntimeError('Test installation failed: ' + str(p.returncode))
+    attestation = json.loads(args.source_attestation.read_text()) if args.source_attestation else None
+    if attestation and (attestation['current_build_source_attested'] is not True or attestation['executable_sha256'] != sha256(root/'openkj.exe') or attestation['cisco_binary_bundled'] is not False):
+        raise RuntimeError('Source application attestation mismatch')
+    expected_count = 339 if attestation else 338
     expected = bins(root); actual = bins(installed)
     generated = {k for k in actual if k not in expected}
-    if len(expected) != 338 or len(generated) != 1 or not next(iter(generated)).lower().startswith('unins'):
+    if len(expected) != expected_count or len(generated) != 1 or not next(iter(generated)).lower().startswith('unins'):
         raise RuntimeError('Unexpected installed runtime inventory')
     if any(actual.get(k) != v for k, v in expected.items()):
         raise RuntimeError('Installed program binary hash mismatch')
@@ -65,7 +70,8 @@ def main():
         'installed_notice_hash_matches': len(notices), 'generated_uninstaller': sorted(generated),
         'install_exit_code': p.returncode, 'installed_path': str(installed),
         'candidate_source_commit': os.environ.get('GITHUB_SHA'),
-        'application_binary_build_commit_attested': False,
+        'application_binary_build_commit_attested': bool(attestation),
+        'application_source_commit': attestation['source_commit'] if attestation else None,
         'physical_playback_tested': False, 'release_approved': False, 'passed': True}
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(data, indent=2) + '\n', encoding='utf-8')

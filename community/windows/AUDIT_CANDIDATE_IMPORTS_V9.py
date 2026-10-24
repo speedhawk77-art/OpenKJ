@@ -71,18 +71,30 @@ def main() -> None:
     ap.add_argument('--original', type=Path, required=True)
     ap.add_argument('--candidate', type=Path, required=True)
     ap.add_argument('--report', type=Path, required=True)
+    ap.add_argument('--isolated-optional-adapter',action='store_true',help='Allow only the byte-identical original adapter outside the scanned plugin directory')
     args = ap.parse_args()
     before = scan(args.original.resolve())
     after = scan(args.candidate.resolve())
-    if len(before) != 340 or len(after) != 338:
+    expected_count=339 if args.isolated_optional_adapter else 338
+    if len(before) != 340 or len(after) != expected_count:
         raise RuntimeError('Expected exactly 340 original and 338 candidate program binaries')
     dependencies = codec_edges(after)
+    isolated=[]
+    if args.isolated_optional_adapter:
+        original=next(r for r in before if r['path']=='gst-plugins/libgstopenh264.dll')
+        adapter=next(r for r in after if r['path']=='optional-codecs/openh264/libgstopenh264.dll')
+        if adapter['sha256']!=original['sha256']:raise RuntimeError('Optional adapter differs from pinned original')
+        isolated=[e for e in dependencies if e['path']==adapter['path']]
+        if not isolated:raise RuntimeError('Expected adapter import was not found')
+        dependencies=[e for e in dependencies if e['path']!=adapter['path']]
+
     result = {
         'check': 'Normal and delay PE imports of omitted OpenH264 components',
         'parser': 'pefile ' + pefile.__version__,
         'original_binary_count': len(before), 'candidate_binary_count': len(after),
         'original_openh264_import_edges': codec_edges(before),
         'candidate_openh264_import_edges': dependencies,
+        'isolated_optional_adapter_import_edges':isolated,
         'passed': not dependencies, 'binaries_executed': False,
         'limitations': ['Dynamic library loading and forwarded exports are not checked',
                         'No decoder availability or playback guarantee',

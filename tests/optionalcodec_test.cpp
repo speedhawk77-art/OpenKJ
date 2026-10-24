@@ -8,6 +8,12 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <cstdio>
+#include <QProcess>
+#include <QTimer>
+#include <QDialog>
+#include <QPushButton>
+#include <QLabel>
+#include <QPlainTextEdit>
 
 int main(int argc,char **argv) {
     QApplication app(argc,argv);
@@ -36,9 +42,36 @@ int main(int argc,char **argv) {
     OptionalCodec::setEnabled(true);check("enable_persists",OptionalCodec::enabled());
     OptionalCodec::configureStartup();
     check("enabled_optional_plugin_path",qgetenv("GST_PLUGIN_PATH_1_0").contains("optional-codecs"));
+    auto probe=[&](const char *label,bool wantCodec){
+        if(argc!=3){check("probe_arguments_supplied",false);return;}
+        QString report=QString("codec-controller-%1.json").arg(label);
+        int code=QProcess::execute("python",{QString::fromLocal8Bit(argv[1]),"--candidate",QCoreApplication::applicationDirPath(),
+            "--fixture",QString::fromLocal8Bit(argv[2]),"--report",report,"--from-codec-controller"});
+        QFile f(report);QJsonObject result;
+        if(f.open(QIODevice::ReadOnly))result=QJsonDocument::fromJson(f.readAll()).object();
+        bool factory=result.value("factories_present").toObject().value("openh264dec").toBool();
+        bool h264=result.value("pipelines").toObject().value("h264_mp4").toObject().value("passed").toBool();
+        check(label,code==0 && factory==wantCodec && (!wantCodec||h264));
+    };
+    probe("enabled_controller_h264_pipeline",true);
+
     OptionalCodec::setEnabled(false);check("disable_persists",!OptionalCodec::enabled());
     OptionalCodec::configureStartup();check("disabled_plugin_path_empty",qgetenv("GST_PLUGIN_PATH_1_0").isEmpty());
+    probe("disabled_controller_decoder_absent",false);
     OptionalCodec::setEnabled(true);check("reenable_downloaded_codec",OptionalCodec::enabled()&&OptionalCodec::verified());
+    QTimer::singleShot(0,[&](){
+        auto dialog=qobject_cast<QDialog*>(QApplication::activeModalWidget());bool attribution=false,terms=false,disabled=false,reenabled=false;
+        if(dialog){
+            for(auto label:dialog->findChildren<QLabel*>())attribution|=label->text().contains("OpenH264 Video Codec provided by Cisco Systems, Inc.");
+            for(auto text:dialog->findChildren<QPlainTextEdit*>())terms|=text->toPlainText()==OptionalCodec::licenseText();
+            for(auto button:dialog->findChildren<QPushButton*>())if(button->text()=="Disable"){button->click();disabled=!OptionalCodec::enabled();}
+            for(auto button:dialog->findChildren<QPushButton*>())if(button->text()=="Enable downloaded codec"){button->click();reenabled=OptionalCodec::enabled();}
+            dialog->reject();
+        }
+        check("dialog_attribution_and_full_license",attribution&&terms);
+        check("dialog_disable_and_reenable_controls",disabled&&reenabled);
+    });
+    OptionalCodec::showDialog(nullptr);
     OptionalCodec::setEnabled(false);
     QJsonObject result{{"checks",checks},{"passed",all},{"binary_distribution_approved",false}};
     auto output=QJsonDocument(result).toJson();

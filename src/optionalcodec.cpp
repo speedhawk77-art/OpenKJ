@@ -105,12 +105,14 @@ void configureStartup() {
     QDir().mkpath(root());
     qputenv("GST_REGISTRY_1_0",QDir::toNativeSeparators(root()+(active?"/registry-on.bin":"/registry-off.bin")).toUtf8());
     qputenv("GST_PLUGIN_PATH_1_0",QByteArray());
+    qputenv("OPENKJ_OPTIONAL_CODEC_PATH",QByteArray());
     if(!active)return;
     const QString pluginDir=QCoreApplication::applicationDirPath()+"/optional-codecs/openh264";
     if(!QFile::exists(pluginDir+"/libgstopenh264.dll"))return;
     // Only the exact pinned bytes may be loaded; no writable-directory DLL search.
     static HMODULE codec=LoadLibraryExW(reinterpret_cast<LPCWSTR>(codecPath().utf16()),nullptr,LOAD_WITH_ALTERED_SEARCH_PATH);
     if(!codec)return;
+    qputenv("OPENKJ_OPTIONAL_CODEC_PATH",codecPath().toUtf8());
     // The scanner is a separate process and also needs the end-user cache path.
     qputenv("PATH",QDir::toNativeSeparators(root()).toLocal8Bit()+";"+qgetenv("PATH"));
     qputenv("GST_PLUGIN_PATH_1_0",QDir::toNativeSeparators(pluginDir).toUtf8());

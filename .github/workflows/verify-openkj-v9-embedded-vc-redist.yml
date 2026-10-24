@@ -95,11 +95,11 @@ jobs:
           notice_sha="$(printf '%s' "$release" | jq -r --arg name "$notice_name" '.assets[] | select(.name==$name) | .digest' | sed 's/^sha256://')"
           gh api -H 'Accept: application/octet-stream' "repos/${GITHUB_REPOSITORY}/releases/assets/${notice_id}" > upstream-notices.zip
           printf '%s  %s\n' "$notice_sha" upstream-notices.zip | sha256sum -c -
-          rust_name='OpenKJ-v9-librsvg-Rust-Notices.zip'
+          rust_name='OpenKJ-v9-librsvg-Rust-Notices-v2.zip'
           test "$(printf '%s' "$release" | jq --arg name "$rust_name" '[.assets[] | select(.name==$name)] | length')" -eq 1
           rust_id="$(printf '%s' "$release" | jq -r --arg name "$rust_name" '.assets[] | select(.name==$name) | .id')"
           gh api -H 'Accept: application/octet-stream' "repos/${GITHUB_REPOSITORY}/releases/assets/${rust_id}" > rust-notices.zip
-          printf '%s  %s\n' '3082565fe65a2dcf6e80fb387ec89f92663bd9e7096d5626ff4365f1da0030ef' rust-notices.zip | sha256sum -c -
+          printf '%s  %s\n' 'ed4998c77dcd9f0d2a9378860579011f7c12ae781cd66ce84025c17299d43a3f' rust-notices.zip | sha256sum -c -
           python community/windows/STAGE_OPENKJ_COMPLIANCE_CANDIDATE_V9.py \
             --cleaned 'extracted/{app}' \
             --repo . \

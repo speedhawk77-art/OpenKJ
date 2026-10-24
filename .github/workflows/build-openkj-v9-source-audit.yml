@@ -83,12 +83,15 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $gst = 'C:\Program Files\gstreamer\1.0\mingw_x86_64'
-          Copy-Item "$gst\bin\libbz2.dll" source-build/
+          Get-ChildItem "$gst\bin\*.dll" | Where-Object { $_.Name -ne 'libopenh264-7.dll' } | Copy-Item -Destination source-build/
+          New-Item -ItemType Directory -Force source-build/gst-plugins | Out-Null
+          Get-ChildItem "$gst\lib\gstreamer-1.0\*.dll" | Where-Object { $_.Name -ne 'libgstopenh264.dll' } | Copy-Item -Destination source-build/gst-plugins/
           New-Item -ItemType Directory -Force source-build/optional-codecs/openh264 | Out-Null
           Copy-Item "$gst\lib\gstreamer-1.0\libgstopenh264.dll" source-build/optional-codecs/openh264/
           $env:LOCALAPPDATA = Join-Path $pwd 'isolated-codec-profile'
           $env:APPDATA = Join-Path $pwd 'isolated-codec-roaming'
-          ./source-build/openkj_codec_test.exe
+          $env:GST_PLUGIN_SYSTEM_PATH_1_0 = Join-Path $pwd 'source-build/gst-plugins'
+          ./source-build/openkj_codec_test.exe "$pwd/community/windows/PROBE_GSTREAMER_CANDIDATE_V9.py" "$pwd/community/windows/blue-h264.mp4.b64"
           if ($LASTEXITCODE -ne 0) { throw 'Optional codec integration tests failed' }
       - name: Probe freshly compiled app without publishing its executable
         shell: bash
@@ -129,6 +132,7 @@ jobs:
         with:
           name: OpenKJ-v9-Source-Build-Evidence
           path: |
+            codec-controller-*.json
             optional-codec-test-evidence.json
             source-build-evidence.json
             source-app-http-probe.json
