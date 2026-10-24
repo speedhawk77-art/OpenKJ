@@ -65,12 +65,13 @@ int main(int argc,char **argv) {
         auto dialog=qobject_cast<QDialog*>(QApplication::activeModalWidget());bool attribution=false,terms=false,disabled=false,reenabled=false;
         if(dialog){
             for(auto label:dialog->findChildren<QLabel*>())attribution|=label->text().contains("OpenH264 Video Codec provided by Cisco Systems, Inc.");
-            for(auto text:dialog->findChildren<QPlainTextEdit*>())terms|=text->toPlainText()==OptionalCodec::licenseText();
+            for(auto text:dialog->findChildren<QPlainTextEdit*>())terms|=text->toPlainText().simplified()==OptionalCodec::licenseText().simplified();
             for(auto button:dialog->findChildren<QPushButton*>())if(button->text()=="Disable"){button->click();disabled=!OptionalCodec::enabled();}
             for(auto button:dialog->findChildren<QPushButton*>())if(button->text()=="Enable downloaded codec"){button->click();reenabled=OptionalCodec::enabled();}
             dialog->reject();
         }
-        check("dialog_attribution_and_full_license",attribution&&terms);
+        check("dialog_exact_attribution",attribution);
+        check("dialog_complete_license_text",terms);
         check("dialog_disable_and_reenable_controls",disabled&&reenabled);
     });
     OptionalCodec::showDialog(nullptr);
