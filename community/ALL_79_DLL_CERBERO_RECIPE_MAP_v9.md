@@ -72,7 +72,7 @@ The **79 transitive DLLs** group into **58 likely source families** (56 correspo
 - OpenSSL 3 (`libssl`, `libcrypto`), openh264 and other audio/video codecs also require project-specific redistribution, notice and potentially independent codec-patent assessment. Merely finding a valid open-source licence does not settle all of those issues.
 - The exact source and patch package of `libintl-8.dll` has a particularly strong mapping to proxy-libintl 0.4 in Cerbero 1.26.9, with its source mirrored and checksummed in the private GitHub draft. The same work remains for other LGPL dependencies.
 - `mingw-runtime` and `winpthreads-runtime` label packaging recipes, not the true GCC or MinGW-w64 upstream compiler/runtime source revision. The printed recipe placeholder version cannot be used as a source correspondence proof.
-- We still need the exact **original Windows SDK binary/build manifest**, source archives/patches for components covered by LGPL, and complete installed licences. The Visual C++ redistributable candidate is Microsoft-signed in the development environment, but its byte identity with the temporary copy embedded in the Inno 7 installer remains unverified.
+- We still need the exact **original Windows SDK binary/build manifest**, source archives/patches for components covered by LGPL, and complete installed licences. The Visual C++ redistributable candidate is Microsoft-signed in the development environment, but its byte identity with the temporary copy embedded in the Inno 7 installer was verified by [run 40065659931](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40065659931).
 
 ## Prior evidence and next checks
 

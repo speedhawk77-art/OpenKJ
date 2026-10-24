@@ -65,3 +65,30 @@ The **official GStreamer Cerbero tag `1.26.9`** recipe `recipes/proxy-libintl.re
 - `OpenKJ-v9-Proxy-Libintl-Source-Manifest.json`: **493 bytes**, SHA-256 `d5c64f826f6177d164bfdb60406e5e1ee4b742ea41fdb12b16f4ad093e2b01d3`.
 
 The separately mirrored Cerbero 1.26.9 archive also contains the corresponding patch, but the exact GStreamer Windows SDK build commit and whether its `libintl-8.dll` used this particular recipe remain to be proven; do **not** call that DLL's complete corresponding-source obligations cleared based on these two archives alone.
+
+
+## Eight transitive source archives preserved — 2026-10-24
+
+[Workflow run 40066229494](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40066229494) passed. The existing draft release **421204266** now holds a source-only bundle and manifest. Each upstream archive was verified against the SHA-256 declared by its recipe in checksum-pinned Cerbero commit `c8981c6e66a7c877a9a9a9cdc7a14668296f3f64`. No recipe code was executed. The bundle includes the complete pinned Cerbero source/recipes archive, preserving conditional patches and build instructions alongside the eight upstream archives.
+
+| Package | Version | Recipe-pinned source SHA-256 |
+| --- | --- | --- |
+| fribidi | 1.0.16 | `1b1cde5b235d40479e91be2f0e88a309e3214c8ab470ec8a2744d82a5a9ea05c` |
+| gdk-pixbuf | 2.42.12 | `b9505b3445b9a7e48ced34760c3bcb73e966df3ac94c95a148cb669ab748e3c7` |
+| glib | 2.80.5 | `9f23a9de803c695bbfde7e37d6626b18b9a83869689dd79019bf3ae66c3e6771` |
+| glib-networking | 2.80.1 | `b80e2874157cd55071f1b6710fa0b911d5ac5de106a9ee2a4c9c7bee61782f8e` |
+| json-glib | 1.10.6 | `77f4bcbf9339528f166b8073458693f0a20b77b7059dbc2db61746a1928b0293` |
+| libiconv | 1.15 | `ccf536620a45458d26ba83887a983b96827001e92a13847b45e4925cc8913178` |
+| libsoup | 3.6.0 | `62959f791e8e8442f8c13cedac8c4919d78f9120d5bb5301be67a5e53318b4a3` |
+| pango | 1.56.2 | `03b7afd7ed730bef651155cbfb5320556b8ef92b0dc04abbb9784dcd4057afe7` |
+
+- `OpenKJ-v9-Transitive-Source-Batch1.zip`: 25,859,997 bytes; SHA-256 `00795c4fe6d887dc620cc039934d512d26433c76616fea2ead51547fc10e9aa3`; draft asset 671367048.
+- `OpenKJ-v9-Transitive-Source-Batch1-Manifest.json`: 5,867 bytes; SHA-256 `7f0cffef41d21cf529f3c7839f8a5eea73d555bbfb856f48f99b43cb7aa5474b`; draft asset 671367133.
+
+These eight recipe families map to **15 of the original 74 GStreamer-side transitive DLLs**. Source mirroring for proxy-libintl was completed earlier and is separate. Other libraries, toolchain sources, exact shipped build provenance and application build attestation remain open. This bundle is partial; it does not establish complete corresponding source, and draft assets are not publicly accessible source delivery. No installer asset was changed or published.
+
+### Narrowed toolchain and Git-source gaps
+
+The literal recipe version `0.1` is a packaging placeholder, not a compiler version. The pinned [Windows bootstrap code](https://github.com/GStreamer/cerbero/blob/c8981c6e66a7c877a9a9a9cdc7a14668296f3f64/cerbero/bootstrap/windows.py) specifies `mingw-12.0.0-gcc-14.2.0-windows-multilib.tar.xz`, SHA-256 `2e9039c6404f68bfce1eecd34172b16715565a15555c76c1652ec26265d5ae89`. The [mingw-runtime recipe](https://github.com/GStreamer/cerbero/blob/c8981c6e66a7c877a9a9a9cdc7a14668296f3f64/recipes/mingw-runtime.recipe) references GCC 14.2.0 runtime paths, and [winpthreads-runtime](https://github.com/GStreamer/cerbero/blob/c8981c6e66a7c877a9a9a9cdc7a14668296f3f64/recipes/winpthreads-runtime.recipe) copies its DLL from the selected toolchain. These identify a concrete build-metadata lead; the bootstrap archive is a binary toolchain and is not a substitute for its corresponding upstream sources or evidence that this toolchain built the shipped DLLs.
+
+[libffi.recipe](https://github.com/GStreamer/cerbero/blob/c8981c6e66a7c877a9a9a9cdc7a14668296f3f64/recipes/libffi.recipe) uses Git source `https://gitlab.freedesktop.org/gstreamer/meson-ports/libffi.git` at `meson-3.2.9999.3`, rather than a missing tarball checksum. Next evidence needed is a resolved immutable Git object and archived source, followed by actual SDK build matching.
