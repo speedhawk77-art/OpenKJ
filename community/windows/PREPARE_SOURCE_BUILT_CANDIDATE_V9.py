@@ -36,10 +36,14 @@ def main():
         raise RuntimeError('Unexpected source candidate binary inventory')
     if any(after[k]!=v for k,v in before.items() if k!='openkj.exe'):raise RuntimeError('Unexpected retained binary modification')
     if sha(root/'vc_redist.x64.exe')!=VC_SHA256:raise RuntimeError('Runtime pin changed')
+    staged=json.loads((root/'CANDIDATE-BUILD-EVIDENCE-v9.json').read_text())
     data.update(candidate_runtime_sha256=after,candidate_runtime_binary_count=len(after),
+        candidate_notice_sha256=staged['candidate_notice_sha256'],
+        purpose='DRAFT ONLY: source-built application candidate with optional adapter and no Cisco binary',
         changes_from_historical_candidate=['openkj.exe rebuilt from recorded public source',plugin.as_posix()+' added outside scanned plugin directory'],
         optional_plugin_sha256=sha(root/plugin),cisco_binary_bundled=False,optional_codec_default_enabled=False,
         physical_playback_tested=False,release_approved=False)
+    (root/'CANDIDATE-BUILD-EVIDENCE-v9.json').write_text(json.dumps(data,indent=2)+'\n')
     Path(a.report).parent.mkdir(parents=True,exist_ok=True)
     Path(a.report).write_text(json.dumps(data,indent=2)+'\n')
     print('Source-built candidate:',a.source_commit,'runtime files:',len(after),'Cisco binary bundled: false')
