@@ -27,17 +27,19 @@ int main(int argc,char **argv) {
     check("direct_cisco_https_download",error.isEmpty()&&!compressed.isEmpty());
     error.clear();check("verified_download_decompress_and_atomic_install",OptionalCodec::installDownloaded(compressed,&error));
     check("installed_exact_pinned_binary",OptionalCodec::verified());
+    QFile corrupted(OptionalCodec::codecPath());
+    if(corrupted.open(QIODevice::WriteOnly|QIODevice::Truncate)){corrupted.write("tampered");corrupted.close();}
+    check("reject_tampered_cached_codec",!OptionalCodec::verified());
+    OptionalCodec::configureStartup();check("tampered_codec_cannot_enable_plugin_path",qgetenv("GST_PLUGIN_PATH_1_0").isEmpty());
+    OptionalCodec::setEnabled(false);corrupted.remove();
+    error.clear();check("reinstall_after_cache_tamper",OptionalCodec::installDownloaded(compressed,&error));
     OptionalCodec::setEnabled(true);check("enable_persists",OptionalCodec::enabled());
     OptionalCodec::configureStartup();
     check("enabled_optional_plugin_path",qgetenv("GST_PLUGIN_PATH_1_0").contains("optional-codecs"));
     OptionalCodec::setEnabled(false);check("disable_persists",!OptionalCodec::enabled());
     OptionalCodec::configureStartup();check("disabled_plugin_path_empty",qgetenv("GST_PLUGIN_PATH_1_0").isEmpty());
     OptionalCodec::setEnabled(true);check("reenable_downloaded_codec",OptionalCodec::enabled()&&OptionalCodec::verified());
-    QFile corrupted(OptionalCodec::codecPath());
-    if(corrupted.open(QIODevice::WriteOnly|QIODevice::Truncate)){corrupted.write("tampered");corrupted.close();}
-    check("reject_tampered_cached_codec",!OptionalCodec::verified());
-    OptionalCodec::configureStartup();check("tampered_codec_cannot_enable_plugin_path",qgetenv("GST_PLUGIN_PATH_1_0").isEmpty());
-    OptionalCodec::setEnabled(false);corrupted.remove();
+    OptionalCodec::setEnabled(false);
     QJsonObject result{{"checks",checks},{"passed",all},{"binary_distribution_approved",false}};
     auto output=QJsonDocument(result).toJson();
     QFile report("optional-codec-test-evidence.json");report.open(QIODevice::WriteOnly);report.write(output);

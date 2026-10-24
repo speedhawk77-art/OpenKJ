@@ -25,7 +25,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for name in OpenKJ-v9-librsvg-2.59.2-Cargo-Sources.zip OpenKJ-v9-librsvg-Cargo-Source-Manifest.json OpenKJ-v9-librsvg-Rust-Notices.zip; do
+          for name in OpenKJ-v9-librsvg-2.59.2-Cargo-Sources.zip OpenKJ-v9-librsvg-Cargo-Source-Manifest.json OpenKJ-v9-librsvg-Rust-Notices-v2.zip; do
             file="cargo-source-output/$name"
             expected="sha256:$(sha256sum "$file" | awk '{print $1}')"
             release="$(gh api "repos/${GITHUB_REPOSITORY}/releases/421204266")"

@@ -8,9 +8,10 @@ on:
       - .github/workflows/build-openkj-v9-source-audit.yml
       - src/optionalcodec.*
       - tests/optionalcodec_test.cpp
+      - community/windows/PACK_SOURCE_BUILT_APP_V9.py
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   source-build:
@@ -135,3 +136,18 @@ jobs:
             source-build/CMakeFiles/CMakeConfigureLog.yaml
           if-no-files-found: warn
           retention-days: 30
+      - name: Preserve the source-built app and exact source in the unchanged draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python community/windows/PACK_SOURCE_BUILT_APP_V9.py
+          name="OpenKJ-v9-Source-Built-App-${GITHUB_SHA}.zip"
+          expected="sha256:$(sha256sum "$name" | awk '{print $1}')"
+          release="$(gh api "repos/${GITHUB_REPOSITORY}/releases/421204266")"
+          printf '%s' "$release" | jq -e --arg name "$name" '.draft==true and .published_at==null and ([.assets[]|select(.name==$name)]|length)==0' >/dev/null
+          curl -fLsS -X POST -H "Authorization: Bearer ${GH_TOKEN}" -H 'Content-Type: application/zip' \
+            --data-binary "@$name" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/421204266/assets?name=${name}" > uploaded-source-app.json
+          jq -e --arg pin "$expected" '.digest==$pin and .state=="uploaded"' uploaded-source-app.json >/dev/null
+          gh api "repos/${GITHUB_REPOSITORY}/releases/421204266" | jq -e '.draft==true and .published_at==null' >/dev/null

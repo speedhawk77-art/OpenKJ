@@ -92,12 +92,50 @@ def main():
         (a.output/'OpenKJ-v9-librsvg-Cargo-Source-Manifest.json').write_bytes(encoded)
         add('OpenKJ-v9-librsvg-Cargo-Source-Manifest.json',encoded)
         add('README-SOURCES.txt',b'Unpack librsvg-2.59.2.tar.xz beside this vendor directory. The parent .cargo/config.toml selects the pinned vendored registry source. Apply the pinned Cerbero patches/build configuration separately. A compatible Rust toolchain and other library build dependencies are still required. No successful build or shipped-binary correspondence is asserted.\n')
+    # Retain original package metadata and actual leading attribution headers for
+    # crates that omit standalone legal files. Never synthesize copyright owners.
+    for package,count in zip(registry,counts):
+        count['standalone_legal_files_preserved']=count['legal_files_preserved']
+        count['source_header_files_preserved']=0
+        if count['legal_files_preserved']:continue
+        def record(member,raw,label):
+            target=f"rust-crates/{package['name']}-{package['version']}/source-attributions/{label}.txt"
+            if target in notices:raise RuntimeError('Attribution path collision')
+            notices[target]=raw
+            docs.append({'installed_supplement_path':target,'sha256':sha(raw),
+                'source_archive':package['filename'],'source_archive_sha256':package['sha256'],
+                'source_member':member,'bytes':len(raw),'kind':'original metadata or leading source attribution'})
+        with tarfile.open(cache/package['filename'],'r:gz') as t:
+            for m in t:
+                if not m.isfile() or m.size>2*1024*1024:continue
+                rel='/'.join(PurePosixPath(m.name).parts[1:]);raw=t.extractfile(m).read()
+                if b'\0' in raw:continue
+                if rel in ('Cargo.toml','Cargo.toml.orig','.cargo_vcs_info.json') or PurePosixPath(rel).name.lower().startswith('readme'):
+                    record(m.name,raw,rel.replace('/','__').replace('.','_'));continue
+                if PurePosixPath(rel).suffix not in ('.rs','.c','.h','.cpp'):continue
+                # Stop before the first code line; preserve exact original bytes.
+                prefix=[];in_block=False
+                for line in raw.splitlines(keepends=True):
+                    stripped=line.lstrip()
+                    if in_block:
+                        prefix.append(line)
+                        if b'*/' in line:in_block=False
+                    elif not stripped.strip() or stripped.startswith(b'//'):
+                        prefix.append(line)
+                    elif stripped.startswith(b'/*'):
+                        prefix.append(line);in_block=b'*/' not in stripped
+                    else:break
+                header=b''.join(prefix)
+                if header and re.search(rb'copyright|licen[cs]e|SPDX|public domain|mozilla.org/MPL',header,re.I):
+                    label=rel.replace('/','__').replace('.','_')+'__header'
+                    record(m.name,header,label);count['source_header_files_preserved']+=1
+        count['metadata_preserved']=True
     if len({n.casefold() for n in notices})!=len(notices):raise RuntimeError('Windows crate notice path collision')
     legal={'purpose':'Original Rust crate legal text preservation',
            'source_package_count':len(registry),'document_count':len(notices),'packages':counts,
            'documents':docs,'legal_completeness_verified':False,'binary_source_correspondence_proven':False,
-           'release_approved':False,'limits':['Standalone filename-based notice collection; inspect any crate with zero collected notices']}
-    with zipfile.ZipFile(a.output/'OpenKJ-v9-librsvg-Rust-Notices.zip','w',compression=zipfile.ZIP_DEFLATED) as z:
+           'release_approved':False,'limits':['Standalone legal texts plus original package metadata and leading source attribution headers for crates without standalone legal files; exact shipped build and legal completeness remain unproven']}
+    with zipfile.ZipFile(a.output/'OpenKJ-v9-librsvg-Rust-Notices-v2.zip','w',compression=zipfile.ZIP_DEFLATED) as z:
         def put(name,raw):
             i=zipfile.ZipInfo(name,(1980,1,1,0,0,0));i.compress_type=zipfile.ZIP_DEFLATED;i.external_attr=0o100644<<16;z.writestr(i,raw)
         put(EVIDENCE,(json.dumps(legal,indent=2,sort_keys=True)+'\n').encode())
