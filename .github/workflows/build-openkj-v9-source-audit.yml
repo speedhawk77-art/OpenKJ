@@ -6,6 +6,8 @@ on:
     branches: [offline-remote-v9]
     paths:
       - .github/workflows/build-openkj-v9-source-audit.yml
+      - src/optionalcodec.*
+      - tests/optionalcodec_test.cpp
 
 permissions:
   contents: read
@@ -71,10 +73,22 @@ jobs:
           Write-Host "Selected MSVC $env:VCToolsVersion"
       - name: Configure current source with the exact spdlog submodule
         shell: pwsh
-        run: cmake -S . -B source-build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSPDLOG_USE_BUNDLED=ON '-DCMAKE_POLICY_VERSION_MINIMUM=3.5'
+        run: cmake -S . -B source-build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSPDLOG_USE_BUNDLED=ON -DOPENKJ_BUILD_CODEC_TESTS=ON '-DCMAKE_POLICY_VERSION_MINIMUM=3.5'
       - name: Compile source without replacing any release binary
         shell: pwsh
         run: cmake --build source-build --parallel 4
+      - name: Verify optional end-user codec integration on the isolated runner
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $gst = 'C:\Program Files\gstreamer\1.0\mingw_x86_64'
+          Copy-Item "$gst\bin\libbz2.dll" source-build/
+          New-Item -ItemType Directory -Force source-build/optional-codecs/openh264 | Out-Null
+          Copy-Item "$gst\lib\gstreamer-1.0\libgstopenh264.dll" source-build/optional-codecs/openh264/
+          $env:LOCALAPPDATA = Join-Path $pwd 'isolated-codec-profile'
+          $env:APPDATA = Join-Path $pwd 'isolated-codec-roaming'
+          ./source-build/openkj_codec_test.exe
+          if ($LASTEXITCODE -ne 0) { throw 'Optional codec integration tests failed' }
       - name: Probe freshly compiled app without publishing its executable
         shell: bash
         run: |
@@ -114,6 +128,7 @@ jobs:
         with:
           name: OpenKJ-v9-Source-Build-Evidence
           path: |
+            optional-codec-test-evidence.json
             source-build-evidence.json
             source-app-http-probe.json
             source-build/CMakeCache.txt

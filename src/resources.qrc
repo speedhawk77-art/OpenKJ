@@ -1,4 +1,7 @@
 <RCC>
+    <qresource prefix="/optional-codec">
+        <file alias="BINARY_LICENSE.txt">../community/licenses/openh264/CISCO-BINARY-LICENSE.txt</file>
+    </qresource>
     <qresource prefix="/icons">
         <file>Icons/splash.png</file>
         <file>Icons/okjlogo.svg</file>

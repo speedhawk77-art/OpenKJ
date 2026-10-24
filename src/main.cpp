@@ -21,10 +21,12 @@
 #include <QApplication>
 #include <QFileInfo>
 #include "mainwindow.h"
+#include "optionalcodec.h"
 #include <QStyleFactory>
 #include <QSplashScreen>
 #include <QStringList>
 #include <QMessageBox>
+#include <QMenu>
 #include "settings.h"
 #include "idledetect.h"
 #include "runguard/runguard.h"
@@ -186,6 +188,7 @@ int main(int argc, char *argv[]) {
     qWarning() << qgetenv("GST_PLUGIN_SYSTEM_PATH") << endl << qgetenv("GST_PLUGIN_SCANNER") << endl << qgetenv("GTK_PATH") << endl << qgetenv("GIO_EXTRA_MODULES") << endl;
 #endif
 
+    OptionalCodec::configureStartup();
     a.installEventFilter(filter);
     qputenv("GST_DEBUG", "*:3");
     QGuiApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
@@ -261,5 +264,9 @@ int main(int argc, char *argv[]) {
     settings.setStartupOk(false);
     MainWindow w;
     w.show();
+#ifdef Q_OS_WIN
+    if (auto help = w.findChild<QMenu *>("menuHelp"))
+        help->addAction(QObject::tr("Optional H.264 codec…"), &w, [&w](){ OptionalCodec::showDialog(&w); });
+#endif
     return QApplication::exec();
 }

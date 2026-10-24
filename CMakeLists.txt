@@ -410,6 +410,8 @@ set(SOURCE_FILES
         src/miniz/miniz.h
         src/miniz/miniz.c
         src/main.cpp
+        src/optionalcodec.cpp
+        src/optionalcodec.h
         src/dlgaddsong.cpp
         src/mediabackend.cpp
         src/mzarchive.cpp
@@ -573,7 +575,12 @@ set(SOURCE_FILES
         src/gstreamer/gstreamerhelper.h
         )
 
+if (WIN32)
+    set(OPTIONAL_CODEC_LIBRARIES winhttp)
+endif ()
+
 set(LIBRARIES
+        ${OPTIONAL_CODEC_LIBRARIES}
         spdlog
         Qt5::Widgets
         Qt5::Core
@@ -772,3 +779,10 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 endif ()
 
 
+
+option(OPENKJ_BUILD_CODEC_TESTS "Build isolated optional-codec integration tests" OFF)
+if (WIN32 AND OPENKJ_BUILD_CODEC_TESTS)
+    add_executable(openkj_codec_test tests/optionalcodec_test.cpp src/optionalcodec.cpp src/resources.qrc)
+    target_include_directories(openkj_codec_test PRIVATE src)
+    target_link_libraries(openkj_codec_test Qt5::Widgets Qt5::Concurrent winhttp)
+endif ()
