@@ -83,3 +83,8 @@ The workflow retains a JSON-only evidence ZIP in the same draft with a unique ru
 - On the karaoke hardware, test real library media including MP3+CDG and H.264, actual audio outputs, singer/second display, and a real phone on the intended network.
 
 The existing draft installer has not been replaced or published. Remote checks cannot establish these physical test outcomes.
+
+
+## Later completion follow-up
+
+The optional-codec integration, source-built application/launcher candidate, official supplier comparison and expanded notice/source work are completed in [the follow-up report](REMOTE_COMPLETION_FOLLOWUP_2026-10-24.md). Refer there for the exact tested candidate and current limits; the earlier Remaining release gates list is historical.

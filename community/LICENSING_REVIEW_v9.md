@@ -111,3 +111,8 @@ No search result from the hash checker requires fetching files from unknown thir
 4. Test and inspect the final installer against the cleaned build, including the Microsoft VC++ redistributable licence and correct release commit.
 
 **Release remains on HOLD:** 79/79 binary provenance verification is passed, but this is not a redistribution licence clearance.
+
+
+## Final remote engineering follow-up — 2026-10-24
+
+The [completion report](REMOTE_COMPLETION_FOLLOWUP_2026-10-24.md) supersedes earlier pending engineering statements for the checks explicitly proved there: optional end-user codec controls, both application executables built from recorded source, direct official SDK byte matches, expanded Qt/Rust notices and source mirrors, and the source-built installer test. It records the remaining evidentiary/licence-use limits separately. The Windows release remains draft-only for physical karaoke testing.

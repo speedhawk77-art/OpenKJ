@@ -38,3 +38,7 @@ The following **eight verbatim source documents** have now been copied from the 
 5. Evaluate specific codec distribution/patent conditions as applicable (especially OpenH264), and preserve applicable source/copyright notices.
 
 **Publication decision: HOLD.** This record completes sourcing of the **standard licence texts** for the SDK README references, but not installed-notice completeness or broader redistributor compliance. See [readiness checklist](RELEASE_READINESS_CHECKLIST_v9.md).
+
+## Final remote engineering follow-up — 2026-10-24
+
+The [completion report](REMOTE_COMPLETION_FOLLOWUP_2026-10-24.md) supersedes earlier pending engineering statements for the checks explicitly proved there: optional end-user codec controls, both application executables built from recorded source, direct official SDK byte matches, expanded Qt/Rust notices and source mirrors, and the source-built installer test. It records the remaining evidentiary/licence-use limits separately. The Windows release remains draft-only for physical karaoke testing.

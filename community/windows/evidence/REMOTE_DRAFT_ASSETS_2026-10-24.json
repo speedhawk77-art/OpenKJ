@@ -1,11 +1,13 @@
 {
-  "observed_date_utc": "2026-10-24",
+  "date_utc": "2026-10-24",
   "repository": "speedhawk77-art/OpenKJ",
   "release_id": 421204266,
   "draft": true,
   "published_at": null,
-  "release_approved": false,
-  "latest_verification_run": 40071327999,
+  "source_build_run": 40098937739,
+  "source_candidate_run": 40099935626,
+  "official_supplier_run": 40099815324,
+  "application_source_commit": "016d5c3135bbc8073b96881e49e19feb97359101",
   "assets": [
     {
       "id": 667420403,
@@ -44,6 +46,12 @@
       "digest": "sha256:1a5732762e29b3db189ddc0ac68f6efba7bc31d7e8f73d4f0fd61ca4a991d86a"
     },
     {
+      "id": 672400238,
+      "name": "OpenKJ-v9-Application-Source-016d5c3135bbc8073b96881e49e19feb97359101.zip",
+      "bytes": 2286471,
+      "digest": "sha256:d2a5b3dce09cf482ed48378e5ceb842dfdf1fa8259e8d98c4382f80beee8ef02"
+    },
+    {
       "id": 667516747,
       "name": "OpenKJ-v9-Cerbero-Source-Manifest.json",
       "bytes": 588,
@@ -80,10 +88,22 @@
       "digest": "sha256:17f871e5433a1300990f2afa2741796a9271db167ae595137eadff78649a62d8"
     },
     {
+      "id": 672322389,
+      "name": "OpenKJ-v9-librsvg-Rust-Notices-v2.zip",
+      "bytes": 1201300,
+      "digest": "sha256:ed4998c77dcd9f0d2a9378860579011f7c12ae781cd66ce84025c17299d43a3f"
+    },
+    {
       "id": 671493540,
       "name": "OpenKJ-v9-librsvg-Rust-Notices.zip",
       "bytes": 1129201,
       "digest": "sha256:3082565fe65a2dcf6e80fb387ec89f92663bd9e7096d5626ff4365f1da0030ef"
+    },
+    {
+      "id": 672391769,
+      "name": "OpenKJ-v9-Official-Supplier-Audit-40099815324.json",
+      "bytes": 87707,
+      "digest": "sha256:5dbd5a0094acef46cab62c02165666ef97b554f7b385fbe808d0d2875014c6d7"
     },
     {
       "id": 667562457,
@@ -92,10 +112,76 @@
       "digest": "sha256:d5c64f826f6177d164bfdb60406e5e1ee4b742ea41fdb12b16f4ad093e2b01d3"
     },
     {
+      "id": 672368963,
+      "name": "OpenKJ-v9-Qt-Notice-Evidence.json",
+      "bytes": 64891,
+      "digest": "sha256:0bbed899dc6759697d75073b57ed8d89440ebf48b5b9a1516a16a81c6ef6a4b2"
+    },
+    {
+      "id": 672368919,
+      "name": "OpenKJ-v9-Qt-Notices.zip",
+      "bytes": 351970,
+      "digest": "sha256:0f9f9d177e18ff52c61264bad6cdb256db7a42bcf4c8a491407a5e34f4301238"
+    },
+    {
       "id": 671517418,
       "name": "OpenKJ-v9-Remote-Audit-40071327999-1.zip",
       "bytes": 76379,
       "digest": "sha256:83cdce57fd754d7370661e06e982d08d03084537493cd6af93c8a679579db88c"
+    },
+    {
+      "id": 672324421,
+      "name": "OpenKJ-v9-Remote-Audit-40097531088-1.zip",
+      "bytes": 76444,
+      "digest": "sha256:957250f850d4907995b191d30ccb0db483373db33aacd26bf96d2d96a872e8a5"
+    },
+    {
+      "id": 672338902,
+      "name": "OpenKJ-v9-Remote-Audit-40097920443-1.zip",
+      "bytes": 81238,
+      "digest": "sha256:d313db7c5cbc81a0b156a02a8542ddfcfb5ee09438f575063dd96f2147272102"
+    },
+    {
+      "id": 672357656,
+      "name": "OpenKJ-v9-Remote-Audit-40098472276-1.zip",
+      "bytes": 81502,
+      "digest": "sha256:926ebaafe45654b52c695e0dd1c80449284e413ccb8a9dd76446f2bad260282f"
+    },
+    {
+      "id": 672366726,
+      "name": "OpenKJ-v9-Remote-Audit-40098834249-1.zip",
+      "bytes": 85170,
+      "digest": "sha256:ba96572a8062bd6c6351631857223deffe43d29e80512e016dfcbbfc4f887327"
+    },
+    {
+      "id": 672371247,
+      "name": "OpenKJ-v9-Remote-Audit-40098937761-1.zip",
+      "bytes": 84734,
+      "digest": "sha256:d2f931cc59df8b2ae02ca3f23b8973f428efeaabf15ebe806e7cb60759a8c5f0"
+    },
+    {
+      "id": 672383338,
+      "name": "OpenKJ-v9-Remote-Audit-40099358428-1.zip",
+      "bytes": 90807,
+      "digest": "sha256:d592b67f28b6290bf26e46b99e1794bc739b3e0475c2ac83707ce4a97042c833"
+    },
+    {
+      "id": 672355616,
+      "name": "OpenKJ-v9-Rust-Standard-Notices.zip",
+      "bytes": 453675,
+      "digest": "sha256:049b80431100e4108e6d26cfeaa6a00433b7231f2f03024d03ddd42f688a57eb"
+    },
+    {
+      "id": 672355535,
+      "name": "OpenKJ-v9-Rust-Standard-Source-Manifest.json",
+      "bytes": 93342,
+      "digest": "sha256:889c683658fe7cfa72aab28c8a02e7e2d5e763007d34a7a51d9e7b93fa376778"
+    },
+    {
+      "id": 672355415,
+      "name": "OpenKJ-v9-Rust-Standard-Sources.zip",
+      "bytes": 25988812,
+      "digest": "sha256:c77f014a1299b5c6048fd052a2e23a702efc292e5bc499c39001fc2d50c6cead"
     },
     {
       "id": 671493286,
@@ -108,6 +194,54 @@
       "name": "OpenKJ-v9-Software-OpenGL-Sources.zip",
       "bytes": 21371754,
       "digest": "sha256:03593861589b98eaa16b84fe09221029a53caafb4b6dc3f04a7c9106af945c1b"
+    },
+    {
+      "id": 672379831,
+      "name": "OpenKJ-v9-Source-Built-App-016d5c3135bbc8073b96881e49e19feb97359101.zip",
+      "bytes": 3671547,
+      "digest": "sha256:2b5958b505e92c2dceaafc27d1f25fdd7fd489571302e47134e2ab6f4d560f98"
+    },
+    {
+      "id": 672342437,
+      "name": "OpenKJ-v9-Source-Built-App-9c1468843292377be632fcb46e1d1680a6608797.zip",
+      "bytes": 3590331,
+      "digest": "sha256:72ea0893af1d701b8c6e1f00be4ab30b7fa2b4cba695cca00adef40f3f01a1cf"
+    },
+    {
+      "id": 672399791,
+      "name": "OpenKJ-v9-Source-Candidate-016d5c3135bbc8073b96881e49e19feb97359101-40099935626-1.exe",
+      "bytes": 204378210,
+      "digest": "sha256:8ad438cc61c212377ab5b4999f5ed0644b8ff26fcbda413a4412c98524351228"
+    },
+    {
+      "id": 672390392,
+      "name": "OpenKJ-v9-Source-Candidate-016d5c3135bbc8073b96881e49e19feb97359101.exe",
+      "bytes": 204378190,
+      "digest": "sha256:847f4fbadfd08802229772fec2556b2a32407b318cdfae08b2ff8aa7eb73912e"
+    },
+    {
+      "id": 672364983,
+      "name": "OpenKJ-v9-Source-Candidate-9c1468843292377be632fcb46e1d1680a6608797.exe",
+      "bytes": 204330909,
+      "digest": "sha256:5f75518585428f8d5aeae925a7b101da79d9265f6e77ce3eb5a66bfe1313bcd9"
+    },
+    {
+      "id": 672364903,
+      "name": "OpenKJ-v9-Source-Candidate-Audit-40098834264-1.zip",
+      "bytes": 139999,
+      "digest": "sha256:ba3aa1eb089a3d2e99f92a044342052b63eef4b6749bac25c7aed872b536e1e3"
+    },
+    {
+      "id": 672390288,
+      "name": "OpenKJ-v9-Source-Candidate-Audit-40099605240-1.zip",
+      "bytes": 151499,
+      "digest": "sha256:0816bbe63e0dc7332498a033b7a6c71c493cdf36958f8b6e1cde71c424272093"
+    },
+    {
+      "id": 672399683,
+      "name": "OpenKJ-v9-Source-Candidate-Audit-40099935626-1.zip",
+      "bytes": 151500,
+      "digest": "sha256:a26f92ebb23a0edafaf6059a44c314db261103c38d360176912d23f603334c09"
     },
     {
       "id": 671367133,
@@ -224,8 +358,7 @@
       "digest": "sha256:3a530d1b243b5dec00bc54937455471aaa3e56849d2593edb8ded07228202240"
     }
   ],
-  "limits": [
-    "Draft assets are not public corresponding-source delivery.",
-    "Snapshot metadata only; independent legal/build correspondence review remains open."
-  ]
+  "physical_karaoke_tested": false,
+  "legal_clearance_certified": false,
+  "release_approved": false
 }

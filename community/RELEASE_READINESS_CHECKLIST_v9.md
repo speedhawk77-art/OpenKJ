@@ -49,3 +49,8 @@ Mark each box `[x]` only once a concrete file, hash, source archive/build recipe
 ## Remote verification follow-up — 2026-10-24
 
 See [the consolidated remote result](REMOTE_VERIFICATION_RESULT_2026-10-24.md) for the executed Windows installer round trip, fresh source build, HTTP probes, Qt renderer and GNU runtime byte matches, expanded source/notice mirrors, original failure causes and rerun steps. It supersedes earlier pending-test statements only for checks explicitly evidenced there. The original draft installer remains unchanged and unpublished. Physical karaoke tests, final codec distribution integration and complete corresponding-source/notice review remain open.
+
+
+## Final remote engineering follow-up — 2026-10-24
+
+The [completion report](REMOTE_COMPLETION_FOLLOWUP_2026-10-24.md) supersedes earlier pending engineering statements for the checks explicitly proved there: optional end-user codec controls, both application executables built from recorded source, direct official SDK byte matches, expanded Qt/Rust notices and source mirrors, and the source-built installer test. It records the remaining evidentiary/licence-use limits separately. The Windows release remains draft-only for physical karaoke testing.
