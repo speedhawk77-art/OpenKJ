@@ -8,6 +8,7 @@ Does not change any OpenKJ sources, binaries, local databases, or settings.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
 import re
 import shutil
@@ -146,8 +147,9 @@ def stage_copy(source: Path, destination: Path) -> tuple[int, int, int]:
     for dirname, subdirs, filenames in os.walk(source, topdown=True, followlinks=False):
         directory = Path(dirname)
         rel_dir = directory.relative_to(source)
+        in_licenses = bool(rel_dir.parts) and rel_dir.parts[0].lower() == 'licenses'
         subdirs[:] = [d for d in subdirs
-                       if d.lower() not in SKIP_FOLDERS and not d.startswith('.')
+                       if (in_licenses or d.lower() not in SKIP_FOLDERS) and not d.startswith('.')
                        and not (directory / d).is_symlink()]
         for filename in filenames:
             file = directory / filename
@@ -161,6 +163,17 @@ def stage_copy(source: Path, destination: Path) -> tuple[int, int, int]:
             count += 1
             bytes_total += file.stat().st_size
     return count, skipped, bytes_total
+
+
+def verify_staged_notices(source: Path, staging: Path) -> None:
+    for original in (source / 'licenses').rglob('*'):
+        if not original.is_file():
+            continue
+        relative = original.relative_to(source)
+        copied = staging / relative
+        if (not copied.is_file() or
+                hashlib.sha256(original.read_bytes()).digest() != hashlib.sha256(copied.read_bytes()).digest()):
+            raise RuntimeError('Installer staging omitted or changed a licence document: ' + str(relative))
 
 
 def iss_path_literal(path: Path) -> str:
@@ -259,6 +272,7 @@ def main() -> int:
             staging = staging_root / 'app'
             staging.mkdir()
             count, skipped, size = stage_copy(source, staging)
+            verify_staged_notices(source, staging)
             checked_directory(staging)
             iss_path = staging_root / 'OpenKJ-v9.iss'
             output_dir.mkdir(parents=True, exist_ok=True)
