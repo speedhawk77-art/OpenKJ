@@ -1,6 +1,7 @@
 name: Verify OpenKJ v9 installer embedded VC redistributable
 
 on:
+  workflow_dispatch:
   push:
     branches: [offline-remote-v9]
     paths:
@@ -12,7 +13,7 @@ permissions:
 jobs:
   verify-embedded-runtime:
     if: github.repository == 'speedhawk77-art/OpenKJ'
-    runs-on: ubuntu-latest
+    runs-on: windows-2025
     timeout-minutes: 25
     steps:
       - name: Verify draft release and download its exact installer
@@ -27,17 +28,29 @@ jobs:
           test "$id" = '667394901' || { echo "Installer asset has changed"; exit 2; }
           gh api -H 'Accept: application/octet-stream' "repos/${GITHUB_REPOSITORY}/releases/assets/${id}" > OpenKJ-v9-Cleaned-Setup.exe
           printf '%s  %s\n' 'bc35c24ef25529b86b90bd3f5a215603de3b283d590620ec58820e02f83421ef' 'OpenKJ-v9-Cleaned-Setup.exe' | sha256sum -c -
-      - name: Inspect Inno Setup 7 embedded Microsoft redistributable with 7-Zip
+      - name: Download checksum-pinned Inno Setup 7 unpacker
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # innounp 2.71.2 supports Inno Setup through 7.1.0.
+          # Pin both the upstream revision and the downloaded archive bytes.
+          $url = 'https://raw.githubusercontent.com/jrathlev/InnoUnpacker-Windows-GUI/032d64c782efc6b36766d8f9c3b1b2f042144a58/innounp-2/bin/innounp-2.zip'
+          Invoke-WebRequest -Uri $url -OutFile innounp-2.zip
+          $sha = (Get-FileHash innounp-2.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($sha -ne '10fce27b6344b7674d5625cc34afca1c88c12183d957c6d93e401097fa2556cd') {
+            throw 'Inno unpacker archive checksum mismatch'
+          }
+          Expand-Archive -LiteralPath innounp-2.zip -DestinationPath unpacker
+      - name: Inspect Inno Setup 7 embedded Microsoft redistributable with innounp
         shell: bash
         run: |
           set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq 7zip
           echo 'Looking for the embedded VC++ redistributable in the Inno archive.'
-          7z l OpenKJ-v9-Cleaned-Setup.exe > listing.txt || { echo 'Current 7-Zip cannot parse this Inno Setup archive; no conclusion about embedded redist.'; exit 3; }
-          grep -i 'vc_redist.x64.exe' listing.txt || { echo 'No matching VC++ file in archive listing; inspect manually.'; exit 4; }
+          # -n rejects unsupported formats; -a includes duplicate file entries.
+          ./unpacker/innounp.exe -v -a -b -n OpenKJ-v9-Cleaned-Setup.exe > listing.txt || { cat listing.txt; echo 'Unpacker failed; no conclusion about embedded redist.'; exit 3; }
+          grep -Fi 'vc_redist.x64.exe' listing.txt || { echo 'No matching VC++ file in archive listing; inspect manually.'; exit 4; }
           mkdir extracted
-          7z x -y -oextracted OpenKJ-v9-Cleaned-Setup.exe >/dev/null
+          ./unpacker/innounp.exe -x -a -b -n -y -dextracted OpenKJ-v9-Cleaned-Setup.exe
           count="$(find extracted -type f -iname 'vc_redist.x64.exe' | wc -l)"
           test "$count" -eq 1 || { echo "Expected one redistributable; found $count"; exit 5; }
           path="$(find extracted -type f -iname 'vc_redist.x64.exe' -print -quit)"
