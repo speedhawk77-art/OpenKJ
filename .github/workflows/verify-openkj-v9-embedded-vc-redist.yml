@@ -6,6 +6,10 @@ on:
     branches: [offline-remote-v9]
     paths:
       - .github/workflows/verify-openkj-v9-embedded-vc-redist.yml
+      - community/windows/STAGE_OPENKJ_COMPLIANCE_CANDIDATE_V9.py
+      - community/licenses/**
+      - THIRD_PARTY_NOTICES.md
+      - community/WINDOWS_DLL_REPLACEMENT_GUIDE_v9.md
 
 permissions:
   contents: write
@@ -16,6 +20,9 @@ jobs:
     runs-on: windows-2025
     timeout-minutes: 25
     steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Verify draft release and download its exact installer
         env:
           GH_TOKEN: ${{ github.token }}
@@ -62,3 +69,36 @@ jobs:
           test "$sha" = '843068991daaa1f73ad9f6239bce4d0f6a07a51f18c37ea2a867e9beca71295c' || { echo "EMBEDDED REDIST DOES NOT MATCH SIGNED VS2026 CANDIDATES"; exit 7; }
           echo 'PASS: Embedded vc_redist.x64.exe is byte-identical to Microsoft-signed VS2026 Community redistributable candidates.'
           echo 'NOTE: Valid Visual Studio licensing and use terms still apply.'
+      - name: Stage separate notice and codec test candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python community/windows/STAGE_OPENKJ_COMPLIANCE_CANDIDATE_V9.py \
+            --cleaned 'extracted/{app}' \
+            --repo . \
+            --vc-redist "$(find extracted -type f -iname 'vc_redist.x64.exe' -print -quit)" \
+            --out candidate \
+            --omit-openh264
+      - name: Record candidate preparation result
+        shell: python
+        run: |
+          import json, os
+          from pathlib import Path
+          d = json.loads(Path('candidate/CANDIDATE-BUILD-EVIDENCE-v9.json').read_text())
+          assert d['source_runtime_binary_count'] == 340
+          assert d['candidate_runtime_binary_count'] == 338
+          assert d['binary_hashes_unchanged_except_omissions'] is True
+          assert d['release_approved'] is False
+          text = (
+              '### Separate test candidate prepared\n\n'
+              '- Embedded Microsoft runtime: exact SHA-256 and size verified.\n'
+              '- Retained program binaries: 338, all original hashes unchanged.\n'
+              '- Removed for testing: libopenh264-7.dll and gst-plugins/libgstopenh264.dll.\n'
+              f"- Supplemental source notice files added: {d['extra_source_notice_texts']}.\n"
+              f"- Total candidate notice files: {len(d['candidate_notice_sha256'])}.\n"
+              '- Pending: Windows playback, rebuilt-installer test, corresponding-source review.\n'
+              '- Candidate binaries stay on this temporary runner; no release assets are changed.\n'
+          )
+          print(text)
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as f:
+              f.write(text)
