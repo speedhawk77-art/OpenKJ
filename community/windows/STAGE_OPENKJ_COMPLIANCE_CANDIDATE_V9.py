@@ -10,8 +10,8 @@ Usage (Windows, Python 3.10+):
     py -3 STAGE_OPENKJ_COMPLIANCE_CANDIDATE_V9.py --cleaned "C:/OpenKJ-Development/OpenKJ-Distribution-Test-v9" --repo "C:/OpenKJ-Development/OpenKJ-Source" --vc-redist "C:/path/to/vc_redist.x64.exe" --omit-openh264
 """
 from __future__ import annotations
-import argparse, hashlib, json, shutil, sys
-from pathlib import Path
+import argparse, hashlib, json, shutil, sys, zipfile
+from pathlib import Path, PurePosixPath
 
 VC_SHA256 = '843068991daaa1f73ad9f6239bce4d0f6a07a51f18c37ea2a867e9beca71295c'
 OMIT_CODEC = ('gst-plugins/libgstopenh264.dll','libopenh264-7.dll')
@@ -29,6 +29,31 @@ def bins(root:Path)->dict[str,str]:
             if p.is_file() and p.suffix.lower() in {'.dll','.exe','.pyd','.ocx'}
             and p.name.lower() != 'vc_redist.x64.exe'}
 
+def install_notice_supplement(bundle:Path,target:Path)->int:
+    if target.exists():raise RuntimeError('Supplement destination already exists')
+    with zipfile.ZipFile(bundle) as z:
+        names=z.namelist()
+        if len({n.casefold() for n in names})!=len(names):
+            raise RuntimeError('Duplicate/colliding supplement paths')
+        evidence_name='OpenKJ-v9-Upstream-Notice-Evidence-v2.json'
+        data=json.loads(z.read(evidence_name))
+        expected={d['installed_supplement_path']:d['sha256'] for d in data['documents']}
+        if len(expected)!=data['document_count'] or set(names)!=set(expected)|{evidence_name}:
+            raise RuntimeError('Supplement inventory does not match its evidence manifest')
+        for name in names:
+            p=PurePosixPath(name)
+            if p.is_absolute() or '..' in p.parts or '\\' in name or ':' in name:
+                raise RuntimeError('Unsafe supplement path')
+            if p.suffix.lower() in {'.exe','.dll','.pyd','.ocx','.py','.ps1','.bat','.cmd'}:
+                raise RuntimeError('Executable/script found in notice supplement')
+            raw=z.read(name)
+            if name in expected and hashlib.sha256(raw).hexdigest()!=expected[name]:
+                raise RuntimeError('Supplement legal-document checksum mismatch')
+        for name in names:
+            path=target/name;path.parent.mkdir(parents=True,exist_ok=True)
+            path.write_bytes(z.read(name))
+    return len(expected)
+
 def main()->int:
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--cleaned',required=True,type=Path,help='Previously tested OpenKJ-Distribution-Test-v9 folder')
@@ -36,6 +61,7 @@ def main()->int:
     ap.add_argument('--vc-redist',required=True,type=Path,help='Microsoft-signed vc_redist.x64.exe, version 14.51.36247.0')
     ap.add_argument('--omit-openh264',action='store_true',help='Exclude both OpenH264 DLLs; video decoding MUST be retested')
     ap.add_argument('--out',type=Path,help='Output folder (default: adjacent OpenKJ-Compliance-Candidate-v9)')
+    ap.add_argument('--notice-supplement',type=Path,help='Verified v2 upstream notice bundle (optional)')
     x=ap.parse_args()
     cleaned=x.cleaned.expanduser().resolve(); repo=x.repo.expanduser().resolve()
     vc=x.vc_redist.expanduser().resolve()
@@ -69,6 +95,10 @@ def main()->int:
         # Keep existing 118 SDK/core notices and ADD source-tagged original texts.
         supplemental=out/'licenses'/'upstream-verified-source-notices'
         shutil.copytree(src,supplemental)
+        archive_notice_count=0
+        if x.notice_supplement:
+            archive_notice_count=install_notice_supplement(x.notice_supplement,
+                out/'licenses'/'upstream-source-archive-notices')
         shutil.copy2(repo/'THIRD_PARTY_NOTICES.md',out/'licenses'/'THIRD_PARTY_NOTICES-updated.md')
         shutil.copy2(repo/'community'/'WINDOWS_DLL_REPLACEMENT_GUIDE_v9.md',out/'licenses'/'WINDOWS_DLL_REPLACEMENT_GUIDE_v9.md')
         if x.omit_openh264:
@@ -106,6 +136,8 @@ def main()->int:
             'binary_hashes_unchanged_except_omissions':True,
             'original_license_directory_retained':True,
             'extra_source_notice_texts':len([p for p in supplemental.rglob('*') if p.is_file()]),
+            'archive_derived_notice_files':archive_notice_count,
+            'notice_supplement_sha256':digest(x.notice_supplement) if x.notice_supplement else None,
             'vc_redist_sha256':actual,
             'vc_redist_signed_status':'Previously validated Microsoft signed for this SHA-256; independently verify on build PC',
             'release_approved':False,

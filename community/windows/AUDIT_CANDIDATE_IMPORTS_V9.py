@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 
 import pefile
@@ -27,7 +28,8 @@ def scan(root: Path) -> list[dict]:
             raise RuntimeError('Unexpected binary symlink: ' + str(path))
         with pefile.PE(str(path), fast_load=True) as pe:
             directories = [pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_IMPORT'],
-                           pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT']]
+                           pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT'],
+                           pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_RESOURCE']]
             pe.parse_data_directories(directories=directories)
             imports = {}
             for label, index, attr in (
@@ -39,9 +41,22 @@ def scan(root: Path) -> list[dict]:
                     raise RuntimeError('Could not parse ' + label + ' imports: ' + str(path))
                 imports[label] = sorted({entry.dll.decode('ascii').lower()
                                          for entry in getattr(pe, attr, [])})
+            versions={}
+            for group in getattr(pe,'FileInfo',[]):
+                for entry in group:
+                    for table in getattr(entry,'StringTable',[]):
+                        for key,value in table.entries.items():
+                            if key in {b'CompanyName',b'FileDescription',b'FileVersion',b'ProductName',b'ProductVersion'}:
+                                versions[key.decode()]=value.decode('utf-8',errors='replace')
+        payload=path.read_bytes()
         rows.append({'path': path.relative_to(root).as_posix(),
-                     'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
-                     'imports': imports})
+                     'sha256': hashlib.sha256(payload).hexdigest(),
+                     'imports': imports,'version_resources':versions})
+        if path.name.lower()=='opengl32sw.dll':
+            rows[-1]['embedded_renderer_version_strings']=sorted({
+                x.decode('ascii') for x in re.findall(
+                    rb'\b(?:Mesa|LLVM) [0-9]+(?:\.[0-9]+){1,3}(?:-[A-Za-z0-9.]+)?',payload)})
+            print('Software OpenGL embedded renderer versions:',rows[-1]['embedded_renderer_version_strings'])
     return rows
 
 

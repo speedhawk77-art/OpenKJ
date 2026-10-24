@@ -79,14 +79,26 @@ jobs:
           echo 'PASS: Embedded vc_redist.x64.exe is byte-identical to Microsoft-signed VS2026 Community redistributable candidates.'
           echo 'NOTE: Valid Visual Studio licensing and use terms still apply.'
       - name: Stage separate notice and codec test candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
+          release="$(gh api "repos/${GITHUB_REPOSITORY}/releases/421204266")"
+          printf '%s' "$release" | jq -e '.draft==true and .published_at==null' >/dev/null
+          notice_name='OpenKJ-v9-Upstream-Notices-v2.zip'
+          notice_count="$(printf '%s' "$release" | jq --arg name "$notice_name" '[.assets[] | select(.name==$name)] | length')"
+          test "$notice_count" -eq 1
+          notice_id="$(printf '%s' "$release" | jq -r --arg name "$notice_name" '.assets[] | select(.name==$name) | .id')"
+          notice_sha="$(printf '%s' "$release" | jq -r --arg name "$notice_name" '.assets[] | select(.name==$name) | .digest' | sed 's/^sha256://')"
+          gh api -H 'Accept: application/octet-stream' "repos/${GITHUB_REPOSITORY}/releases/assets/${notice_id}" > upstream-notices.zip
+          printf '%s  %s\n' "$notice_sha" upstream-notices.zip | sha256sum -c -
           python community/windows/STAGE_OPENKJ_COMPLIANCE_CANDIDATE_V9.py \
             --cleaned 'extracted/{app}' \
             --repo . \
             --vc-redist "$(find extracted -type f -iname 'vc_redist.x64.exe' -print -quit)" \
             --out candidate \
+            --notice-supplement upstream-notices.zip \
             --omit-openh264
       - name: Record candidate preparation result
         shell: python
@@ -104,6 +116,7 @@ jobs:
               '- Retained program binaries: 338, all original hashes unchanged.\n'
               '- Removed for testing: libopenh264-7.dll and gst-plugins/libgstopenh264.dll.\n'
               f"- Supplemental source notice files added: {d['extra_source_notice_texts']}.\n"
+              f"- Additional archive-derived notice files: {d['archive_derived_notice_files']}.\n"
               f"- Total candidate notice files: {len(d['candidate_notice_sha256'])}.\n"
               '- Pending: Windows playback, rebuilt-installer test, corresponding-source review.\n'
               '- Candidate binaries stay on this temporary runner; no release assets are changed.\n'
