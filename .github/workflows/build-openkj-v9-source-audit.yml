@@ -132,7 +132,7 @@ jobs:
         with:
           name: OpenKJ-v9-Source-Build-Evidence
           path: |
-            codec-controller-*.json
+            codec-controller-*/probes.json
             optional-codec-test-evidence.json
             source-build-evidence.json
             source-app-http-probe.json

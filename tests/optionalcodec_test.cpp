@@ -1,5 +1,6 @@
 #include "optionalcodec.h"
 #include <QApplication>
+#include <QCryptographicHash>
 #include <QFile>
 #include <QDir>
 #include <QSettings>
@@ -25,6 +26,7 @@ int main(int argc,char **argv) {
     check("disabled_by_default",!OptionalCodec::enabled());
     check("full_binary_license_embedded",OptionalCodec::licenseText().contains("AVC/H.264 Patent Portfolio License Conditions")
           && OptionalCodec::licenseText().contains("Any third-party software that makes use"));
+    check("exact_original_cisco_license",QCryptographicHash::hash(OptionalCodec::licenseText().toUtf8(),QCryptographicHash::Sha256).toHex()=="bd9f363c5ea11ef723d0304cddacb5273c43c0e1194097c7a045d05273635418");
     QString error;
     check("reject_empty_download",!OptionalCodec::installDownloaded(QByteArray(),&error));
     check("reject_oversized_download",!OptionalCodec::installDownloaded(QByteArray(2097153,'x'),&error));
@@ -44,7 +46,7 @@ int main(int argc,char **argv) {
     check("enabled_optional_plugin_path",qgetenv("GST_PLUGIN_PATH_1_0").contains("optional-codecs"));
     auto probe=[&](const char *label,bool wantCodec){
         if(argc!=3){check("probe_arguments_supplied",false);return;}
-        QString report=QString("codec-controller-%1.json").arg(label);
+        QString report=QString("codec-controller-%1/probes.json").arg(label);
         int code=QProcess::execute("python",{QString::fromLocal8Bit(argv[1]),"--candidate",QCoreApplication::applicationDirPath(),
             "--fixture",QString::fromLocal8Bit(argv[2]),"--report",report,"--from-codec-controller"});
         QFile f(report);QJsonObject result;
