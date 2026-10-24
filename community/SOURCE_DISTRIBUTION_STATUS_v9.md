@@ -122,3 +122,8 @@ The two recipe families still lacking corresponding toolchain source preservatio
 [Windows run 40066585261](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40066585261) passed the extended candidate audit. The checksum-pinned pefile 2024.8.26 parser examined normal and delay PE imports in all 340 original and 338 retained program binaries without executing them. **Zero retained normal/delay imports name an OpenH264 component.** The full per-file hashes/import inventory is available as [text-only audit artifact 12549770611](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40066585261/artifacts/12549770611) (30-day artifact retention; reproduce with the committed workflow).
 
 This narrowly excludes static import edges to the omitted codec. It does not check dynamic library loading, forwarded exports, all Windows/system dependencies, available decoding paths, media playback or guest/phone controls. The local regression test and rebuilt installer verification remain required. No candidate program binaries were uploaded as workflow artifacts or release assets.
+
+
+## Remote verification follow-up — 2026-10-24
+
+See [the consolidated remote result](REMOTE_VERIFICATION_RESULT_2026-10-24.md) for the executed Windows installer round trip, fresh source build, HTTP probes, Qt renderer and GNU runtime byte matches, expanded source/notice mirrors, original failure causes and rerun steps. It supersedes earlier pending-test statements only for checks explicitly evidenced there. The original draft installer remains unchanged and unpublished. Physical karaoke tests, final codec distribution integration and complete corresponding-source/notice review remain open.

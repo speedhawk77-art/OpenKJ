@@ -1,0 +1,231 @@
+{
+  "observed_date_utc": "2026-10-24",
+  "repository": "speedhawk77-art/OpenKJ",
+  "release_id": 421204266,
+  "draft": true,
+  "published_at": null,
+  "release_approved": false,
+  "latest_verification_run": 40071327999,
+  "assets": [
+    {
+      "id": 667420403,
+      "name": "gst-plugins-bad-1.26.9.tar.xz",
+      "bytes": 7787684,
+      "digest": "sha256:a96bfb68c53a7c9ab1ae279eac7c101f4204fb5c0e4729683b2be64261707446"
+    },
+    {
+      "id": 667420460,
+      "name": "gst-plugins-base-1.26.9.tar.xz",
+      "bytes": 2499200,
+      "digest": "sha256:11db4ec9ae5be2194ff8ccf2b5fecdc069252fe4416921b083a921ef71dd000a"
+    },
+    {
+      "id": 667420502,
+      "name": "gst-plugins-good-1.26.9.tar.xz",
+      "bytes": 3007176,
+      "digest": "sha256:f38566fb53ae56b7019a039475311756a28eb978a781154d67813dcb551ff5fe"
+    },
+    {
+      "id": 667420541,
+      "name": "gst-rtsp-server-1.26.9.tar.xz",
+      "bytes": 291996,
+      "digest": "sha256:67e92e9a5b0f2b51eb571cc893b80da2ae2374f19b05d381d1e364393fe12654"
+    },
+    {
+      "id": 667420583,
+      "name": "gstreamer-1.26.9.tar.xz",
+      "bytes": 1894152,
+      "digest": "sha256:8ee8772e468102ebe86d414d8c4c7440dd91d9f3e9396952ff23aecde80670c8"
+    },
+    {
+      "id": 667516678,
+      "name": "GStreamer-cerbero-1.26.9-source-and-recipes.tar.gz",
+      "bytes": 3455696,
+      "digest": "sha256:1a5732762e29b3db189ddc0ac68f6efba7bc31d7e8f73d4f0fd61ca4a991d86a"
+    },
+    {
+      "id": 667516747,
+      "name": "OpenKJ-v9-Cerbero-Source-Manifest.json",
+      "bytes": 588,
+      "digest": "sha256:3f172257bf93981cabb8c138f47af0de0bdd1966a037c7e54522d431ead93f23"
+    },
+    {
+      "id": 667394903,
+      "name": "OpenKJ-v9-Cleaned-Manifest.json",
+      "bytes": 914,
+      "digest": "sha256:2b7bdd6ff67435ac113b95ff9e1db32a075e865ac6f943b23b00822bd702f1c3"
+    },
+    {
+      "id": 667394901,
+      "name": "OpenKJ-v9-Cleaned-Setup.exe",
+      "bytes": 205876054,
+      "digest": "sha256:bc35c24ef25529b86b90bd3f5a215603de3b283d590620ec58820e02f83421ef"
+    },
+    {
+      "id": 667394902,
+      "name": "OpenKJ-v9-Cleaned-Setup.sha256.txt",
+      "bytes": 95,
+      "digest": "sha256:3dd67a169c9671cf8d565536df5787fa3ae4b761193f125c4936fd0651ef6a65"
+    },
+    {
+      "id": 671493405,
+      "name": "OpenKJ-v9-librsvg-2.59.2-Cargo-Sources.zip",
+      "bytes": 58734931,
+      "digest": "sha256:dc45d766ef02a71bf8a6015b674e2e236171c9ff657aaeab51b01a802cb08c47"
+    },
+    {
+      "id": 671493475,
+      "name": "OpenKJ-v9-librsvg-Cargo-Source-Manifest.json",
+      "bytes": 89940,
+      "digest": "sha256:17f871e5433a1300990f2afa2741796a9271db167ae595137eadff78649a62d8"
+    },
+    {
+      "id": 671493540,
+      "name": "OpenKJ-v9-librsvg-Rust-Notices.zip",
+      "bytes": 1129201,
+      "digest": "sha256:3082565fe65a2dcf6e80fb387ec89f92663bd9e7096d5626ff4365f1da0030ef"
+    },
+    {
+      "id": 667562457,
+      "name": "OpenKJ-v9-Proxy-Libintl-Source-Manifest.json",
+      "bytes": 493,
+      "digest": "sha256:d5c64f826f6177d164bfdb60406e5e1ee4b742ea41fdb12b16f4ad093e2b01d3"
+    },
+    {
+      "id": 671517418,
+      "name": "OpenKJ-v9-Remote-Audit-40071327999-1.zip",
+      "bytes": 76379,
+      "digest": "sha256:83cdce57fd754d7370661e06e982d08d03084537493cd6af93c8a679579db88c"
+    },
+    {
+      "id": 671493286,
+      "name": "OpenKJ-v9-Software-OpenGL-Source-Manifest.json",
+      "bytes": 3552,
+      "digest": "sha256:93e9da4c9aeb74d0ee8eb7eb3e121d16f04443107133223c9fbbcf47fced2b5b"
+    },
+    {
+      "id": 671493261,
+      "name": "OpenKJ-v9-Software-OpenGL-Sources.zip",
+      "bytes": 21371754,
+      "digest": "sha256:03593861589b98eaa16b84fe09221029a53caafb4b6dc3f04a7c9106af945c1b"
+    },
+    {
+      "id": 671367133,
+      "name": "OpenKJ-v9-Transitive-Source-Batch1-Manifest.json",
+      "bytes": 5867,
+      "digest": "sha256:7f0cffef41d21cf529f3c7839f8a5eea73d555bbfb856f48f99b43cb7aa5474b"
+    },
+    {
+      "id": 671367048,
+      "name": "OpenKJ-v9-Transitive-Source-Batch1.zip",
+      "bytes": 25859997,
+      "digest": "sha256:00795c4fe6d887dc620cc039934d512d26433c76616fea2ead51547fc10e9aa3"
+    },
+    {
+      "id": 671377558,
+      "name": "OpenKJ-v9-Transitive-Source-Batch2-Manifest.json",
+      "bytes": 8093,
+      "digest": "sha256:8ef40eb1b95177fde3b82a225c629bc9a8e5fbd663b0ee9fce606ec20aed7746"
+    },
+    {
+      "id": 671377500,
+      "name": "OpenKJ-v9-Transitive-Source-Batch2.zip",
+      "bytes": 54866947,
+      "digest": "sha256:cfaecddfcd239b21677b15e6e2fb856c0eac493ed8c27cd3b882d520762f9f61"
+    },
+    {
+      "id": 671382428,
+      "name": "OpenKJ-v9-Transitive-Source-Batch3-Manifest.json",
+      "bytes": 20851,
+      "digest": "sha256:0859c7a5f4a1624562f7140f4ec875c6968a5432ca2892bcab883dacfbb390ab"
+    },
+    {
+      "id": 671382258,
+      "name": "OpenKJ-v9-Transitive-Source-Batch3.zip",
+      "bytes": 199105015,
+      "digest": "sha256:5082a5247b09761eb4d4bc7fe03a6b6220196535e40118ca3af540cb0ef0424b"
+    },
+    {
+      "id": 671385914,
+      "name": "OpenKJ-v9-Transitive-Source-Batch4-Manifest.json",
+      "bytes": 1911,
+      "digest": "sha256:09ae2d7d4c8453e9bf51116f0ef4a1fde9a6652cf7acc383ce6a02b8f8307180"
+    },
+    {
+      "id": 671385888,
+      "name": "OpenKJ-v9-Transitive-Source-Batch4.zip",
+      "bytes": 3951617,
+      "digest": "sha256:c9812f67a540096f2c512f7dfda7ae4769f02d385c1ac793d9b7b842a5307525"
+    },
+    {
+      "id": 671420401,
+      "name": "OpenKJ-v9-Transitive-Source-Batch5-Manifest.json",
+      "bytes": 5557,
+      "digest": "sha256:df18e3ae368b36a9a346904c057b32fc8b038172ebfb966858f68c1ae9adc0c7"
+    },
+    {
+      "id": 671420208,
+      "name": "OpenKJ-v9-Transitive-Source-Batch5.zip",
+      "bytes": 151671850,
+      "digest": "sha256:7d3e1b62f0118ec0f34ceb4b5a73bf63c4c9daa5b8c9f96cd7d418e269311d10"
+    },
+    {
+      "id": 671458595,
+      "name": "OpenKJ-v9-Transitive-Source-Batch6-Manifest.json",
+      "bytes": 1994,
+      "digest": "sha256:a8fc00c70e54dc3dd8f056f0c7f5fda9e6b8eb097f7277efa92bfcb5339f5733"
+    },
+    {
+      "id": 671458545,
+      "name": "OpenKJ-v9-Transitive-Source-Batch6.zip",
+      "bytes": 3652912,
+      "digest": "sha256:cf84a86046a1934920f0c798c1179b37f4fbe1ffbb5399f5654c9a922053ce44"
+    },
+    {
+      "id": 671442039,
+      "name": "OpenKJ-v9-Upstream-Notice-Evidence-v2.json",
+      "bytes": 109972,
+      "digest": "sha256:e6d2bdae7331e9ce21c019c5712e50561176653c20726125d5625022667dd09d"
+    },
+    {
+      "id": 671428313,
+      "name": "OpenKJ-v9-Upstream-Notice-Evidence.json",
+      "bytes": 103813,
+      "digest": "sha256:082395ecaeeea1334078ce7d03f824415dfe3d2816b3ba5ed444711fc5288db9"
+    },
+    {
+      "id": 671441982,
+      "name": "OpenKJ-v9-Upstream-Notices-v2.zip",
+      "bytes": 846348,
+      "digest": "sha256:e84daa9fb5afb05ba86508a52d67bd535082f4020d056551c3288363389f540a"
+    },
+    {
+      "id": 671428284,
+      "name": "OpenKJ-v9-Upstream-Notices.zip",
+      "bytes": 789704,
+      "digest": "sha256:3885d2d3e1005a072612d68d7237a990f38d94c55b69b8fb2693604ea444f4ae"
+    },
+    {
+      "id": 667421529,
+      "name": "OpenKJ-v9-Upstream-Source-Mirror-Manifest.json",
+      "bytes": 1612,
+      "digest": "sha256:3f688e67d91298e0b983d96f9e16f62bd0b67df0e06168a555b302cc4fdfe99d"
+    },
+    {
+      "id": 667562424,
+      "name": "proxy-libintl-0.4-source.tar.gz",
+      "bytes": 13033,
+      "digest": "sha256:13ef3eea0a3bc0df55293be368dfbcff5a8dd5f4759280f28e030d1494a5dffb"
+    },
+    {
+      "id": 667420661,
+      "name": "qt-everywhere-src-5.15.2.tar.xz",
+      "bytes": 586690220,
+      "digest": "sha256:3a530d1b243b5dec00bc54937455471aaa3e56849d2593edb8ded07228202240"
+    }
+  ],
+  "limits": [
+    "Draft assets are not public corresponding-source delivery.",
+    "Snapshot metadata only; independent legal/build correspondence review remains open."
+  ]
+}

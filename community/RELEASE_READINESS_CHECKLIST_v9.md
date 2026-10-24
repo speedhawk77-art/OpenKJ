@@ -44,3 +44,8 @@ Mark each box `[x]` only once a concrete file, hash, source archive/build recipe
 - [GStreamer Cerbero build details](https://gstreamer.freedesktop.org/documentation/installing/building-from-source-using-cerbero.html)
 
 **No public release should be published merely because boxes in this checklist are checked.** Actual licence obligations must be met, and potentially a qualified legal review if uncertainty remains.
+
+
+## Remote verification follow-up — 2026-10-24
+
+See [the consolidated remote result](REMOTE_VERIFICATION_RESULT_2026-10-24.md) for the executed Windows installer round trip, fresh source build, HTTP probes, Qt renderer and GNU runtime byte matches, expanded source/notice mirrors, original failure causes and rerun steps. It supersedes earlier pending-test statements only for checks explicitly evidenced there. The original draft installer remains unchanged and unpublished. Physical karaoke tests, final codec distribution integration and complete corresponding-source/notice review remain open.
