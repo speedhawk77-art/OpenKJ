@@ -70,13 +70,15 @@ def main() -> None:
     factories = {}
     for name in ('audiotestsrc', 'videotestsrc', 'lamemp3enc', 'mpg123audiodec',
                  'qtdemux', 'h264parse', 'decodebin', 'avdec_h264',
-                 'openh264dec', 'mfh264dec', 'd3d11h264dec', 'd3d12h264dec'):
+                 'openh264dec', 'd3d11h264dec', 'd3d12h264dec', 'msdkh264dec', 'nvh264dec', 'qsvh264dec'):
         factory = find_factory(name.encode())
         factories[name] = bool(factory)
         if factory: obj_unref(factory)
 
     fixture = reports / 'generated-blue-h264.mp4'
     fixture.write_bytes(base64.b64decode(args.fixture.read_bytes(), validate=False))
+    if hashlib.sha256(fixture.read_bytes()).hexdigest() != 'e004249adaa97849fdb1d8dc686422884a861ef11ebee64aec9c9b0624fcb2a6':
+        raise RuntimeError('Generated H.264 fixture checksum mismatch')
     pipelines = {
         'raw_audio': 'audiotestsrc num-buffers=8 ! audioconvert ! audioresample ! fakesink sync=false',
         'raw_video': 'videotestsrc num-buffers=8 ! videoconvert ! fakesink sync=false',
@@ -122,6 +124,7 @@ def main() -> None:
     report = {
         'check': 'Isolated Windows candidate GStreamer diagnostic pipelines',
         'factories_present': factories, 'pipelines': results,
+        'plugin_files': sorted(p.name for p in (root / 'gst-plugins').glob('*.dll')),
         'h264_fixture_sha256': hashlib.sha256(fixture.read_bytes()).hexdigest(),
         'candidate_gstreamer_sha256': hashlib.sha256((root / 'libgstreamer-1.0-0.dll').read_bytes()).hexdigest(),
         'physical_output_tested': False, 'application_ui_tested': False,

@@ -1,0 +1,103 @@
+name: Compile current OpenKJ v9 source and record build evidence
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [offline-remote-v9]
+    paths:
+      - .github/workflows/build-openkj-v9-source-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  source-build:
+    if: github.repository == 'speedhawk77-art/OpenKJ'
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - name: Install Qt 5.15.2 build headers and libraries
+        uses: jurplel/install-qt-action@a9c63c7c123f3069cff414e7e482d95dfa9d8125
+        with:
+          version: '5.15.2'
+          arch: win64_msvc2019_64
+          archives: qtbase qtsvg
+      - name: Install checksum-pinned GStreamer 1.26.9 development SDK
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $msi = Join-Path $pwd 'gstreamer-devel-1.26.9.msi'
+          Invoke-WebRequest -Uri 'https://gstreamer.freedesktop.org/data/pkg/windows/1.26.9/mingw/gstreamer-1.0-devel-mingw-x86_64-1.26.9.msi' -OutFile $msi
+          if ((Get-FileHash $msi -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'e88e22054411fa5424e9e58266a2ec17d0cae098eafe785b79338c131315234c') { throw 'GStreamer SDK checksum mismatch' }
+          $p = Start-Process msiexec.exe -ArgumentList "/i `"$msi`" /qn /norestart ADDLOCAL=ALL" -Wait -PassThru
+          if ($p.ExitCode -notin @(0,3010)) { throw "SDK installation failed: $($p.ExitCode)" }
+          if (!(Test-Path 'C:\Program Files\gstreamer\1.0\mingw_x86_64\include\gstreamer-1.0\gst\gst.h')) { throw 'SDK was not installed at the path required by CMake' }
+      - name: Install pinned runtime for an isolated app startup probe
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $msi = Join-Path $pwd 'gstreamer-runtime-1.26.9.msi'
+          Invoke-WebRequest -Uri 'https://gstreamer.freedesktop.org/data/pkg/windows/1.26.9/mingw/gstreamer-1.0-mingw-x86_64-1.26.9.msi' -OutFile $msi
+          if ((Get-FileHash $msi -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'f06f729f965deaff5d499a7feb596a001c25badbc8e9d5a791d0f23a530d66ab') { throw 'GStreamer runtime checksum mismatch' }
+          $p = Start-Process msiexec.exe -ArgumentList "/i `"$msi`" /qn /norestart ADDLOCAL=ALL" -Wait -PassThru
+          if ($p.ExitCode -notin @(0,3010)) { throw "Runtime installation failed: $($p.ExitCode)" }
+          Add-Content -LiteralPath $env:GITHUB_PATH -Value 'C:\Program Files\gstreamer\1.0\mingw_x86_64\bin'
+      - name: Set up x64 Visual Studio build shell
+        uses: egor-tensin/vs-shell@7710434f30f873ff4ab78184b74cc576a10726d6
+        with:
+          arch: x64
+      - name: Configure current source with the exact spdlog submodule
+        shell: pwsh
+        run: cmake -S . -B source-build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSPDLOG_USE_BUNDLED=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+      - name: Compile source without replacing any release binary
+        shell: pwsh
+        run: cmake --build source-build --parallel 4
+      - name: Probe freshly compiled app without publishing its executable
+        shell: bash
+        run: |
+          set -euo pipefail
+          python community/windows/PROBE_APPLICATION_HTTP_V9.py \
+            --app source-build/openkj.exe --report source-app-http-probe.json
+      - name: Record source commit and executable hash
+        shell: python
+        run: |
+          import hashlib,json,os,subprocess
+          from pathlib import Path
+          exe=Path('source-build/openkj.exe')
+          if not exe.is_file(): raise RuntimeError('Compiled executable not found')
+          def cmd(*args):
+              p=subprocess.run(args,text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,errors='replace')
+              return p.stdout.strip()
+          result={
+              'source_commit':os.environ['GITHUB_SHA'],
+              'source_tree':cmd('git','rev-parse','HEAD^{tree}'),
+              'submodules':cmd('git','submodule','status','--recursive'),
+              'executable_sha256':hashlib.sha256(exe.read_bytes()).hexdigest(),
+              'executable_bytes':exe.stat().st_size,
+              'compiler':cmd('cl'),
+              'qt_version':cmd('qmake','-query','QT_VERSION'),
+              'gstreamer_development_sdk_version':'1.26.9',
+              'gstreamer_development_sdk_sha256':'e88e22054411fa5424e9e58266a2ec17d0cae098eafe785b79338c131315234c',
+              'current_build_source_attested':True,
+              'existing_draft_executable_source_attested':False,
+              'gstreamer_runtime_sdk_sha256':'f06f729f965deaff5d499a7feb596a001c25badbc8e9d5a791d0f23a530d66ab',
+              'binary_published':False,'physical_playback_tested':False,'release_approved':False,
+          }
+          Path('source-build-evidence.json').write_text(json.dumps(result,indent=2)+'\n',encoding='utf-8')
+          print('Compiled current source; executable SHA-256:',result['executable_sha256'])
+      - name: Preserve build evidence only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenKJ-v9-Source-Build-Evidence
+          path: |
+            source-build-evidence.json
+            source-app-http-probe.json
+            source-build/CMakeCache.txt
+            source-build/CMakeFiles/CMakeConfigureLog.yaml
+          if-no-files-found: warn
+          retention-days: 30

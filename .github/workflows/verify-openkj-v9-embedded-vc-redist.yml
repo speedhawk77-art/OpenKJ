@@ -12,6 +12,10 @@ on:
       - community/windows/PROBE_GSTREAMER_CANDIDATE_V9.py
       - community/windows/VERIFY_TOOLCHAIN_RUNTIME_V9.py
       - community/windows/blue-h264.mp4.b64
+      - community/windows/EXPERIMENT_CISCO_CODEC_V9.py
+      - community/windows/VERIFY_INSTALLER_ROUNDTRIP_V9.py
+      - community/windows/MAKE_SINGLE_FILE_INSTALLER.py
+      - community/windows/PROBE_APPLICATION_HTTP_V9.py
       - community/licenses/**
       - THIRD_PARTY_NOTICES.md
       - community/WINDOWS_DLL_REPLACEMENT_GUIDE_v9.md
@@ -132,6 +136,28 @@ jobs:
           python community/windows/VERIFY_TOOLCHAIN_RUNTIME_V9.py \
             --candidate candidate --cache toolchain-cache \
             --report audit-reports/OpenKJ-v9-Toolchain-Runtime-Audit.json
+      - name: Experiment with separately downloaded official Cisco codec
+        shell: bash
+        run: |
+          set -euo pipefail
+          python community/windows/EXPERIMENT_CISCO_CODEC_V9.py \
+            --candidate candidate --original 'extracted/{app}' \
+            --output cisco-experiment --fixture community/windows/blue-h264.mp4.b64 \
+            --report audit-reports/OpenKJ-v9-Cisco-Compatibility-Experiment.json
+      - name: Build and verify a separate test installer on the isolated runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          python community/windows/VERIFY_INSTALLER_ROUNDTRIP_V9.py \
+            --candidate candidate --work installer-roundtrip --unpacker unpacker/innounp.exe \
+            --report audit-reports/OpenKJ-v9-Installer-Roundtrip.json
+      - name: Probe installed application startup and localhost HTTP routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python community/windows/PROBE_APPLICATION_HTTP_V9.py \
+            --app installer-roundtrip/installed/openkj.exe \
+            --report audit-reports/OpenKJ-v9-Installed-App-HTTP-Probe.json
       - name: Preserve text audit evidence only
         if: always()
         uses: actions/upload-artifact@v4

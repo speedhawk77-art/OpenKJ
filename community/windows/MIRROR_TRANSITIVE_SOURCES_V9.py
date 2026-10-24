@@ -187,11 +187,14 @@ def main() -> None:
                 sources[-1].update(git_tag=LIBFFI_TAG, git_tag_object=LIBFFI_TAG_OBJECT,
                     git_commit=LIBFFI_COMMIT,
                     checksum_origin='Locally verified immutable Git commit archive; not a recipe tarball checksum')
+            if args.batch == 5 and name == 'gmp':
+                sources[-1]['alternate_urls'] = ['https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.bz2']
 
     def fetch(item: dict) -> None:
         path = cache / Path(item['archive']).relative_to('upstream')
         path.parent.mkdir(parents=True, exist_ok=True)
-        download([item['source_url'], item['fallback_url']], path, item['sha256'])
+        download([item['source_url']] + item.get('alternate_urls', []) + [item['fallback_url']],
+                 path, item['sha256'])
         item['bytes'] = path.stat().st_size
 
     with ThreadPoolExecutor(max_workers=4) as pool:
