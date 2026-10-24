@@ -50,10 +50,25 @@ jobs:
           $p = Start-Process msiexec.exe -ArgumentList "/i `"$msi`" /qn /norestart ADDLOCAL=ALL" -Wait -PassThru
           if ($p.ExitCode -notin @(0,3010)) { throw "Runtime installation failed: $($p.ExitCode)" }
           Add-Content -LiteralPath $env:GITHUB_PATH -Value 'C:\Program Files\gstreamer\1.0\mingw_x86_64\bin'
-      - name: Set up x64 Visual Studio build shell
-        uses: egor-tensin/vs-shell@7710434f30f873ff4ab78184b74cc576a10726d6
-        with:
-          arch: x64
+      - name: Select the Qt 5.15.2-compatible MSVC 14.44 toolset
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # MSVC 14.51 removed stdext iterators still used by Qt 5.15.2.
+          # The hosted VS2026 image also provides the supported 14.44 toolset.
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+          $vs = (& $vswhere -products '*' -latest -format json | ConvertFrom-Json | Select-Object -First 1)
+          $tools = Join-Path $vs.installationPath 'Common7\Tools'
+          $module = Join-Path $tools 'Microsoft.VisualStudio.DevShell.dll'
+          if (!(Test-Path $module)) { $module = Join-Path $tools 'vsdevshell\Microsoft.VisualStudio.DevShell.dll' }
+          Import-Module $module
+          Enter-VsDevShell -VsInstanceId $vs.instanceId -SkipAutomaticLocation -DevCmdArguments '-arch=x64 -host_arch=x64 -vcvars_ver=14.44' | Out-Null
+          if (!$env:VCToolsVersion.StartsWith('14.44.')) { throw "Wrong MSVC toolset: $env:VCToolsVersion" }
+          foreach ($name in @('Path','INCLUDE','LIB','LIBPATH','VCToolsInstallDir','VCToolsVersion','VCINSTALLDIR','VSINSTALLDIR','VisualStudioVersion','VSCMD_VER','VSCMD_ARG_HOST_ARCH','VSCMD_ARG_TGT_ARCH','WindowsSdkDir','WindowsSDKVersion','WindowsSDKLibVersion','UniversalCRTSdkDir','UCRTVersion')) {
+            $value = [Environment]::GetEnvironmentVariable($name,'Process')
+            if ($value) { Add-Content -LiteralPath $env:GITHUB_ENV -Value "$name=$value" }
+          }
+          Write-Host "Selected MSVC $env:VCToolsVersion"
       - name: Configure current source with the exact spdlog submodule
         shell: pwsh
         run: cmake -S . -B source-build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSPDLOG_USE_BUNDLED=ON '-DCMAKE_POLICY_VERSION_MINIMUM=3.5'
