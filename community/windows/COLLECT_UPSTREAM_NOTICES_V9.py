@@ -16,8 +16,15 @@ import zipfile
 from MIRROR_TRANSITIVE_SOURCES_V9 import download
 
 LEGAL = re.compile(r'^(copying\d*|licen[cs]e\d*|licensing|notice|authors|copyright)([._-].*)?$', re.I)
-ZIP_NAME = 'OpenKJ-v9-Upstream-Notices.zip'
-JSON_NAME = 'OpenKJ-v9-Upstream-Notice-Evidence.json'
+ZIP_NAME = 'OpenKJ-v9-Upstream-Notices-v2.zip'
+JSON_NAME = 'OpenKJ-v9-Upstream-Notice-Evidence-v2.json'
+
+
+def legal_name(name):
+    parts=PurePosixPath(name).parts
+    return (bool(LEGAL.match(PurePosixPath(name).name))
+            or any(p.upper() in {'LICENSES','LICENCES'} for p in parts[:-1])
+            or name.endswith('/.reuse/dep5') or PurePosixPath(name).name=='REUSE.toml')
 
 
 def sha(data): return hashlib.sha256(data).hexdigest()
@@ -71,13 +78,15 @@ def main():
                 print('Collecting original legal documents:',package,flush=True)
                 if sha(raw)!=source['sha256']:raise RuntimeError('Upstream source digest mismatch')
                 count=0
-                def collect(name,data):
+                def collect(name,data,output_relative=None,byte_range=None):
                     nonlocal total,count
                     parts=PurePosixPath(name).parts
                     if not parts or '..' in parts or PurePosixPath(name).is_absolute():
                         raise RuntimeError('Unsafe legal-document path')
                     # Strip just the upstream archive's top directory.
-                    relative='/'.join(parts[1:]) if len(parts)>1 else parts[0]
+                    relative=output_relative or ('/'.join(parts[1:]) if len(parts)>1 else parts[0])
+                    relative='/'.join('_dot_'+p[1:] if p.startswith('.') else p
+                                      for p in PurePosixPath(relative).parts)
                     target=package+'/'+relative
                     if len(data)>2*1024*1024 or b'\x00' in data:
                         skipped.append({'package':package,'path':name,'reason':'not a small text document'});return
@@ -90,22 +99,32 @@ def main():
                     evidence.append({'installed_supplement_path':target,'sha256':sha(data),
                         'source_archive':source['archive'],'source_archive_sha256':source['sha256'],
                         'source_member':name,'bytes':len(data)})
+                    if byte_range is not None:evidence[-1]['source_byte_range']=byte_range
                 if zipfile.is_zipfile(io.BytesIO(raw)):
                     with zipfile.ZipFile(io.BytesIO(raw)) as source_zip:
                         for info in source_zip.infolist():
-                            if not info.is_dir() and LEGAL.match(PurePosixPath(info.filename).name):
+                            if package=='sqlite3' and info.filename.endswith('/sqlite3.c'):
+                                data=source_zip.read(info)
+                                start=data.find(b'/*\n** 2001 September 15')
+                                end=data.find(b'*/',start)+2 if start>=0 else -1
+                                if start<0 or end<=start or b'disclaims copyright' not in data[start:end]:
+                                    raise RuntimeError('SQLite source dedication header not found')
+                                collect(info.filename,data[start:end],'sqlite3-source-dedication.txt',[start,end])
+                            if not info.is_dir() and legal_name(info.filename):
                                 if info.file_size>2*1024*1024:raise RuntimeError('Oversized legal document')
                                 collect(info.filename,source_zip.read(info))
                 else:
                     with tarfile.open(fileobj=io.BytesIO(raw),mode='r:*') as source_tar:
                         for info in source_tar:
-                            if not LEGAL.match(PurePosixPath(info.name).name):continue
+                            if not legal_name(info.name):continue
                             if not info.isfile():
                                 skipped.append({'package':package,'path':info.name,'reason':'non-regular legal-document alias'});continue
                             if info.size>2*1024*1024:raise RuntimeError('Oversized legal document')
                             collect(info.name,source_tar.extractfile(info).read())
                 packages.append({'recipe':package,'version':source['version'],
                                  'source_sha256':source['sha256'],'legal_files_preserved':count})
+    if len({n.casefold() for n in docs})!=len(docs):
+        raise RuntimeError('Notice paths would collide on Windows')
     report={'purpose':'Original source legal/attribution text preservation',
         'source_package_count':len(packages),'document_count':len(docs),
         'packages':packages,'documents':evidence,'skipped':skipped,
