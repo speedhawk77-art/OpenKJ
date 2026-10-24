@@ -122,6 +122,11 @@ jobs:
           std_id="$(printf '%s' "$release" | jq -r --arg name "$std_name" '.assets[] | select(.name==$name) | .id')"
           gh api -H 'Accept: application/octet-stream' "repos/${GITHUB_REPOSITORY}/releases/assets/${std_id}" > rust-standard-notices.zip
           printf '%s  %s\n' '049b80431100e4108e6d26cfeaa6a00433b7231f2f03024d03ddd42f688a57eb' rust-standard-notices.zip | sha256sum -c -
+          qt_name='OpenKJ-v9-Qt-Notices.zip'
+          test "$(printf '%s' "$release" | jq --arg name "$qt_name" '[.assets[] | select(.name==$name)] | length')" -eq 1
+          qt_id="$(printf '%s' "$release" | jq -r --arg name "$qt_name" '.assets[] | select(.name==$name) | .id')"
+          gh api -H 'Accept: application/octet-stream' "repos/${GITHUB_REPOSITORY}/releases/assets/${qt_id}" > qt-notices.zip
+          printf '%s  %s\n' '0f9f9d177e18ff52c61264bad6cdb256db7a42bcf4c8a491407a5e34f4301238' qt-notices.zip | sha256sum -c -
           python community/windows/STAGE_OPENKJ_COMPLIANCE_CANDIDATE_V9.py \
             --cleaned 'extracted/{app}' \
             --repo . \
@@ -130,6 +135,7 @@ jobs:
             --notice-supplement upstream-notices.zip \
             --rust-notice-supplement rust-notices.zip \
             --rust-standard-notice-supplement rust-standard-notices.zip \
+            --qt-notice-supplement qt-notices.zip \
             --omit-openh264
           python community/windows/PREPARE_SOURCE_BUILT_CANDIDATE_V9.py \
             --candidate candidate --original 'extracted/{app}' --bundle source-built-app.zip \

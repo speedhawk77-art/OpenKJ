@@ -64,6 +64,7 @@ def main()->int:
     ap.add_argument('--notice-supplement',type=Path,help='Verified v2 upstream notice bundle (optional)')
     ap.add_argument('--rust-notice-supplement',type=Path,help='Verified librsvg locked Rust crate notice bundle (optional)')
     ap.add_argument('--rust-standard-notice-supplement',type=Path,help='Verified Rust 1.85.0 standard-library notice bundle (optional)')
+    ap.add_argument('--qt-notice-supplement',type=Path,help='Verified original Qt module attribution and notice bundle (optional)')
     x=ap.parse_args()
     cleaned=x.cleaned.expanduser().resolve(); repo=x.repo.expanduser().resolve()
     vc=x.vc_redist.expanduser().resolve()
@@ -109,6 +110,9 @@ def main()->int:
         if x.rust_standard_notice_supplement:
             standard_notice_count=install_notice_supplement(x.rust_standard_notice_supplement,
                 out/'licenses'/'rust-standard-library-notices')
+        qt_notice_count=0
+        if x.qt_notice_supplement:
+            qt_notice_count=install_notice_supplement(x.qt_notice_supplement,out/'licenses'/'qt-module-notices')
         shutil.copy2(repo/'THIRD_PARTY_NOTICES.md',out/'licenses'/'THIRD_PARTY_NOTICES-updated.md')
         shutil.copy2(repo/'community'/'WINDOWS_DLL_REPLACEMENT_GUIDE_v9.md',out/'licenses'/'WINDOWS_DLL_REPLACEMENT_GUIDE_v9.md')
         if x.omit_openh264:
@@ -147,6 +151,8 @@ def main()->int:
             'original_license_directory_retained':True,
             'extra_source_notice_texts':len([p for p in supplemental.rglob('*') if p.is_file()]),
             'archive_derived_notice_files':archive_notice_count,
+            'qt_module_notice_files':qt_notice_count,
+            'qt_notice_supplement_sha256':digest(x.qt_notice_supplement) if x.qt_notice_supplement else None,
             'rust_standard_notice_files':standard_notice_count,
             'rust_standard_notice_supplement_sha256':digest(x.rust_standard_notice_supplement) if x.rust_standard_notice_supplement else None,
             'rust_crate_notice_files':rust_notice_count,
