@@ -9,6 +9,9 @@ on:
       - community/windows/STAGE_OPENKJ_COMPLIANCE_CANDIDATE_V9.py
       - community/windows/AUDIT_CANDIDATE_IMPORTS_V9.py
       - community/windows/pe-audit-requirements.txt
+      - community/windows/PROBE_GSTREAMER_CANDIDATE_V9.py
+      - community/windows/VERIFY_TOOLCHAIN_RUNTIME_V9.py
+      - community/windows/blue-h264.mp4.b64
       - community/licenses/**
       - THIRD_PARTY_NOTICES.md
       - community/WINDOWS_DLL_REPLACEMENT_GUIDE_v9.md
@@ -20,7 +23,7 @@ jobs:
   verify-embedded-runtime:
     if: github.repository == 'speedhawk77-art/OpenKJ'
     runs-on: windows-2025
-    timeout-minutes: 25
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -115,11 +118,25 @@ jobs:
           python community/windows/AUDIT_CANDIDATE_IMPORTS_V9.py \
             --original 'extracted/{app}' --candidate candidate \
             --report audit-reports/OpenKJ-v9-Candidate-Import-Audit.json
+      - name: Probe isolated GStreamer media pipelines
+        shell: bash
+        run: |
+          set -euo pipefail
+          python community/windows/PROBE_GSTREAMER_CANDIDATE_V9.py \
+            --candidate candidate --fixture community/windows/blue-h264.mp4.b64 \
+            --report audit-reports/OpenKJ-v9-GStreamer-Probes.json
+      - name: Match GNU runtime DLLs to pinned compiler toolchains
+        shell: bash
+        run: |
+          set -euo pipefail
+          python community/windows/VERIFY_TOOLCHAIN_RUNTIME_V9.py \
+            --candidate candidate --cache toolchain-cache \
+            --report audit-reports/OpenKJ-v9-Toolchain-Runtime-Audit.json
       - name: Preserve text audit evidence only
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: OpenKJ-v9-Candidate-Import-Audit
-          path: audit-reports/OpenKJ-v9-Candidate-Import-Audit.json
+          path: audit-reports/*.json
           if-no-files-found: warn
           retention-days: 30

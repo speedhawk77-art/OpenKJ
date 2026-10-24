@@ -31,6 +31,7 @@ BATCHES = {
         'libsrtp', 'svt-av1', 'svt-jpeg-xs', 'libtheora', 'tiff',
         'libvorbis', 'wavpack', 'libxml2', 'zlib'),
     4: ('libffi',),
+    5: ('gcc-sources', 'mingw-w64-sources', 'binutils', 'gmp', 'mpfr', 'mpc', 'isl'),
 }
 LIBFFI_TAG = 'meson-3.2.9999.3'
 LIBFFI_TAG_OBJECT = '7b21e70fa237c4ee5ac465bbb6bfd8caae9219c2'
@@ -145,7 +146,8 @@ def main() -> None:
     sources = []
     with tarfile.open(cerbero, 'r:gz') as archive:
         for name in sorted(BATCHES[args.batch]):
-            member = f'cerbero-{COMMIT}/recipes/{name}.recipe'
+            recipe_dir = 'recipes-toolchain' if args.batch == 5 else 'recipes'
+            member = f'cerbero-{COMMIT}/{recipe_dir}/{name}.recipe'
             stream = archive.extractfile(member)
             if stream is None:
                 raise RuntimeError('Missing recipe: ' + member)
@@ -204,12 +206,17 @@ def main() -> None:
         'remaining_gaps': [
             'All other transitive libraries and any additional build dependencies',
             'Exact shipped SDK build configuration and source/binary matching',
-            ('MinGW/GCC toolchain sources; libffi binary build matching is unproven'
+            ('Exact compiler/runtime binary build matching; windows-default-manifest Git source'
+             if args.batch == 5 else
+             'MinGW/GCC toolchain sources; libffi binary build matching is unproven'
              if args.batch == 4 else 'MinGW/GCC toolchain sources and libffi Git source'),
             'Application executable build revision attestation',
             'Windows playback and rebuilt-installer validation',
         ],
     }
+    if args.batch == 5:
+        manifest['source_recipe_families_addressed'] = ['mingw-runtime', 'winpthreads-runtime']
+        manifest['scope'] = 'Compiler/runtime and compiler build dependencies from recipes-toolchain; not proof of shipped DLL build matching'
     data = (json.dumps(manifest, indent=2, sort_keys=True) + '\n').encode()
     (output / manifest_name).write_bytes(data)
     with zipfile.ZipFile(output / bundle_name, 'w', compression=zipfile.ZIP_STORED) as bundle:
