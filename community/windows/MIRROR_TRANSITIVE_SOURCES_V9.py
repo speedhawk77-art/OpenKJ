@@ -30,7 +30,12 @@ BATCHES = {
         'pcre2', 'pixman', 'libpng', 'libpsl', 'speex', 'sqlite3',
         'libsrtp', 'svt-av1', 'svt-jpeg-xs', 'libtheora', 'tiff',
         'libvorbis', 'wavpack', 'libxml2', 'zlib'),
+    4: ('libffi',),
 }
+LIBFFI_TAG = 'meson-3.2.9999.3'
+LIBFFI_TAG_OBJECT = '7b21e70fa237c4ee5ac465bbb6bfd8caae9219c2'
+LIBFFI_COMMIT = '258a091198308063770643cf74a0deb6e121196c'
+LIBFFI_SHA = '184d16c0ebcfc7c4bb1e2dff5d0c16b51ea9892eadf6b0fedf0ae34a39f3e355'
 
 
 def sha256(path: Path) -> str:
@@ -78,7 +83,7 @@ def source_literal(node: ast.AST, fields: dict[str, str]) -> str:
     return ast.literal_eval(node)
 
 
-def read_recipe(text: str, name: str) -> dict[str, str]:
+def read_recipe(text: str, name: str, git_source: bool = False) -> dict[str, str]:
     classes = [n for n in ast.parse(text).body
                if isinstance(n, ast.ClassDef) and n.name == 'Recipe']
     if len(classes) != 1:
@@ -88,9 +93,9 @@ def read_recipe(text: str, name: str) -> dict[str, str]:
         if isinstance(node, ast.Assign):
             for target in node.targets:
                 if isinstance(target, ast.Name) and target.id in (
-                        'name', 'version', 'url', 'tarball_checksum'):
+                        'name', 'version', 'url', 'tarball_checksum', 'commit'):
                     fields[target.id] = source_literal(node.value, fields)
-    if fields.get('name') != name or len(fields.get('tarball_checksum', '')) != 64:
+    if fields.get('name') != name or (not git_source and len(fields.get('tarball_checksum', '')) != 64):
         raise RuntimeError('Incomplete source pin: ' + name)
     return fields
 
@@ -145,7 +150,23 @@ def main() -> None:
             if stream is None:
                 raise RuntimeError('Missing recipe: ' + member)
             raw = stream.read()
-            fields = read_recipe(raw.decode('utf-8'), name)
+            fields = read_recipe(raw.decode('utf-8'), name, git_source=name == 'libffi')
+            if name == 'libffi':
+                if fields.get('commit') != LIBFFI_TAG:
+                    raise RuntimeError('Unexpected libffi recipe Git ref')
+                remote = 'https://gitlab.freedesktop.org/gstreamer/meson-ports/libffi.git'
+                refs = subprocess.check_output([
+                    'git', 'ls-remote', remote, f'refs/tags/{LIBFFI_TAG}',
+                    f'refs/tags/{LIBFFI_TAG}^{{}}'], text=True, timeout=90)
+                actual_refs = dict(line.split()[::-1] for line in refs.splitlines())
+                if actual_refs != {f'refs/tags/{LIBFFI_TAG}': LIBFFI_TAG_OBJECT,
+                                   f'refs/tags/{LIBFFI_TAG}^{{}}': LIBFFI_COMMIT}:
+                    raise RuntimeError('libffi upstream tag/commit pin mismatch')
+                fields['url'] = ('https://gitlab.freedesktop.org/gstreamer/meson-ports/'
+                    f'libffi/-/archive/{LIBFFI_COMMIT}/libffi-{LIBFFI_COMMIT}.tar.gz')
+                # This pin is independently recorded from the immutable Git
+                # commit archive, not declared as a recipe tarball checksum.
+                fields['tarball_checksum'] = LIBFFI_SHA
             url = source_url(fields)
             filename = url.rsplit('/', 1)[1]
             sources.append({
@@ -160,6 +181,10 @@ def main() -> None:
                 'recipe_sha256': hashlib.sha256(raw).hexdigest(),
                 'recipe_path_in_cerbero_archive': member,
             })
+            if name == 'libffi':
+                sources[-1].update(git_tag=LIBFFI_TAG, git_tag_object=LIBFFI_TAG_OBJECT,
+                    git_commit=LIBFFI_COMMIT,
+                    checksum_origin='Locally verified immutable Git commit archive; not a recipe tarball checksum')
 
     def fetch(item: dict) -> None:
         path = cache / Path(item['archive']).relative_to('upstream')
@@ -179,7 +204,8 @@ def main() -> None:
         'remaining_gaps': [
             'All other transitive libraries and any additional build dependencies',
             'Exact shipped SDK build configuration and source/binary matching',
-            'MinGW/GCC toolchain sources and libffi Git source',
+            ('MinGW/GCC toolchain sources; libffi binary build matching is unproven'
+             if args.batch == 4 else 'MinGW/GCC toolchain sources and libffi Git source'),
             'Application executable build revision attestation',
             'Windows playback and rebuilt-installer validation',
         ],
