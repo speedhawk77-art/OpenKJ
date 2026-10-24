@@ -62,6 +62,7 @@ def main()->int:
     ap.add_argument('--omit-openh264',action='store_true',help='Exclude both OpenH264 DLLs; video decoding MUST be retested')
     ap.add_argument('--out',type=Path,help='Output folder (default: adjacent OpenKJ-Compliance-Candidate-v9)')
     ap.add_argument('--notice-supplement',type=Path,help='Verified v2 upstream notice bundle (optional)')
+    ap.add_argument('--rust-notice-supplement',type=Path,help='Verified librsvg locked Rust crate notice bundle (optional)')
     x=ap.parse_args()
     cleaned=x.cleaned.expanduser().resolve(); repo=x.repo.expanduser().resolve()
     vc=x.vc_redist.expanduser().resolve()
@@ -99,6 +100,10 @@ def main()->int:
         if x.notice_supplement:
             archive_notice_count=install_notice_supplement(x.notice_supplement,
                 out/'licenses'/'upstream-source-archive-notices')
+        rust_notice_count=0
+        if x.rust_notice_supplement:
+            rust_notice_count=install_notice_supplement(x.rust_notice_supplement,
+                out/'licenses'/'rust-crate-notices')
         shutil.copy2(repo/'THIRD_PARTY_NOTICES.md',out/'licenses'/'THIRD_PARTY_NOTICES-updated.md')
         shutil.copy2(repo/'community'/'WINDOWS_DLL_REPLACEMENT_GUIDE_v9.md',out/'licenses'/'WINDOWS_DLL_REPLACEMENT_GUIDE_v9.md')
         if x.omit_openh264:
@@ -137,6 +142,8 @@ def main()->int:
             'original_license_directory_retained':True,
             'extra_source_notice_texts':len([p for p in supplemental.rglob('*') if p.is_file()]),
             'archive_derived_notice_files':archive_notice_count,
+            'rust_crate_notice_files':rust_notice_count,
+            'rust_notice_supplement_sha256':digest(x.rust_notice_supplement) if x.rust_notice_supplement else None,
             'notice_supplement_sha256':digest(x.notice_supplement) if x.notice_supplement else None,
             'vc_redist_sha256':actual,
             'vc_redist_signed_status':'Previously validated Microsoft signed for this SHA-256; independently verify on build PC',

@@ -95,12 +95,18 @@ jobs:
           notice_sha="$(printf '%s' "$release" | jq -r --arg name "$notice_name" '.assets[] | select(.name==$name) | .digest' | sed 's/^sha256://')"
           gh api -H 'Accept: application/octet-stream' "repos/${GITHUB_REPOSITORY}/releases/assets/${notice_id}" > upstream-notices.zip
           printf '%s  %s\n' "$notice_sha" upstream-notices.zip | sha256sum -c -
+          rust_name='OpenKJ-v9-librsvg-Rust-Notices.zip'
+          test "$(printf '%s' "$release" | jq --arg name "$rust_name" '[.assets[] | select(.name==$name)] | length')" -eq 1
+          rust_id="$(printf '%s' "$release" | jq -r --arg name "$rust_name" '.assets[] | select(.name==$name) | .id')"
+          gh api -H 'Accept: application/octet-stream' "repos/${GITHUB_REPOSITORY}/releases/assets/${rust_id}" > rust-notices.zip
+          printf '%s  %s\n' '3082565fe65a2dcf6e80fb387ec89f92663bd9e7096d5626ff4365f1da0030ef' rust-notices.zip | sha256sum -c -
           python community/windows/STAGE_OPENKJ_COMPLIANCE_CANDIDATE_V9.py \
             --cleaned 'extracted/{app}' \
             --repo . \
             --vc-redist "$(find extracted -type f -iname 'vc_redist.x64.exe' -print -quit)" \
             --out candidate \
             --notice-supplement upstream-notices.zip \
+            --rust-notice-supplement rust-notices.zip \
             --omit-openh264
       - name: Record candidate preparation result
         shell: python
@@ -119,8 +125,9 @@ jobs:
               '- Removed for testing: libopenh264-7.dll and gst-plugins/libgstopenh264.dll.\n'
               f"- Supplemental source notice files added: {d['extra_source_notice_texts']}.\n"
               f"- Additional archive-derived notice files: {d['archive_derived_notice_files']}.\n"
+              f"- Original Rust crate legal documents added: {d['rust_crate_notice_files']}.\n"
               f"- Total candidate notice files: {len(d['candidate_notice_sha256'])}.\n"
-              '- Pending: Windows playback, rebuilt-installer test, corresponding-source review.\n'
+              '- Physical playback and corresponding-source review remain pending; later steps test the rebuilt installer.\n'
               '- Candidate binaries stay on this temporary runner; no release assets are changed.\n'
           )
           print(text)
@@ -192,3 +199,25 @@ jobs:
           path: audit-reports/*.json
           if-no-files-found: warn
           retention-days: 30
+      - name: Preserve successful text evidence in the unchanged draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PYCODE'
+          from pathlib import Path
+          import zipfile
+          files=sorted(Path('audit-reports').glob('*.json'))+[Path('candidate/CANDIDATE-BUILD-EVIDENCE-v9.json')]
+          assert files and all(p.is_file() and p.suffix=='.json' for p in files)
+          with zipfile.ZipFile('remote-audit-evidence.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for p in files:z.write(p,p.name)
+          PYCODE
+          name="OpenKJ-v9-Remote-Audit-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.zip"
+          expected="sha256:$(sha256sum remote-audit-evidence.zip | awk '{print $1}')"
+          release="$(gh api "repos/${GITHUB_REPOSITORY}/releases/421204266")"
+          printf '%s' "$release" | jq -e --arg name "$name" '.draft==true and .published_at==null and ([.assets[]|select(.name==$name)]|length)==0' >/dev/null
+          curl -fLsS -X POST -H "Authorization: Bearer ${GH_TOKEN}" -H 'Content-Type: application/zip' \
+            --data-binary @remote-audit-evidence.zip "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/421204266/assets?name=${name}" > uploaded-audit.json
+          jq -e --arg pin "$expected" '.digest==$pin and .state=="uploaded"' uploaded-audit.json >/dev/null
+          gh api "repos/${GITHUB_REPOSITORY}/releases/421204266" | jq -e --arg name "$name" --arg pin "$expected" '.draft==true and .published_at==null and ([.assets[]|select(.name==$name and .digest==$pin)]|length)==1' >/dev/null
