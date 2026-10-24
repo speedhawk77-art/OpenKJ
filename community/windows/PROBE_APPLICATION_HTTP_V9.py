@@ -64,7 +64,9 @@ def main():
             print('Isolated app HTTP probe:', 'PASS' if result['passed'] else 'FAIL/NOT READY',
                   f"({sum(x['passed'] for x in checks)}/{len(checks)} route checks)")
         finally:
-            process.terminate()
+            if os.name=='nt':
+                subprocess.run(['taskkill','/PID',str(process.pid),'/T','/F'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+            else:process.terminate()
             try:process.wait(timeout=10)
             except subprocess.TimeoutExpired:process.kill();process.wait(timeout=5)
 

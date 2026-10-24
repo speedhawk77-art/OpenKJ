@@ -16,6 +16,7 @@ def main():
     evidence=Path('source-build-evidence.json');data=json.loads(evidence.read_text())
     assert data['source_commit']==os.environ['GITHUB_SHA']
     app=Path('source-build/openkj.exe');assert digest(app)==data['executable_sha256']
+    launcher=Path('source-build/OpenKJ-Remote.exe');assert digest(launcher)==data['launcher_sha256']
     probe=json.loads(Path('source-app-http-probe.json').read_text());assert probe['passed'] and len(probe['checks'])==11
     tests=json.loads(Path('optional-codec-test-evidence.json').read_text());assert tests['passed']
     names=subprocess.check_output(['git','ls-files','--recurse-submodules','-z']).decode().split('\0')
@@ -30,7 +31,7 @@ def main():
     data['application_source_tracked_files']=len(files)
     evidence.write_text(json.dumps(data,indent=2)+'\n')
     bundle=Path('OpenKJ-v9-Source-Built-App-'+os.environ['GITHUB_SHA']+'.zip')
-    writezip(bundle,[('openkj.exe',app),('source-build-evidence.json',evidence),
+    writezip(bundle,[('openkj.exe',app),('OpenKJ-Remote.exe',launcher),('source-build-evidence.json',evidence),
         ('OpenKJ-v9-Application-Source.zip',source),('optional-codec-test-evidence.json',Path('optional-codec-test-evidence.json'))])
     print('Draft-only source-built bundle:',bundle.name,'SHA256:',digest(bundle))
 if __name__=='__main__':main()

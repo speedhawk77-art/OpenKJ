@@ -47,7 +47,7 @@ def main():
         '/SP-', '/NOICONS', '/DIR=' + str(installed), '/LOG=' + str(work / 'install.log')])
     if p.returncode not in (0, 3010): raise RuntimeError('Test installation failed: ' + str(p.returncode))
     attestation = json.loads(args.source_attestation.read_text()) if args.source_attestation else None
-    if attestation and (attestation['current_build_source_attested'] is not True or attestation['executable_sha256'] != sha256(root/'openkj.exe') or attestation['cisco_binary_bundled'] is not False):
+    if attestation and (attestation['current_build_source_attested'] is not True or attestation['executable_sha256'] != sha256(root/'openkj.exe') or attestation['launcher_sha256'] != sha256(root/'OpenKJ-Remote.exe') or attestation['cisco_binary_bundled'] is not False):
         raise RuntimeError('Source application attestation mismatch')
     expected_count = 339 if attestation else 338
     expected = bins(root); actual = bins(installed)

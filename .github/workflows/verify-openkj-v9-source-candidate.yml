@@ -202,7 +202,7 @@ jobs:
         run: |
           set -euo pipefail
           python community/windows/PROBE_APPLICATION_HTTP_V9.py \
-            --app installer-roundtrip/installed/openkj.exe \
+            --app installer-roundtrip/installed/OpenKJ-Remote.exe \
             --report audit-reports/OpenKJ-v9-Installed-App-HTTP-Probe.json
       - name: Preserve text audit evidence only
         if: always()

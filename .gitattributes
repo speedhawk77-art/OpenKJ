@@ -1,0 +1,2 @@
+# Preserve original legal-document bytes, including in Windows CI resources.
+community/licenses/** -text
