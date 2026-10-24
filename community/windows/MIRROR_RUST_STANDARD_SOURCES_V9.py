@@ -20,7 +20,7 @@ def main():
  channel=inputs/'channel-rust-1.85.0.toml';download(['https://static.rust-lang.org/dist/channel-rust-1.85.0.toml'],channel,CHANNEL)
  c=tomllib.loads(channel.read_text());p=c['pkg']['rust-src']['target']['*'];assert p['xz_hash']==SOURCE
  src=inputs/'rust-src-1.85.0.tar.xz';download([p['xz_url']],src,SOURCE)
- registry={};locks=[]
+ registry={};crate_names={};locks=[]
  with tarfile.open(src) as t:
   for m in t:
    if m.isfile() and m.name.endswith('/Cargo.lock'):
@@ -32,9 +32,9 @@ def main():
      if not re.fullmatch('[0-9a-f]{64}',pkg.get('checksum','')):raise RuntimeError('Missing lock checksum')
      name=f"{pkg['name']}-{pkg['version']}.crate"
      if name in registry and registry[name]!=pkg['checksum']:raise RuntimeError('Conflicting crate checksum')
-     registry[name]=pkg['checksum']
+     registry[name]=pkg['checksum'];crate_names[name]=pkg['name']
  def fetch(item):
-  name,pin=item;crate=name.rsplit('-',1)[0];download([f'https://static.crates.io/crates/{crate}/{name}'],inputs/name,pin)
+  name,pin=item;crate=crate_names[name];download([f'https://static.crates.io/crates/{crate}/{name}'],inputs/name,pin)
  with ThreadPoolExecutor(max_workers=8) as pool:list(pool.map(fetch,registry.items()))
  docs={};evidence=[]
  for path,pin in [(src,SOURCE)]+[(inputs/n,p) for n,p in sorted(registry.items())]:
