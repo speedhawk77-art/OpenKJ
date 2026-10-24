@@ -254,7 +254,7 @@ jobs:
           r=json.loads(Path('audit-reports/OpenKJ-v9-Installer-Roundtrip.json').read_text())
           assert r['passed'] and r['application_binary_build_commit_attested'] is True
           PYCODE
-          name="OpenKJ-v9-Source-Candidate-${SOURCE_BUILT_COMMIT}.exe"
+          name="OpenKJ-v9-Source-Candidate-${SOURCE_BUILT_COMMIT}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.exe"
           file='OpenKJ-Installer-Output/OpenKJ-v9-Setup.exe'
           expected="sha256:$(sha256sum "$file" | awk '{print $1}')"
           release="$(gh api "repos/${GITHUB_REPOSITORY}/releases/421204266")"
@@ -263,3 +263,25 @@ jobs:
             --data-binary "@$file" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/421204266/assets?name=${name}" > uploaded-installer.json
           jq -e --arg pin "$expected" '.digest==$pin and .state=="uploaded"' uploaded-installer.json >/dev/null
           gh api "repos/${GITHUB_REPOSITORY}/releases/421204266" | jq -e '.draft==true and .published_at==null' >/dev/null
+      - name: Preserve standalone exact application source for eventual matching delivery
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          name="OpenKJ-v9-Application-Source-${SOURCE_BUILT_COMMIT}.zip"
+          expected="sha256:$(sha256sum "$name" | awk '{print $1}')"
+          release="$(gh api "repos/${GITHUB_REPOSITORY}/releases/421204266")"
+          printf '%s' "$release" | jq -e '.draft==true and .published_at==null' >/dev/null
+          count="$(printf '%s' "$release" | jq --arg name "$name" '[.assets[]|select(.name==$name)]|length')"
+          if [ "$count" -eq 0 ]; then
+            curl -fLsS -X POST -H "Authorization: Bearer ${GH_TOKEN}" -H 'Content-Type: application/zip' \
+              --data-binary "@$name" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/421204266/assets?name=${name}" > uploaded-application-source.json
+            jq -e --arg pin "$expected" '.digest==$pin and .state=="uploaded"' uploaded-application-source.json >/dev/null
+          elif [ "$count" -eq 1 ]; then
+            actual="$(printf '%s' "$release" | jq -r --arg name "$name" '.assets[]|select(.name==$name)|.digest')"
+            test "$actual" = "$expected" || { echo 'Conflicting existing source asset'; exit 2; }
+          else
+            exit 3
+          fi
+          gh api "repos/${GITHUB_REPOSITORY}/releases/421204266" | jq -e --arg name "$name" --arg pin "$expected" '.draft==true and .published_at==null and ([.assets[]|select(.name==$name and .digest==$pin)]|length)==1' >/dev/null

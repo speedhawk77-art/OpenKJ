@@ -26,6 +26,7 @@ def main():
             or hashlib.sha256(launcher).hexdigest()!=data['launcher_sha256']
             or hashlib.sha256(source).hexdigest()!=data['application_source_archive_sha256'] or tests['passed'] is not True):
             raise RuntimeError('Source app build evidence mismatch')
+        (root.parent/('OpenKJ-v9-Application-Source-'+a.source_commit+'.zip')).write_bytes(source)
         (root/'openkj.exe').write_bytes(exe)
         (root/'OpenKJ-Remote.exe').write_bytes(launcher)
     plugin=Path('optional-codecs/openh264/libgstopenh264.dll');(root/plugin).parent.mkdir(parents=True,exist_ok=True)
