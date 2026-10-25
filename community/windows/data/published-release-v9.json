@@ -1,0 +1,26 @@
+{
+  "release_id": 423591307,
+  "tag": "v9.0-offline-remote.2",
+  "url": "https://github.com/speedhawk77-art/OpenKJ/releases/tag/v9.0-offline-remote.2",
+  "published_at": "2026-10-25T19:58:57Z",
+  "draft": false,
+  "publication_workflow_run": 40228571754,
+  "publication_commit": "42cf2ba90130118d25a3ca89d5cc1df1ed25d257",
+  "owner_authorized_publication": true,
+  "owner_reported_refreshed_installer_passed": true,
+  "asset_count": 41,
+  "installer": [
+    {
+      "id": 675832181,
+      "name": "OpenKJ-v9-Source-Candidate-016d5c3135bbc8073b96881e49e19feb97359101-40222179361-1.exe",
+      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/v9.0-offline-remote.2/OpenKJ-v9-Source-Candidate-016d5c3135bbc8073b96881e49e19feb97359101-40222179361-1.exe",
+      "bytes": 206894379,
+      "sha256": "7accc965efcc2a7f13df5699cc66bdd0c5f186cf09c829f737d77c89d62a1c12"
+    }
+  ],
+  "source_and_notice_assets": 39,
+  "checksum_file_sha256": "4d8c89863996843219ce468c7274319c1e8250ee76cc4f903d884dba4fe01aef",
+  "anonymous_downloads_checked": true,
+  "historical_working_release_id": 421204266,
+  "historical_working_release_should_remain_private": true
+}

@@ -6,11 +6,11 @@ The application is GPL-3.0; each bundled library retains its own terms.
 
 ## Source archives to accompany the installer
 
-The planned public release is
+The public release is
 [`v9.0-offline-remote.2`](https://github.com/speedhawk77-art/OpenKJ/releases/tag/v9.0-offline-remote.2).
-While it is a draft these downloads are owner-only. Publication must include
-the matching source assets alongside the installer; a private draft is not
-public source delivery. No written source offer is substituted for those files.
+The matching source assets accompany the installer and are publicly accessible
+without signing in. Keep these source downloads available with the binary.
+No written source offer is substituted for those files.
 
 | Component | Source assets |
 | --- | --- |

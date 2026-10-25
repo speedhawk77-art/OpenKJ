@@ -1,5 +1,7 @@
 # Release completion — 2026-10-25
 
+**Published on 2026-10-25 with Andrew’s approval:** [OpenKJ Offline Remote v9](https://github.com/speedhawk77-art/OpenKJ/releases/tag/v9.0-offline-remote.2). The owner confirmed the refreshed installer works. All 41 assets are public; anonymous installer/source access and the complete checksum file were verified. Publication run: [40228571754](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40228571754). Publication metadata: `windows/data/published-release-v9.json`. The prepublication snapshot remains in `verified-clean-draft-v9.json`.
+
 ## Current candidate
 
 Andrew reported that MP3+CDG, H.264 with sound, singer display and phone/tablet
@@ -73,9 +75,9 @@ The first clean-draft attempt created the draft but a tag-based lookup returned
 creation responses and uploads. The successful reruns above supersede those
 failed preparation attempts; no verification check was bypassed.
 
-## Ready draft and exact installer
+## Published release and exact installer
 
-- [Clean draft release 423591307](https://github.com/speedhawk77-art/OpenKJ/releases/tag/untagged-0bda9e68a675f5c69a51), planned public tag `v9.0-offline-remote.2`.
+- [Public release 423591307](https://github.com/speedhawk77-art/OpenKJ/releases/tag/v9.0-offline-remote.2), tag `v9.0-offline-remote.2`.
 - Installer: `OpenKJ-v9-Source-Candidate-016d5c3135bbc8073b96881e49e19feb97359101-40222179361-1.exe`.
 - Size: **206,894,379 bytes**; SHA-256 **`7accc965efcc2a7f13df5699cc66bdd0c5f186cf09c829f737d77c89d62a1c12`**.
 - Installer asset in the clean draft: **675832181**.
@@ -83,10 +85,10 @@ failed preparation attempts; no verification check was bypassed.
 - Exactly one installer, 39 source/notice/evidence assets and the checksum file.
 - Exact asset IDs, sizes, hashes and test scope: `windows/data/verified-clean-draft-v9.json`.
 
-The owner can download this draft while signed in. All required selected source
-archives accompany it, but draft assets remain private until publication. The
-release was independently confirmed **draft=true, published_at=null**. No
-publication action has been taken.
+The release is public and can be downloaded without signing in. All selected
+source archives accompany it. The release was independently confirmed
+**draft=false**, published at **2026-10-25T19:58:57Z** (4:58:57 p.m. ADT).
+The historical working release remains a private draft.
 
 Do not publish working draft 421204266 wholesale: it retains historical
 installers, including the old SDK-built OpenH264 payload. Those assets remain
@@ -108,7 +110,7 @@ Use branch `offline-remote-v9` and the Actions **Run workflow** controls:
    It can also be run manually with the successful candidate run ID. A different
    candidate will not overwrite a conflicting existing draft or source asset.
 
-The engineering and packaging checks listed here are complete. Publication is
-an owner decision, and the sources must remain available with the installer.
+The engineering and packaging checks listed here are complete. Publication was
+authorized by Andrew and completed; sources must remain available with the installer.
 These results do not claim independent reproduction of every upstream binary,
 exercise of every codec/hardware configuration, or a legal certification.

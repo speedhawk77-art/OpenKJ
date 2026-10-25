@@ -1,3 +1,5 @@
+**Unofficial community release.** This is a separate community edition, not an official release from the OpenKJ maintainers.
+
 OpenKJ Offline Remote v9 for Windows x64 provides local karaoke playback,
 a singer display and phone/tablet remote operation on the same local network.
 
@@ -20,4 +22,3 @@ The SDK-built OpenH264 runtime is excluded. Optional Cisco OpenH264 support is
 off by default and downloads the official binary separately on the end user's
 computer after showing the feature's original terms and attribution.
 
-This draft is prepared for final owner review. It has not been published.
