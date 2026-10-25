@@ -5,6 +5,7 @@ Requires GitHub CLI with GH_TOKEN. Does not delete assets or publish releases.
 """
 import argparse,hashlib,json,subprocess
 from pathlib import Path
+from urllib.parse import quote
 
 REPO='speedhawk77-art/OpenKJ'
 def gh(*args):
@@ -15,6 +16,12 @@ def sha(path):
     with path.open('rb') as f:
         for block in iter(lambda:f.read(1024*1024),b''):h.update(block)
     return h.hexdigest()
+def upload(release_id,path):
+    result=json.loads(gh('api',f'https://uploads.github.com/repos/{REPO}/releases/{release_id}/assets?name='+quote(path.name,safe=''),'--method','POST','--input',str(path),'-H','Content-Type: application/octet-stream'))
+    if result['state']!='uploaded' or result['digest']!='sha256:'+sha(path):
+        raise RuntimeError('Uploaded asset checksum mismatch: '+path.name)
+    print('Preserved:',path.name,flush=True)
+
 def private(release):
     if release['draft'] is not True or release['published_at'] is not None:
         raise RuntimeError('Release is not an unpublished draft')
@@ -81,8 +88,10 @@ def main():
         target=matches[0];private(target)
         if target['body']!=notes:raise RuntimeError('Existing target draft has different notes; review before changing it')
     else:
-        gh('release','create',tag,'--repo',REPO,'--draft','--target','offline-remote-v9','--title','OpenKJ Offline Remote v9','--notes-file',str(notes_path))
-        target=api('releases/tags/'+tag);private(target)
+        request=a.work/'create-draft.json'
+        request.write_text(json.dumps({'tag_name':tag,'target_commitish':'offline-remote-v9','name':'OpenKJ Offline Remote v9','body':notes,'draft':True}))
+        target=json.loads(gh('api',f'repos/{REPO}/releases','--method','POST','--input',str(request)))
+        private(target)
     expected={x['name']:x['digest'] for x in selected}
     if any(x['name'] not in set(expected)|{'SHA256SUMS.txt'} for x in target['assets']):raise RuntimeError('Unexpected asset in target draft; no assets deleted')
     for item in selected:
@@ -90,14 +99,14 @@ def main():
         present=[x for x in target['assets'] if x['name']==item['name']]
         if present:
             if len(present)!=1 or present[0]['digest']!=item['digest']:raise RuntimeError('Conflicting target draft asset')
-        else:gh('release','upload',tag,str(a.work/item['name']),'--repo',REPO)
+        else:upload(target['id'],a.work/item['name'])
     checksum=a.work/'SHA256SUMS.txt'
     checksum.write_text(''.join(x['digest'].removeprefix('sha256:')+'  '+x['name']+'\n' for x in sorted(selected,key=lambda x:x['name'])))
     target=api('releases/'+str(target['id']));private(target)
     sums=[x for x in target['assets'] if x['name']==checksum.name]
     if sums:
         if len(sums)!=1 or sums[0]['digest']!='sha256:'+sha(checksum):raise RuntimeError('Conflicting checksum asset')
-    else:gh('release','upload',tag,str(checksum),'--repo',REPO)
+    else:upload(target['id'],checksum)
     target=api('releases/'+str(target['id']));private(target)
     expected[checksum.name]='sha256:'+sha(checksum)
     if {x['name']:x['digest'] for x in target['assets']}!=expected:raise RuntimeError('Final target draft inventory mismatch')

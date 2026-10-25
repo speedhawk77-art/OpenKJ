@@ -1,5 +1,10 @@
 name: Prepare clean public-release draft
 on:
+  push:
+    branches: [offline-remote-v9]
+    paths:
+      - .github/workflows/prepare-openkj-v9-public-draft.yml
+      - community/windows/PREPARE_PUBLIC_DRAFT_V9.py
   workflow_dispatch:
     inputs:
       candidate_run:
@@ -28,5 +33,5 @@ jobs:
       - name: Verify evidence and prepare a separate draft without publishing
         env:
           GH_TOKEN: ${{ github.token }}
-          CANDIDATE_RUN: ${{ github.event.workflow_run.id || inputs.candidate_run }}
+          CANDIDATE_RUN: ${{ github.event.workflow_run.id || inputs.candidate_run || '40222179361' }}
         run: python3 community/windows/PREPARE_PUBLIC_DRAFT_V9.py --candidate-run "$CANDIDATE_RUN" --work public-draft-inputs
