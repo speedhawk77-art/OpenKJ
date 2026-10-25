@@ -1,0 +1,26 @@
+name: Publish owner-approved verified OpenKJ v9 release
+on:
+  push:
+    branches: [offline-remote-v9]
+    paths:
+      - .github/workflows/publish-openkj-v9-verified-release.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: publish-approved-openkj-v9-release-423591307
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.repository == 'speedhawk77-art/OpenKJ'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Recheck the reviewed asset set and publish only release 423591307
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 community/windows/PUBLISH_VERIFIED_RELEASE_V9.py
