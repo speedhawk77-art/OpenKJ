@@ -4,6 +4,9 @@ on:
   push:
     branches: [offline-remote-v9]
     paths: [.github/workflows/inspect-openkj-v9-microsoft-terms.yml]
+concurrency:
+  group: openkj-v9-microsoft-terms
+  cancel-in-progress: false
 permissions:
   contents: write
 jobs:

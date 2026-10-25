@@ -7,6 +7,9 @@ on:
       - .github/workflows/mirror-openkj-v9-retained-plugin-sources.yml
       - community/windows/MIRROR_RETAINED_PLUGIN_SOURCES_V9.py
       - community/windows/data/plugin-*-v9.json
+concurrency:
+  group: openkj-v9-retained-plugin-mirror
+  cancel-in-progress: false
 permissions:
   contents: write
 jobs:
