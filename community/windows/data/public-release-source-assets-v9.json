@@ -205,13 +205,37 @@
       "id": 667420661,
       "bytes": 586690220,
       "sha256": "3a530d1b243b5dec00bc54937455471aaa3e56849d2593edb8ded07228202240"
+    },
+    {
+      "name": "OpenKJ-v9-Microsoft-Runtime-Legal-Documents.zip",
+      "id": 675812548,
+      "bytes": 72006,
+      "sha256": "e3e94ebf560d3b6393d2406682323e77f86f3cacc0eb12e38730e3a46164318b"
+    },
+    {
+      "name": "OpenKJ-v9-Microsoft-Runtime-Legal-Manifest.json",
+      "id": 675812597,
+      "bytes": 3957,
+      "sha256": "fe91864549c3021a10369793bfd72d7c20006e3b8affc06fe8f4f02eaf9102fe"
+    },
+    {
+      "name": "OpenKJ-v9-Retained-Plugin-Notices.zip",
+      "id": 675807879,
+      "bytes": 8474014,
+      "sha256": "2f4c0feebe91b8a1c42d20370288446ae73acec4290a8cc3b9257477632b5a3a"
+    },
+    {
+      "name": "OpenKJ-v9-Retained-Plugin-Source-Manifest.json",
+      "id": 675807822,
+      "bytes": 7388906,
+      "sha256": "3fbf90ece8e0db0c0898eb5008cbc590629fd99d44f9ee4f9f885ced6f351692"
+    },
+    {
+      "name": "OpenKJ-v9-Retained-Plugin-Sources.zip",
+      "id": 675807541,
+      "bytes": 195002719,
+      "sha256": "ad8b9b160c80b3a642e88cdf51ded6b8b873b6677f75ea638c27710adb27f9cc"
     }
   ],
-  "additional_required_assets": [
-    "OpenKJ-v9-Retained-Plugin-Sources.zip",
-    "OpenKJ-v9-Retained-Plugin-Source-Manifest.json",
-    "OpenKJ-v9-Retained-Plugin-Notices.zip",
-    "OpenKJ-v9-Microsoft-Runtime-Legal-Documents.zip",
-    "OpenKJ-v9-Microsoft-Runtime-Legal-Manifest.json"
-  ]
+  "additional_required_assets": []
 }
