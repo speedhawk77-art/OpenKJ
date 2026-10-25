@@ -9,7 +9,7 @@ SoftwareRenderVideoSink::SoftwareRenderVideoSink(QWidget *surface)
     m_surface = surface;
 
     m_appSink = (GstAppSink*)gst_element_factory_make("appsink", nullptr);
-    g_object_ref(m_appSink);
+    gst_object_ref_sink(m_appSink);
 
     GstAppSinkCallbacks appsinkCallbacks;
     memset(&appsinkCallbacks, 0, sizeof(GstAppSinkCallbacks));
@@ -125,7 +125,7 @@ QImage SoftwareRenderVideoSink::imageFromSample(GstSample *sample)
     const int width = GST_VIDEO_INFO_WIDTH(&videoInfo);
     const int height = GST_VIDEO_INFO_HEIGHT(&videoInfo);
     if (format == QImage::Format_Invalid || width <= 0 || height <= 0 ||
-        width > std::numeric_limits<int>::max() / bytesPerPixel) {
+        width > (std::numeric_limits<int>::max)() / bytesPerPixel) {
         gst_sample_unref(sample);
         return {};
     }

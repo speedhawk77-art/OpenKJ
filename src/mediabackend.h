@@ -59,6 +59,7 @@ std::ostream& operator<<(std::ostream& os, const QString& s);
 class MediaBackend : public QObject
 {
     Q_OBJECT
+    friend struct MaintenanceTestAccess;
 public:
     std::string m_loggingPrefix;
     std::shared_ptr<spdlog::logger> m_logger;

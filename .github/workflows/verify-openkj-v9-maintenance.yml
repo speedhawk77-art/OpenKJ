@@ -16,7 +16,7 @@ permissions:
   actions: read
 concurrency:
   group: openkj-v9-maintenance-candidate
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   maintenance-build-verify:
     if: github.repository == 'speedhawk77-art/OpenKJ'

@@ -8,7 +8,7 @@ CdgAppSrc::CdgAppSrc()
 {
     logger = spdlog::get("logger");
     m_cdgAppSrc = reinterpret_cast<GstAppSrc*>(gst_element_factory_make("appsrc", "cdgAppSrc"));
-    g_object_ref(m_cdgAppSrc);
+    gst_object_ref_sink(m_cdgAppSrc);
 
     auto appSrcCaps = gst_caps_new_simple(
                 "video/x-raw",
@@ -24,7 +24,7 @@ CdgAppSrc::CdgAppSrc()
     g_object_set(m_cdgAppSrc, "stream-type", GST_APP_STREAM_TYPE_SEEKABLE, "format", GST_FORMAT_TIME, NULL);
     gst_app_src_set_max_bytes(m_cdgAppSrc, cdg::CDG_IMAGE_SIZE * 200);
 
-    GstAppSrcCallbacks callbacks;
+    GstAppSrcCallbacks callbacks{};
     callbacks.need_data	  = &CdgAppSrc::cb_need_data;
     callbacks.enough_data = &CdgAppSrc::cb_enough_data;
     callbacks.seek_data   = &CdgAppSrc::cb_seek_data;

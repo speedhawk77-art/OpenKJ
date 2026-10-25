@@ -27,6 +27,14 @@
 IdleDetect *filter = nullptr;
 std::ostream &operator<<(std::ostream &out, const QString &s) { return out << s.toStdString(); }
 struct MaintenanceTestAccess {
+    static void observePlayback(MediaBackend &backend,int *destroyed,bool attach) {
+        for (auto *element : {backend.m_audioBin,backend.m_videoBin,backend.m_decoder,
+                              backend.m_cdgSrc->getSrcElement()}) {
+            gst_object_weak_ref(GST_OBJECT(element),[](gpointer p,GstObject *){++*static_cast<int *>(p);},destroyed);
+            if (attach && !gst_object_has_as_parent(GST_OBJECT(element),GST_OBJECT(backend.m_pipeline)))
+                gst_bin_add(GST_BIN(backend.m_pipeline),element);
+        }
+    }
     static QImage image(GstSample *sample) { return SoftwareRenderVideoSink::imageFromSample(sample); }
     static void messages(AudioRecorder &r) { r.processGstMessage(); }
     static bool finished(AudioRecorder &r) { return !r.m_recording && !r.m_finalizing && !r.m_finalizeTimer.isActive(); }
@@ -179,8 +187,16 @@ int main(int argc,char **argv) {
             check("ticker_immediate_start_stop_is_safe",stopped);
         }
         {
-            for (int i=0;i<3;++i) { MediaBackend backend(nullptr,"Maintenance teardown",MediaBackend::Karaoke); }
-            check("playback_repeated_teardown_without_critical",true);
+            for (int i=0;i<4;++i) {
+                int destroyed=0;
+                { MediaBackend backend(nullptr,"Maintenance teardown",MediaBackend::Karaoke);
+                  MaintenanceTestAccess::observePlayback(backend,&destroyed,i%2!=0); }
+                check(QString("playback_owned_objects_destroyed_%1").arg(i),destroyed==4);
+            }
+            int destroyed=0;
+            { QWidget surface; SoftwareRenderVideoSink sink(&surface);
+              gst_object_weak_ref(GST_OBJECT(sink.getSink()),[](gpointer p,GstObject *){++*static_cast<int *>(p);},&destroyed); }
+            check("unused_software_sink_destroyed_once",destroyed==1);
         }
         {
             Settings settings;settings.setRecordingOutputDir(profile.path());settings.setRecordingCodec("OGG Vorbis");

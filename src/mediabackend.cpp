@@ -336,6 +336,7 @@ void MediaBackend::patchPipelineSinks()
                 gst_element_unlink(currentSrc, m_audioBin);
                 gst_bin_remove(m_pipelineAsBin, m_audioBin);
                 gst_element_set_state(m_audioBin, GST_STATE_NULL);
+                gst_object_unref(currentSrc);
             }
         }
     }
@@ -362,6 +363,7 @@ void MediaBackend::patchPipelineSinks()
                 gst_element_unlink(currentSrc, m_videoBin);
                 gst_bin_remove(m_pipelineAsBin, m_videoBin);
                 gst_element_set_state(m_videoBin, GST_STATE_NULL);
+                gst_object_unref(currentSrc);
                 emit hasActiveVideoChanged(false);
             }
         }
@@ -756,7 +758,7 @@ void MediaBackend::buildPipeline()
 
     m_decoder = gst_element_factory_make("uridecodebin", "uridecodebin");
     g_signal_connect(m_decoder, "pad-added", G_CALLBACK(padAddedToDecoder_cb), this);
-    g_object_ref(m_decoder);
+    gst_object_ref_sink(m_decoder);
 
     m_cdgSrc = new CdgAppSrc();
 
@@ -783,7 +785,7 @@ void MediaBackend::buildPipeline()
 void MediaBackend::buildVideoSinkBin()
 {
     m_videoBin = gst_bin_new("videoBin");
-    g_object_ref(m_videoBin);
+    gst_object_ref_sink(m_videoBin);
 
     m_queueMainVideo = gst_element_factory_make("queue", "m_queueMainVideo");
     gst_bin_add(reinterpret_cast<GstBin *>(m_videoBin), m_queueMainVideo);
@@ -816,7 +818,7 @@ void MediaBackend::buildVideoSinkBin()
 void MediaBackend::buildAudioSinkBin()
 {
     m_audioBin = gst_bin_new("audioBin");
-    g_object_ref(m_audioBin);
+    gst_object_ref_sink(m_audioBin);
     m_faderVolumeElement = gst_element_factory_make("volume", "FaderVolumeElement");
     g_object_set(m_faderVolumeElement, "volume", 1.0, nullptr);
     m_fader = new AudioFader(this);
