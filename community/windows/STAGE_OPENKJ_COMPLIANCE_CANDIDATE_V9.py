@@ -10,7 +10,7 @@ Usage (Windows, Python 3.10+):
     py -3 STAGE_OPENKJ_COMPLIANCE_CANDIDATE_V9.py --cleaned "C:/OpenKJ-Development/OpenKJ-Distribution-Test-v9" --repo "C:/OpenKJ-Development/OpenKJ-Source" --vc-redist "C:/path/to/vc_redist.x64.exe" --omit-openh264
 """
 from __future__ import annotations
-import argparse, hashlib, json, shutil, sys, zipfile
+import argparse, hashlib, json, re, shutil, sys, zipfile
 from pathlib import Path, PurePosixPath
 
 VC_SHA256 = '843068991daaa1f73ad9f6239bce4d0f6a07a51f18c37ea2a867e9beca71295c'
@@ -66,7 +66,10 @@ def main()->int:
     ap.add_argument('--rust-standard-notice-supplement',type=Path,help='Verified Rust 1.85.0 standard-library notice bundle (optional)')
     ap.add_argument('--qt-notice-supplement',type=Path,help='Verified original Qt module attribution and notice bundle (optional)')
     ap.add_argument('--retained-plugin-notice-supplement',type=Path,help='Checksum-verified retained-plugin notice bundle')
+    ap.add_argument('--maintenance-source-commit',help='Exact source commit of a separately tested maintenance application')
     x=ap.parse_args()
+    if x.maintenance_source_commit and not re.fullmatch('[0-9a-f]{40}',x.maintenance_source_commit):
+        ap.error('Invalid maintenance source commit')
     cleaned=x.cleaned.expanduser().resolve(); repo=x.repo.expanduser().resolve()
     vc=x.vc_redist.expanduser().resolve()
     out=(x.out or cleaned.parent/'OpenKJ-Compliance-Candidate-v9').resolve()
@@ -117,7 +120,10 @@ def main()->int:
         plugin_notice_count=0
         if x.retained_plugin_notice_supplement:
             plugin_notice_count=install_notice_supplement(x.retained_plugin_notice_supplement,out/'licenses'/'retained-plugin-notices')
-        shutil.copy2(repo/'community'/'SOURCE_ACCESS_v9.md',out/'licenses'/'SOURCE_ACCESS_v9.md')
+        source_access=(repo/'community'/'SOURCE_ACCESS_v9.md').read_text(encoding='utf-8')
+        if x.maintenance_source_commit:
+            source_access='MAINTENANCE TEST CANDIDATE. Matching application source: https://github.com/speedhawk77-art/OpenKJ/tree/'+x.maintenance_source_commit+'\nNew source archive: OpenKJ-v9-Application-Source-'+x.maintenance_source_commit+'.zip in working draft 421204266. Dependency sources are unchanged from the public v9 release below.\n\n'+source_access.replace('016d5c3135bbc8073b96881e49e19feb97359101',x.maintenance_source_commit)
+        (out/'licenses'/'SOURCE_ACCESS_v9.md').write_text(source_access,encoding='utf-8')
         shutil.copy2(repo/'THIRD_PARTY_NOTICES.md',out/'licenses'/'THIRD_PARTY_NOTICES-updated.md')
         shutil.copy2(repo/'community'/'WINDOWS_DLL_REPLACEMENT_GUIDE_v9.md',out/'licenses'/'WINDOWS_DLL_REPLACEMENT_GUIDE_v9.md')
         if x.omit_openh264:
@@ -141,6 +147,9 @@ def main()->int:
             'Microsoft runtime and SDK component terms: licenses/upstream-verified-source-notices/microsoft/.\n'
             'The SDK-built OpenH264 binary is omitted; any optional Cisco binary is downloaded separately by the end user.\n'
             'Release packaging must make the source archives in SOURCE_ACCESS_v9.md available alongside this installer.\n',encoding='utf-8')
+        if x.maintenance_source_commit:
+            status=out/'licenses'/'SOURCE_AND_DISTRIBUTION_STATUS.txt'
+            status.write_text(status.read_text(encoding='utf-8').replace('016d5c3135bbc8073b96881e49e19feb97359101',x.maintenance_source_commit),encoding='utf-8')
         after=bins(out)
         intended=set(OMIT_CODEC if x.omit_openh264 else ())
         if {k for k in expected if k not in after}!=intended or set(after)-set(expected) or any(expected[k]!=v for k,v in after.items()):

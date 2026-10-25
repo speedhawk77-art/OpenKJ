@@ -3,6 +3,7 @@
 
 #include <gst/gst.h>
 #include <gst/app/gstappsink.h>
+#include <gst/video/video.h>
 
 #include <QWidget>
 
@@ -10,14 +11,14 @@
 class SoftwareRenderVideoSink : public QObject
 {
     Q_OBJECT
+    friend struct MaintenanceTestAccess;
 
 private:
 
     struct SampleInfo
     {
         GstSample *sample;
-        GstBuffer *buffer;
-        GstMapInfo *bufferInfo;
+        GstVideoFrame frame;
     };
 
     std::atomic<bool> m_active {false};
@@ -34,6 +35,7 @@ private:
     static GstFlowReturn NewSampleCallback(GstAppSink *appsink, gpointer user_data);
     bool pullSampleAndDrawImage();
     static void cleanupFunction(void *info);
+    static QImage imageFromSample(GstSample *sample);
 
 signals:
     void newFrameAvailable();

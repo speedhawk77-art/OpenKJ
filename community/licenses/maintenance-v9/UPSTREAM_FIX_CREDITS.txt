@@ -1,0 +1,27 @@
+OpenKJ v9 maintenance candidate: upstream fixes and adaptations
+
+OpenKJ and these changes remain under the repository's GPL-3.0-or-later terms.
+Existing copyright notices and the complete GPL text are retained.
+
+Adapted from pkircher29/OpenKJ:
+https://github.com/pkircher29/OpenKJ/commit/864174b429601b5bd2cca2e52241cbc10f78dc4f
+  CD+G scratch buffers, overlapping-copy correction and offset limits;
+  singer-history refresh/model notifications; recording message ownership,
+  EOS finalization, instance-specific codec state and filename correction.
+https://github.com/pkircher29/OpenKJ/commit/c315c5813b3c314d25bb086fe7e70adcd7f7c323
+  Equalizer signal handlers retain each band index by value.
+
+Also reviewed as supporting analysis:
+https://github.com/mrlindstrom/OpenKJ/commit/020399152d7139cb55468fa0645e47373281dd6a
+  Worker-thread pixmap and CD+G safety issues.
+https://github.com/mrlindstrom/OpenKJ/commit/58b538cf48745f5134f8901d2498974a5d4b3ac5
+  Playback re-entry analysis; not included as an untested wholesale change.
+
+Local adaptations for Andrew Burgess's Qt 5 offline-remote edition:
+  Ticker workers exchange QImage only, with synchronized state, safe shutdown
+  and rejection of stale render results; QPixmap conversion stays in the GUI.
+  Software video frames validate format, dimensions, mapped size and row stride
+  through GstVideoFrame; mapped samples are held until their last image copy dies.
+  Recording uses a cancellable finalization timer, drains paused recordings,
+  and queues a recording requested while the preceding file finishes.
+  Regression tests exercise the actual modified application classes.

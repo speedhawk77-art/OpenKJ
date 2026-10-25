@@ -14,6 +14,7 @@
 class AudioRecorder : public QObject
 {
     Q_OBJECT
+    friend struct MaintenanceTestAccess;
 private:
     std::shared_ptr<spdlog::logger> logger;
     std::string m_loggingPrefix{"[AudioRecorder]"};
@@ -36,12 +37,18 @@ private:
     QString m_currentFileExt{".ogg"};
     QString m_startDateTime;
     int m_currentDevice{0};
+    int m_currentCodec{1};
     QTimer m_timer;
+    QTimer m_finalizeTimer;
+    QString m_pendingRecording;
+    bool m_recording{false};
+    bool m_finalizing{false};
 
     void generateDeviceList();
     void initGStreamer();
     void processGstMessage();
     void getRecordingSettings();
+    void completeFinalization();
 
 public:
     explicit AudioRecorder(QObject *parent = nullptr);

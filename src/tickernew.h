@@ -3,6 +3,8 @@
 
 #include <QObject>
 #include <QPixmap>
+#include <QImage>
+#include <atomic>
 #include <QThread>
 #include <settings.h>
 #include <spdlog/spdlog.h>
@@ -22,7 +24,7 @@ public:
     TickerImageCreator(QString TickerText, int targetWidth);
 
 signals:
-    void imageCreated(QPixmap image, int textWidth);
+    void imageCreated(QImage image, int textWidth);
 
 };
 
@@ -32,13 +34,14 @@ Q_OBJECT
 private:
     QMutex m_mutex;
     Settings m_settings;
-    bool m_stop{false};
-    QPixmap scrollImage;
+    std::atomic<bool> m_stop{true};
+    QImage scrollImage;
     QString m_text;
     int m_height{0};
     int m_width{0};
     int m_txtWidth{1024};
-    int curOffset{0};
+    quint64 m_renderGeneration{0};
+    bool m_reducedCpuMode{false};
     bool m_textOverflows{false};
     int m_speed{5};
     bool m_textChanged{false};
@@ -49,19 +52,21 @@ private:
 
 public:
     TickerNew();
+    ~TickerNew() override;
+    void startScrolling();
     QSize getSize();
     void stop();
 
 public slots:
     void setWidth(int width);
     void setText(const QString &text, bool force = false);
-    void replaceImage(const QPixmap &image, int textWidth);
+    void replaceImage(const QImage &image, int textWidth);
     void refresh();
     void setSpeed(int speed);
 
 signals:
-    void newFrame(QPixmap frame);
-    void newFrameRect(QPixmap frame, QRect displayArea);
+    void newFrame(QImage frame);
+    void newFrameRect(QImage frame, QRect displayArea);
     void newRect(QRect displayArea);
 };
 
@@ -89,9 +94,9 @@ public:
     void refresh() {ticker->refresh();}
 
 private slots:
-    void newFrameRect(const QPixmap& frame, QRect displayArea);
+    void newFrameRect(const QImage& frame, QRect displayArea);
     void newRect(QRect displayArea);
-    void newFrame(const QPixmap& frame);
+    void newFrame(const QImage& frame);
 
 protected:
     void resizeEvent(QResizeEvent *event) override;

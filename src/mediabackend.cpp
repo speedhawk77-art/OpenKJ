@@ -159,10 +159,8 @@ MediaBackend::~MediaBackend()
     gst_caps_unref(m_audioCapsStereo);
     gst_object_unref(m_pipeline);
     gst_object_unref(m_decoder);
-    // these still have 2 refs each for some reason
+    // resetPipeline() removes the bin-owned references; release our retained references once.
     gst_object_unref(m_audioBin);
-    gst_object_unref(m_audioBin);
-    gst_object_unref(m_videoBin);
     gst_object_unref(m_videoBin);
     delete m_cdgSrc;
     for (auto &device : m_audioOutputDevices)
@@ -1256,6 +1254,8 @@ void MediaBackend::setEqBypass(const bool &bypass)
 
 void MediaBackend::setEqLevel(const int &band, const int &level)
 {
+    if (band < 0 || band >= static_cast<int>(m_eqLevels.size()))
+        return;
     if (!m_bypass)
         g_object_set(m_equalizer, QString("band%1").arg(band).toLocal8Bit(), (double)level, nullptr);
     m_eqLevels[band] = level;

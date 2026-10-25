@@ -2,6 +2,7 @@
 #include <QObject>
 #include <QPainter>
 #include <QResizeEvent>
+#include <limits>
 
 SoftwareRenderVideoSink::SoftwareRenderVideoSink(QWidget *surface)
 {
@@ -98,10 +99,51 @@ void SoftwareRenderVideoSink::cleanupFunction(void* _info)
 {
     SampleInfo *info = static_cast<SampleInfo*>(_info);
 
-    gst_buffer_unmap(info->buffer, info->bufferInfo);
+    gst_video_frame_unmap(&info->frame);
     gst_sample_unref(info->sample);
-    delete info->bufferInfo;
     delete info;
+}
+
+QImage SoftwareRenderVideoSink::imageFromSample(GstSample *sample)
+{
+    if (!sample)
+        return {};
+    GstVideoInfo videoInfo{};
+    auto *caps = gst_sample_get_caps(sample);
+    auto *buffer = gst_sample_get_buffer(sample);
+    if (!caps || !buffer || !gst_video_info_from_caps(&videoInfo, caps)) {
+        gst_sample_unref(sample);
+        return {};
+    }
+    QImage::Format format = QImage::Format_Invalid;
+    int bytesPerPixel = 0;
+    switch (GST_VIDEO_INFO_FORMAT(&videoInfo)) {
+        case GST_VIDEO_FORMAT_RGB16: format = QImage::Format_RGB16; bytesPerPixel = 2; break;
+        case GST_VIDEO_FORMAT_BGRx: format = QImage::Format_RGB32; bytesPerPixel = 4; break;
+        default: break;
+    }
+    const int width = GST_VIDEO_INFO_WIDTH(&videoInfo);
+    const int height = GST_VIDEO_INFO_HEIGHT(&videoInfo);
+    if (format == QImage::Format_Invalid || width <= 0 || height <= 0 ||
+        width > std::numeric_limits<int>::max() / bytesPerPixel) {
+        gst_sample_unref(sample);
+        return {};
+    }
+    auto *info = new SampleInfo{};
+    info->sample = sample;
+    if (!gst_video_frame_map(&info->frame, &videoInfo, buffer, GST_MAP_READ)) {
+        gst_sample_unref(sample);
+        delete info;
+        return {};
+    }
+    const int stride = GST_VIDEO_FRAME_PLANE_STRIDE(&info->frame, 0);
+    if (stride < width * bytesPerPixel) {
+        cleanupFunction(info);
+        return {};
+    }
+    // Hold the mapped frame and its sample until the last QImage copy is released.
+    return QImage(static_cast<const uchar *>(GST_VIDEO_FRAME_PLANE_DATA(&info->frame, 0)),
+                  width, height, stride, format, cleanupFunction, info);
 }
 
 bool SoftwareRenderVideoSink::pullSampleAndDrawImage()
@@ -111,40 +153,16 @@ bool SoftwareRenderVideoSink::pullSampleAndDrawImage()
 
     if (sample)
     {
-        SampleInfo *info = new SampleInfo();
-        info->sample = sample;
-        info->bufferInfo = new GstMapInfo;
-        GstCaps *caps;
-        GstStructure *s;
-        const gchar *format;
-        int width, height;
-
-        caps = gst_sample_get_caps(sample);
-        s = gst_caps_get_structure(caps, 0);
-        gst_structure_get_int(s, "width", &width);
-        gst_structure_get_int(s, "height", &height);
-        format = gst_structure_get_string(s, "format");
-
-        info->buffer = gst_sample_get_buffer (sample);
-
-        gst_buffer_map(info->buffer, info->bufferInfo, GST_MAP_READ);
-        guint8 *rawFrame = info->bufferInfo->data;
-
-        QImage::Format qtFormat;
-
-        if (strcmp(format, "RGB16") == 0)
-            qtFormat = QImage::Format_RGB16;
-        else if (strcmp(format, "BGRx") == 0)
-            qtFormat = QImage::Format_RGB32;
-
-        QImage frame(rawFrame, width, height, qtFormat, cleanupFunction, info);
+        const auto frame = imageFromSample(sample);
+        if (frame.isNull())
+            return false;
         m_buffer = frame;
     }
     else
     {
         // No sample found in queue - are we still playing?
         GstState state = GST_STATE_NULL;
-        gst_element_get_state(reinterpret_cast<GstElement*>(m_appSink), &state, nullptr, GST_CLOCK_TIME_NONE);
+        gst_element_get_state(reinterpret_cast<GstElement*>(m_appSink), &state, nullptr, 0);
 
         if (state == GST_STATE_NULL)
         {

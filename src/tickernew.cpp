@@ -18,49 +18,70 @@
 #endif
 
 void TickerNew::run() {
-    bool reducedCpuMode = m_settings.tickerReducedCpuMode();
-    using namespace std::chrono_literals;
     using namespace std::chrono;
-    auto lastUpdate = high_resolution_clock::now();
+    auto lastUpdate = steady_clock::now();
+    int offset = 0;
 #ifdef _MSC_VER
     timeBeginPeriod(1);
 #endif
-    m_logger->info("{} Ticker starting", m_loggingPrefix);
-    m_stop = false;
-    m_textChanged = true;
-    while (!m_stop)
-    {
-        if (!m_textOverflows)
-            curOffset = 0;
-        if (curOffset >= m_txtWidth) {
-            curOffset = 0;
-        }
-        if (!reducedCpuMode || high_resolution_clock::now() - lastUpdate > 7ms) {
-            if (!m_textChanged) {
-                emit newRect(QRect(curOffset, 0, m_width, m_height));
-            } else {
+    while (!m_stop.load()) {
+        int speed;
+        QImage image;
+        QRect area;
+        bool changed = false;
+        {
+            QMutexLocker lock(&m_mutex);
+            speed = m_speed;
+            if (!m_textOverflows || offset >= m_txtWidth)
+                offset = 0;
+            if (!m_reducedCpuMode || steady_clock::now() - lastUpdate > milliseconds(7)) {
+                changed = m_textChanged;
                 m_textChanged = false;
-                m_mutex.lock();
-                emit newFrameRect(scrollImage, QRect(curOffset, 0, m_width, m_height));
-                m_mutex.unlock();
+                if (changed)
+                    image = scrollImage;
+                area = QRect(offset, 0, m_width, m_height);
+                lastUpdate = steady_clock::now();
             }
-            lastUpdate = high_resolution_clock::now();
         }
-        curOffset++;
-        TickerNew::usleep(m_speed / 2 * 250);
-        //std::this_thread::sleep_for(microseconds(m_speed / 2 * 250));
+        // Only images and geometry cross the thread boundary. QPixmap stays in the GUI.
+        if (!area.isNull()) {
+            if (changed)
+                emit newFrameRect(image, area);
+            else
+                emit newRect(area);
+        }
+        ++offset;
+        TickerNew::usleep(static_cast<unsigned long>(speed) * 125);
     }
+#ifdef _MSC_VER
+    timeEndPeriod(1);
+#endif
 }
 
 void TickerNew::stop()
 {
-    if (!m_mutex.tryLock(100))
-    {
-        m_logger->warn("{} stop() unable to lock m_mutex!", m_loggingPrefix);
+    m_stop.store(true);
+}
+
+void TickerNew::startScrolling()
+{
+    if (isRunning())
         return;
+    m_reducedCpuMode = m_settings.tickerReducedCpuMode();
+    m_stop.store(false);
+    {
+        QMutexLocker lock(&m_mutex);
+        m_textChanged = true;
     }
-    m_stop = true;
-    m_mutex.unlock();
+    start();
+}
+
+TickerNew::~TickerNew()
+{
+    stop();
+    wait();
+    for (auto *creator : findChildren<TickerImageCreator *>())
+        creator->wait();
 }
 
 TickerNew::TickerNew()
@@ -95,7 +116,9 @@ void TickerNew::setWidth(int width)
     m_height = static_cast<int>(QFontMetrics(m_settings.tickerFont()).tightBoundingRect("PLACEHOLDERtextgj|i01").height() * 1.2);
 #endif
     m_width = width;
-    scrollImage = QPixmap(width * 2, m_height);
+    scrollImage = QImage(qMax(1, width * 2), qMax(1, m_height), QImage::Format_ARGB32_Premultiplied);
+    scrollImage.fill(m_settings.tickerBgColor());
+    m_textChanged = true;
     //qInfo() << "Unlocking m_mutex in setWidth()";
     m_mutex.unlock();
     setText(m_text, false);
@@ -106,8 +129,14 @@ void TickerNew::setText(const QString &text, bool force)
     if (m_text == text && !force)
         return;
     m_text = text;
+    const auto generation = ++m_renderGeneration;
     auto imageCreator = new TickerImageCreator(text, m_width);
-    connect(imageCreator, &TickerImageCreator::imageCreated, this, &TickerNew::replaceImage);
+    imageCreator->setParent(this);
+    connect(imageCreator, &TickerImageCreator::imageCreated, this,
+            [this, generation](const QImage &image, int textWidth) {
+                if (generation == m_renderGeneration)
+                    replaceImage(image, textWidth);
+            });
     connect(imageCreator, &TickerImageCreator::finished, imageCreator, &TickerImageCreator::deleteLater);
     imageCreator->start();
 }
@@ -124,14 +153,11 @@ void TickerNew::setSpeed(int speed)
         m_logger->warn("{} setSpeed() unable to lock m_mutex!", m_loggingPrefix);
         return;
     }
-    if (speed > 50)
-        m_speed = 50;
-    else
-        m_speed = 51 - speed;
+    m_speed = qBound(1, 51 - speed, 50);
     m_mutex.unlock();
 }
 
-void TickerNew::replaceImage(const QPixmap &image, int textWidth) {
+void TickerNew::replaceImage(const QImage &image, int textWidth) {
     if (!m_mutex.tryLock(1000))
     {
         m_logger->error("{} setText() unable to lock m_mutex!", m_loggingPrefix);
@@ -140,11 +166,10 @@ void TickerNew::replaceImage(const QPixmap &image, int textWidth) {
     m_textChanged = true;
     m_textOverflows = false;
     m_height = image.height();
-    image.width();
     if (image.width() > m_width)
         m_textOverflows = true;
     scrollImage = image;
-    m_txtWidth = textWidth;
+    m_txtWidth = qMax(1, textWidth);
     m_mutex.unlock();
 }
 
@@ -162,7 +187,7 @@ TickerDisplayWidget::TickerDisplayWidget(QWidget *parent)
 TickerDisplayWidget::~TickerDisplayWidget()
 {
     ticker->stop();
-    ticker->wait(1000);
+    ticker->wait();
     delete ticker;
 }
 
@@ -186,17 +211,20 @@ void TickerDisplayWidget::setSpeed(int speed)
 void TickerDisplayWidget::stop()
 {
     ticker->stop();
+    ticker->wait();
 }
 
 void TickerDisplayWidget::setTickerEnabled(bool enabled)
 {
     m_logger->info("{} Enabled set to: {}", m_loggingPrefix, enabled);
     if (enabled && !ticker->isRunning()) {
-        ticker->start();
+        ticker->startScrolling();
         ticker->setPriority(QThread::TimeCriticalPriority);
     }
-    else if (!enabled && ticker->isRunning())
+    else if (!enabled && ticker->isRunning()) {
         ticker->stop();
+        ticker->wait();
+    }
 }
 
 
@@ -205,10 +233,10 @@ void TickerDisplayWidget::resizeEvent(QResizeEvent *event)
     ticker->setWidth(event->size().width());
 }
 
-void TickerDisplayWidget::newFrameRect(const QPixmap& frame, const QRect displayArea)
+void TickerDisplayWidget::newFrameRect(const QImage& frame, const QRect displayArea)
 {
     rectBasedDrawing = true;
-    m_image = frame;
+    m_image = QPixmap::fromImage(frame);
     drawRect = displayArea;
     update();
 }
@@ -222,12 +250,12 @@ void TickerDisplayWidget::newRect(const QRect displayArea)
     update();
 }
 
-void TickerDisplayWidget::newFrame(const QPixmap& frame)
+void TickerDisplayWidget::newFrame(const QImage& frame)
 {
     if (!isVisible())
         return;
     rectBasedDrawing = false;
-    m_image = frame;
+    m_image = QPixmap::fromImage(frame);
     update();
 }
 
@@ -252,7 +280,7 @@ void TickerImageCreator::run() {
 
     m_logger->info("{} Rendering ticker text: {}", m_loggingPrefix, m_tickerText);
     QFont tickerFont = settings.tickerFont();
-    QPixmap img;
+    QImage img;
     int imgHeight;
     int imgWidth;
     int txtWidth;
@@ -271,12 +299,15 @@ void TickerImageCreator::run() {
         drawText.append(m_tickerText + " • " + m_tickerText + " • ");
         imgWidth = QFontMetrics(tickerFont).size(Qt::TextSingleLine, drawText).width();
         txtWidth = txtWidth + QFontMetrics(tickerFont).size(Qt::TextSingleLine," • ").width();
-        img = QPixmap(imgWidth, imgHeight);
+
     }
     else {
         drawText = m_tickerText;
-        img = QPixmap(imgWidth, imgHeight);
+
     }
+    img = QImage(qMax(1, imgWidth), qMax(1, imgHeight), QImage::Format_ARGB32_Premultiplied);
+    if (img.isNull())
+        return;
     img.fill(settings.tickerBgColor());
     QPainter p;
     p.begin(&img);
