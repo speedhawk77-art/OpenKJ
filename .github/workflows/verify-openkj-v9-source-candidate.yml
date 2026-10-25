@@ -17,6 +17,10 @@ on:
     types: [completed]
     branches: [offline-remote-v9]
 
+concurrency:
+  group: openkj-v9-source-candidate
+  cancel-in-progress: false
+
 permissions:
   contents: write
   actions: read

@@ -39,7 +39,8 @@ def main():
     encoded=(json.dumps(manifest,indent=2)+'\n').encode()
     (a.output/'OpenKJ-v9-Microsoft-Runtime-Legal-Manifest.json').write_bytes(encoded)
     with zipfile.ZipFile(a.output/'OpenKJ-v9-Microsoft-Runtime-Legal-Documents.zip','w',zipfile.ZIP_DEFLATED) as z:
-        for name,raw in documents.items():z.writestr(name,raw)
-        z.writestr('OpenKJ-v9-Microsoft-Runtime-Legal-Manifest.json',encoded)
+        for name,raw in sorted({**documents,'OpenKJ-v9-Microsoft-Runtime-Legal-Manifest.json':encoded}.items()):
+            info=zipfile.ZipInfo(name,(1980,1,1,0,0,0));info.compress_type=zipfile.ZIP_DEFLATED
+            info.external_attr=0o100644<<16;z.writestr(info,raw)
     print('Verified linked original terms and',len(documents),'preserved documents; no terms accepted.')
 if __name__=='__main__':main()

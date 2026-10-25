@@ -82,6 +82,8 @@ jobs:
             OpenKJ-v9-Microsoft-Runtime-Legal-Documents.zip
             OpenKJ-v9-Microsoft-Runtime-Legal-Manifest.json
       - name: Preserve validated original Microsoft terms in the same draft
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
