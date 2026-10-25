@@ -28,6 +28,7 @@ Mark each box `[x]` only once a concrete file, hash, source archive/build recipe
 - [ ] **4B. Confirm that all installed notices are legally complete.** Check the actual installer installs OpenKJ GPLv3, Qt LGPLv3, GStreamer LGPLv2.1 (where applicable), QR MIT/Apache texts and each installed third-party copyright/licence. Resolve missing umbrella licence texts referenced by SDK README documents. Include visible source availability and library replacement instructions.
 - [x] **5A. Build and test the current cleaned installer.** Already built, SHA-256 verified on GitHub and installed/tested on a second computer; the installed runtime matches its expected cleaned reference. [Installed audit](INSTALLED_BINARY_AUDIT_RESULT_v9.md).
 - [x] **5A-ii. Check normal/delay imports after OpenH264 omission.** [Run 40066585261](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40066585261) parsed all 338 retained program binaries and found zero normal/delay imports of OpenH264 components. The parser dependency is checksum-pinned; malformed PE inputs fail the audit. Text-only hashes/import evidence was preserved. This does not test dynamic loading, available decoders or playback.
+- [x] **5A-iii. User-reported karaoke hardware check — 2026-10-25.** Andrew Burgess confirmed MP3+CDG and H.264 playback with sound, correct singer-screen lyrics/video, and working phone/tablet remote connection and operation. This is his hands-on confirmation for the candidate discussed immediately before the test (installer ending `40099935626-1.exe`), not an independently captured inventory/hash or a claim that every library file/decoder was exercised. [Recorded follow-up](REMOTE_COMPLETION_FOLLOWUP_2026-10-24.md#user-reported-hardware-test--2026-10-25).
 - [ ] **5B. Final release verification after any compliance fixes.** If DLLs or notices change, rebuild the installer, install and test it on a second machine, compute the new SHA-256 and update the GitHub *draft* asset + manifest. Verify the release remains draft, body links exact sources and checksum, and do not make it public until the foregoing requirements are supported by the evidence.
 
 ## Current known evidence
@@ -54,3 +55,8 @@ See [the consolidated remote result](REMOTE_VERIFICATION_RESULT_2026-10-24.md) f
 ## Final remote engineering follow-up — 2026-10-24
 
 The [completion report](REMOTE_COMPLETION_FOLLOWUP_2026-10-24.md) supersedes earlier pending engineering statements for the checks explicitly proved there: optional end-user codec controls, both application executables built from recorded source, direct official SDK byte matches, expanded Qt/Rust notices and source mirrors, and the source-built installer test. It records the remaining evidentiary/licence-use limits separately. The Windows release remains draft-only for physical karaoke testing.
+
+
+## Hardware confirmation — 2026-10-25
+
+The user has now confirmed the three requested hardware checks passed; 5A-iii records the scope. Earlier statements that these physical checks were still pending are superseded. This confirmation does not check off the separate licensing/source or full publication-verification items, and it is not an instruction to publish.

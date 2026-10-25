@@ -1,6 +1,6 @@
 # OpenKJ v9 — remaining remote engineering completed
 
-**Status: remote software/build checks completed; Windows release remains an unpublished draft for hardware testing.** The historical installer was not overwritten. No physical karaoke, second-display, audio-device, authenticated DJ operation or real-phone test is claimed.
+**Status updated 2026-10-25: remote software/build checks completed and the user reports the requested karaoke hardware checks passed. The Windows release remains an unpublished draft pending the separate release review.** The historical installer was not overwritten. See the dated hardware confirmation below; authenticated DJ operations beyond the confirmed remote usage are not separately attested.
 
 This report supersedes the engineering items left open in [the earlier remote result](REMOTE_VERIFICATION_RESULT_2026-10-24.md). It records technical licence/source evidence, not a legal certification or a guarantee of rights for every use of media.
 
@@ -97,3 +97,16 @@ The [source-build workflow](https://github.com/speedhawk77-art/OpenKJ/actions/wo
 On the karaoke laptop, use the specifically identified source-built candidate and test actual MP3+CDG/H.264 library media, audio outputs, singer display and a real phone on the intended network. Enable the optional Cisco decoder only after reviewing its terms and restart before testing it. These are the remaining physical test outcomes.
 
 The report does not certify organisational Microsoft licence eligibility, codec patent rights for a particular paid/non-personal use, rights in media, or unseen supplier build records. Those limits remain explicit rather than being marked as proved by CI. The Windows binary release remains draft-only.
+
+
+## User-reported hardware test — 2026-10-25
+
+Andrew Burgess confirmed that all three checks requested in the conversation passed:
+
+- MP3+CDG and H.264 video song playback with sound.
+- Lyrics/video displayed correctly on the singer screen.
+- Phone/tablet remote connection and operation.
+
+This is a hands-on user report for the source-built candidate most recently identified in the conversation, `OpenKJ-v9-Source-Candidate-016d5c3135bbc8073b96881e49e19feb97359101-40099935626-1.exe`. The installed checksum, precise hardware/network configuration, selected H.264 decoder and exhaustive media-library coverage were not separately supplied, so this record does not invent those details. No independent test log was provided.
+
+This confirmation supersedes earlier statements that these three physical checks remained pending. It does not establish the separate licence/rights conditions or authorize publication. The release stays in draft.
