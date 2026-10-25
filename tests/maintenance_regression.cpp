@@ -30,7 +30,7 @@ struct MaintenanceTestAccess {
     static void observePlayback(MediaBackend &backend,int *destroyed,bool attach) {
         for (auto *element : {backend.m_audioBin,backend.m_videoBin,backend.m_decoder,
                               backend.m_cdgSrc->getSrcElement()}) {
-            gst_object_weak_ref(GST_OBJECT(element),[](gpointer p,GstObject *){++*static_cast<int *>(p);},destroyed);
+            g_object_weak_ref(G_OBJECT(element),[](gpointer p,GObject *){++*static_cast<int *>(p);},destroyed);
             if (attach && !gst_object_has_as_parent(GST_OBJECT(element),GST_OBJECT(backend.m_pipeline)))
                 gst_bin_add(GST_BIN(backend.m_pipeline),element);
         }
@@ -195,7 +195,7 @@ int main(int argc,char **argv) {
             }
             int destroyed=0;
             { QWidget surface; SoftwareRenderVideoSink sink(&surface);
-              gst_object_weak_ref(GST_OBJECT(sink.getSink()),[](gpointer p,GstObject *){++*static_cast<int *>(p);},&destroyed); }
+              g_object_weak_ref(G_OBJECT(sink.getSink()),[](gpointer p,GObject *){++*static_cast<int *>(p);},&destroyed); }
             check("unused_software_sink_destroyed_once",destroyed==1);
         }
         {
