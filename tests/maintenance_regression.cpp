@@ -25,7 +25,6 @@
 #include <stdexcept>
 
 IdleDetect *filter = nullptr;
-std::ostream &operator<<(std::ostream &out, const QString &s) { return out << s.toStdString(); }
 struct MaintenanceTestAccess {
     static void observePlayback(MediaBackend &backend,int *destroyed,bool attach) {
         for (auto *element : {backend.m_audioBin,backend.m_videoBin,backend.m_decoder,
@@ -40,15 +39,16 @@ struct MaintenanceTestAccess {
     static bool finished(AudioRecorder &r) { return !r.m_recording && !r.m_finalizing && !r.m_finalizeTimer.isActive(); }
     static void syntheticInput(AudioRecorder &r) {
         r.m_timer.stop();
+        // Exercise the production encoder/muxer graph; substitute only the microphone.
         gst_element_set_state(r.m_pipeline, GST_STATE_NULL);
-        gst_object_unref(r.m_bus); gst_object_unref(r.m_pipeline);
-        GError *error = nullptr;
-        r.m_pipeline = gst_parse_launch("audiotestsrc is-live=true ! audioconvert ! vorbisenc ! oggmux ! filesink name=recording_sink", &error);
-        if (!r.m_pipeline || error) throw std::runtime_error("Synthetic recording pipeline unavailable");
-        r.m_bus = gst_element_get_bus(r.m_pipeline);
-        r.m_fileSink = gst_bin_get_by_name(GST_BIN(r.m_pipeline), "recording_sink");
-        // Keep the bin's reference; the production field is non-owning.
-        gst_object_unref(r.m_fileSink);
+        gst_element_unlink(r.m_autoAudioSrc,r.m_audioRate);
+        gst_bin_remove(GST_BIN(r.m_pipeline),r.m_autoAudioSrc);
+        r.m_autoAudioSrc=gst_element_factory_make("audiotestsrc",nullptr);
+        if (!r.m_autoAudioSrc) throw std::runtime_error("Synthetic recording source unavailable");
+        g_object_set(r.m_autoAudioSrc,"is-live",TRUE,nullptr);
+        if (!gst_bin_add(GST_BIN(r.m_pipeline),r.m_autoAudioSrc) ||
+            !gst_element_link(r.m_autoAudioSrc,r.m_audioRate))
+            throw std::runtime_error("Synthetic recording source could not join production graph");
         r.m_timer.start(10);
     }
     static bool warningReleasedOnce(AudioRecorder &r) {
@@ -211,6 +211,11 @@ int main(int argc,char **argv) {
             recorder.record("queued-first");spin(100);recorder.stop();recorder.record("queued-next");spin(400);recorder.stop();
             check("queued_next_recording_finalizes",waitFor([&]{return MaintenanceTestAccess::finished(recorder);}));
             check("queued_next_recording_was_not_dropped",oggFinalized(profile.path(),"queued-next.ogg"));
+        }
+        {
+            { AudioRecorder recorder;MaintenanceTestAccess::syntheticInput(recorder);
+              recorder.record("shutdown-paused");spin(200);recorder.pause(); }
+            check("paused_recording_finalizes_on_destruction",oggFinalized(profile.path(),"shutdown-paused.ogg"));
         }
     } catch (const std::exception &e) { check(QString("exception: ")+e.what(),false); }
     QFile report("maintenance-regression-evidence.json");report.open(QIODevice::WriteOnly);

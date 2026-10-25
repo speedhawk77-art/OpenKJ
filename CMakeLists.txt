@@ -27,6 +27,8 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(OPENKJ_BUILD_MAINTENANCE_TESTS "Build focused v9 maintenance regressions" OFF)
+
 find_package(QT NAMES Qt5 COMPONENTS Widgets REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Gui Sql Network Widgets Concurrent Svg PrintSupport REQUIRED)
 
@@ -735,10 +737,16 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif ()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    add_executable(openkj
-            ${SOURCE_FILES}
-            ${WINDOWS_ICON_RC}
-            )
+    if (OPENKJ_BUILD_MAINTENANCE_TESTS)
+        # Both executables exercise the same compiled application objects.
+        set(MAINTENANCE_CORE_SOURCES ${SOURCE_FILES})
+        list(FILTER MAINTENANCE_CORE_SOURCES EXCLUDE REGEX "src/main\\.cpp$")
+        add_library(openkj_maintenance_core OBJECT ${MAINTENANCE_CORE_SOURCES})
+        target_link_libraries(openkj_maintenance_core PRIVATE ${LIBRARIES})
+        add_executable(openkj src/main.cpp ${WINDOWS_ICON_RC} $<TARGET_OBJECTS:openkj_maintenance_core>)
+    else ()
+        add_executable(openkj ${SOURCE_FILES} ${WINDOWS_ICON_RC})
+    endif ()
     target_link_libraries(openkj PRIVATE ${LIBRARIES})
     set_property(
             TARGET openkj
@@ -787,10 +795,7 @@ if (WIN32 AND OPENKJ_BUILD_CODEC_TESTS)
     target_link_libraries(openkj_codec_test Qt5::Widgets Qt5::Concurrent winhttp)
 endif ()
 
-option(OPENKJ_BUILD_MAINTENANCE_TESTS "Build focused v9 maintenance regressions" OFF)
 if (WIN32 AND OPENKJ_BUILD_MAINTENANCE_TESTS)
-    set(MAINTENANCE_TEST_SOURCES ${SOURCE_FILES})
-    list(FILTER MAINTENANCE_TEST_SOURCES EXCLUDE REGEX "src/main\\.cpp$")
-    add_executable(openkj_maintenance_test tests/maintenance_regression.cpp ${MAINTENANCE_TEST_SOURCES})
+    add_executable(openkj_maintenance_test tests/maintenance_regression.cpp $<TARGET_OBJECTS:openkj_maintenance_core>)
     target_link_libraries(openkj_maintenance_test PRIVATE ${LIBRARIES})
 endif ()

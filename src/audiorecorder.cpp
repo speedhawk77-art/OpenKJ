@@ -236,6 +236,8 @@ AudioRecorder::~AudioRecorder() {
     if (m_pipeline && (m_recording || m_finalizing)) {
         if (!m_finalizing)
             gst_element_send_event(m_pipeline, gst_event_new_eos());
+        // A paused pipeline cannot deliver EOS until it resumes draining.
+        gst_element_set_state(m_pipeline, GST_STATE_PLAYING);
         GstMessage *message = gst_bus_timed_pop_filtered(
             m_bus, 2 * GST_SECOND,
             static_cast<GstMessageType>(GST_MESSAGE_EOS | GST_MESSAGE_ERROR));
