@@ -1,0 +1,95 @@
+name: Inspect embedded Microsoft runtime licence documents
+on:
+  workflow_dispatch:
+  push:
+    branches: [offline-remote-v9]
+    paths: [.github/workflows/inspect-openkj-v9-microsoft-terms.yml]
+permissions:
+  contents: write
+jobs:
+  microsoft-terms:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify draft release and download its exact installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          data="$(gh api "repos/${GITHUB_REPOSITORY}/releases/421204266")"
+          printf '%s' "$data" | jq -e '.draft==true and .published_at==null' >/dev/null
+          id="$(printf '%s' "$data" | jq -r '.assets[] | select(.name=="OpenKJ-v9-Cleaned-Setup.exe") | .id')"
+          test "$id" = '667394901' || { echo "Installer asset has changed"; exit 2; }
+          gh api -H 'Accept: application/octet-stream' "repos/${GITHUB_REPOSITORY}/releases/assets/${id}" > OpenKJ-v9-Cleaned-Setup.exe
+          printf '%s  %s\n' 'bc35c24ef25529b86b90bd3f5a215603de3b283d590620ec58820e02f83421ef' 'OpenKJ-v9-Cleaned-Setup.exe' | sha256sum -c -
+      - name: Download checksum-pinned Inno Setup 7 unpacker
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # innounp 2.71.2 supports Inno Setup through 7.1.0.
+          # Pin both the upstream revision and the downloaded archive bytes.
+          $url = 'https://raw.githubusercontent.com/jrathlev/InnoUnpacker-Windows-GUI/032d64c782efc6b36766d8f9c3b1b2f042144a58/innounp-2/bin/innounp-2.zip'
+          Invoke-WebRequest -Uri $url -OutFile innounp-2.zip
+          $sha = (Get-FileHash innounp-2.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($sha -ne '10fce27b6344b7674d5625cc34afca1c88c12183d957c6d93e401097fa2556cd') {
+            throw 'Inno unpacker archive checksum mismatch'
+          }
+          Expand-Archive -LiteralPath innounp-2.zip -DestinationPath unpacker
+      - name: Inspect Inno Setup 7 embedded Microsoft redistributable with innounp
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'Looking for the embedded VC++ redistributable in the Inno archive.'
+          # -n rejects unsupported formats; -a includes duplicate file entries.
+          ./unpacker/innounp.exe -v -a -b -n OpenKJ-v9-Cleaned-Setup.exe > listing.txt || { cat listing.txt; echo 'Unpacker failed; no conclusion about embedded redist.'; exit 3; }
+          grep -Fi 'vc_redist.x64.exe' listing.txt || { echo 'No matching VC++ file in archive listing; inspect manually.'; exit 4; }
+          mkdir extracted
+          ./unpacker/innounp.exe -x -a -b -n -y -dextracted OpenKJ-v9-Cleaned-Setup.exe
+          count="$(find extracted -type f -iname 'vc_redist.x64.exe' | wc -l)"
+          test "$count" -eq 1 || { echo "Expected one redistributable; found $count"; exit 5; }
+          path="$(find extracted -type f -iname 'vc_redist.x64.exe' -print -quit)"
+          sha="$(sha256sum "$path" | awk '{print $1}')"
+          bytes="$(stat -c%s "$path")"
+          echo "Embedded Microsoft VC++ file size: $bytes bytes"
+          echo "Embedded Microsoft VC++ SHA-256: $sha"
+          test "$bytes" -eq 18731856 || { echo "Unexpected redist size"; exit 6; }
+          test "$sha" = '843068991daaa1f73ad9f6239bce4d0f6a07a51f18c37ea2a867e9beca71295c' || { echo "EMBEDDED REDIST DOES NOT MATCH SIGNED VS2026 CANDIDATES"; exit 7; }
+          echo 'PASS: Embedded vc_redist.x64.exe is byte-identical to Microsoft-signed VS2026 Community redistributable candidates.'
+          echo 'NOTE: Valid Visual Studio licensing and use terms still apply.'
+      - name: Extract the Microsoft Burn bootstrapper documents without running the redist
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          dotnet tool install --tool-path wix-cli wix --version 5.0.2
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned WiX extraction tool failed to install' }
+          $redist = Get-ChildItem extracted -Recurse -Filter vc_redist.x64.exe | Select-Object -First 1
+          ./wix-cli/wix.exe burn extract $redist.FullName -o runtime-payload -outba runtime-bootstrapper
+          if ($LASTEXITCODE -ne 0) { throw 'Runtime document extraction failed' }
+      - name: Preserve actual embedded legal documents and metadata
+        shell: python
+        run: |
+          from pathlib import Path
+          import hashlib,json,zipfile
+          documents=[]
+          roots=[Path('runtime-bootstrapper'),Path('runtime-payload')]
+          with zipfile.ZipFile('OpenKJ-v9-Microsoft-Runtime-Legal-Documents.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for root in roots:
+                  for p in sorted(root.rglob('*')):
+                      if p.is_file() and any(x in p.name.lower() for x in ('licen','eula','notice','copyright')) and p.suffix.lower() in ('.rtf','.txt','.html','.htm','.xml'):
+                          raw=p.read_bytes();name=p.relative_to(root.parent).as_posix()
+                          z.writestr(name,raw);documents.append({'path':name,'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()})
+              assert documents,'No embedded legal documents found'
+              data={'embedded_vc_sha256':'843068991daaa1f73ad9f6239bce4d0f6a07a51f18c37ea2a867e9beca71295c','redist_executed':False,'documents':documents}
+              Path('OpenKJ-v9-Microsoft-Runtime-Legal-Manifest.json').write_text(json.dumps(data,indent=2)+'\n')
+              z.write('OpenKJ-v9-Microsoft-Runtime-Legal-Manifest.json')
+          print(json.dumps(data,indent=2))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenKJ-v9-Microsoft-Runtime-Legal-Documents
+          path: |
+            OpenKJ-v9-Microsoft-Runtime-Legal-Documents.zip
+            OpenKJ-v9-Microsoft-Runtime-Legal-Manifest.json
