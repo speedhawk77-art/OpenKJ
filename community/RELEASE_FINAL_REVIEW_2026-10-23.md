@@ -1,3 +1,5 @@
+> Current status, 2026-10-25: [release completion and remaining reruns](RELEASE_COMPLETION_2026-10-25.md) supersedes the historical pending statements below. The hardware test passed by user report. Application source and installed-file verification are recorded there. Retained-plugin source/notice coverage has been extended locally; final Windows execution awaits GitHub Actions re-enablement. The old working draft must not be published wholesale. [Source access index](SOURCE_ACCESS_v9.md).
+
 # OpenKJ v9 — final available-evidence review (2026-10-23)
 
 **DECISION: RELEASE BLOCKED. This is a documented technical/licence due-diligence result, not legal clearance.** The source is already public, but GitHub Windows binary draft release **421204266** must remain unpublished until the conditions below are fulfilled.

@@ -1,0 +1,10 @@
+{
+  "runtime_document_url": "https://visualstudio.microsoft.com/wp-content/uploads/2025/10/Visual-C-V14-License-Redistributable_and_Runtime_ENU.docx",
+  "runtime_document_sha256": "08651651a7602fc7c0e2763de0fde1ff9f868df2780597cd1775ee9d6441c783",
+  "runtime_text_sha256": "4581a3fd122a841bc71b930934bc3b3aedfbcc889b4cbf7cc6028cc68d51a1ee",
+  "embedded_license_url": "https://aka.ms/VCRedistLicense",
+  "embedded_redist_sha256": "843068991daaa1f73ad9f6239bce4d0f6a07a51f18c37ea2a867e9beca71295c",
+  "sdk_license_source": "https://api.github.com/repos/microsoft/win32metadata/git/blobs/efaf451b29e15921362cdb5888da9ee8f67acd1b",
+  "sdk_license_sha256": "f117abc48de9c18431fa051f80dafc0e436f29cd1552f4a06298336e94a4b42b",
+  "extraction": "Runtime text is paragraphs extracted from word/document.xml in the original Microsoft DOCX; the workflow preserves the checksum-pinned original DOCX too."
+}

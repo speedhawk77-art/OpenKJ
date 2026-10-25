@@ -1,3 +1,5 @@
+> Current status, 2026-10-25: [release completion and remaining reruns](RELEASE_COMPLETION_2026-10-25.md) supersedes the historical pending statements below. The hardware test passed by user report. Application source and installed-file verification are recorded there. Retained-plugin source/notice coverage has been extended locally; final Windows execution awaits GitHub Actions re-enablement. The old working draft must not be published wholesale. [Source access index](SOURCE_ACCESS_v9.md).
+
 # OpenKJ v9 — Public Windows release readiness checklist
 
 **Release status: ON HOLD — GitHub draft ID 421204266.** The cleaned installer works on a second Windows computer, but evidence for some redistributed DLLs and source obligations is incomplete. This is a practical compliance tracker, **not legal certification**.

@@ -69,27 +69,34 @@ jobs:
           $redist = Get-ChildItem extracted -Recurse -Filter vc_redist.x64.exe | Select-Object -First 1
           ./wix-cli/wix.exe burn extract $redist.FullName -o runtime-payload -outba runtime-bootstrapper
           if ($LASTEXITCODE -ne 0) { throw 'Runtime document extraction failed' }
-      - name: Preserve actual embedded legal documents and metadata
-        shell: python
-        run: |
-          from pathlib import Path
-          import hashlib,json,zipfile
-          documents=[]
-          roots=[Path('runtime-bootstrapper'),Path('runtime-payload')]
-          with zipfile.ZipFile('OpenKJ-v9-Microsoft-Runtime-Legal-Documents.zip','w',zipfile.ZIP_DEFLATED) as z:
-              for root in roots:
-                  for p in sorted(root.rglob('*')):
-                      if p.is_file() and any(x in p.name.lower() for x in ('licen','eula','notice','copyright')) and p.suffix.lower() in ('.rtf','.txt','.html','.htm','.xml'):
-                          raw=p.read_bytes();name=p.relative_to(root.parent).as_posix()
-                          z.writestr(name,raw);documents.append({'path':name,'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()})
-              assert documents,'No embedded legal documents found'
-              data={'embedded_vc_sha256':'843068991daaa1f73ad9f6239bce4d0f6a07a51f18c37ea2a867e9beca71295c','redist_executed':False,'documents':documents}
-              Path('OpenKJ-v9-Microsoft-Runtime-Legal-Manifest.json').write_text(json.dumps(data,indent=2)+'\n')
-              z.write('OpenKJ-v9-Microsoft-Runtime-Legal-Manifest.json')
-          print(json.dumps(data,indent=2))
+      - name: Preserve the actual embedded license link and its pinned Microsoft terms
+        shell: bash
+        run: python community/windows/PRESERVE_MICROSOFT_TERMS_V9.py --metadata runtime-bootstrapper --repo . --output .
       - uses: actions/upload-artifact@v4
         with:
           name: OpenKJ-v9-Microsoft-Runtime-Legal-Documents
           path: |
             OpenKJ-v9-Microsoft-Runtime-Legal-Documents.zip
             OpenKJ-v9-Microsoft-Runtime-Legal-Manifest.json
+      - name: Preserve validated original Microsoft terms in the same draft
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in OpenKJ-v9-Microsoft-Runtime-Legal-Documents.zip OpenKJ-v9-Microsoft-Runtime-Legal-Manifest.json; do
+            file="$name"
+            expected="sha256:$(sha256sum "$file" | awk '{print $1}')"
+            release="$(gh api "repos/${GITHUB_REPOSITORY}/releases/421204266")"
+            printf '%s' "$release" | jq -e '.draft==true and .published_at==null' >/dev/null
+            count="$(printf '%s' "$release" | jq --arg name "$name" '[.assets[] | select(.name==$name)]|length')"
+            if [ "$count" -eq 0 ]; then
+              curl -fLsS -X POST -H "Authorization: Bearer ${GH_TOKEN}" -H 'Content-Type: application/octet-stream' \
+                --data-binary "@$file" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/421204266/assets?name=${name}" > uploaded-cargo.json
+              jq -e --arg pin "$expected" '.digest==$pin and .state=="uploaded"' uploaded-cargo.json >/dev/null
+            elif [ "$count" -eq 1 ]; then
+              actual="$(printf '%s' "$release" | jq -r --arg name "$name" '.assets[] | select(.name==$name)|.digest')"
+              test "$actual" = "$expected" || { echo 'Conflicting existing Cargo source asset'; exit 2; }
+            else
+              exit 3
+            fi
+            gh api "repos/${GITHUB_REPOSITORY}/releases/421204266" | jq -e --arg name "$name" --arg pin "$expected" '.draft==true and .published_at==null and ([.assets[]|select(.name==$name and .digest==$pin)]|length)==1' >/dev/null
+          done

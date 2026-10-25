@@ -65,6 +65,7 @@ def main()->int:
     ap.add_argument('--rust-notice-supplement',type=Path,help='Verified librsvg locked Rust crate notice bundle (optional)')
     ap.add_argument('--rust-standard-notice-supplement',type=Path,help='Verified Rust 1.85.0 standard-library notice bundle (optional)')
     ap.add_argument('--qt-notice-supplement',type=Path,help='Verified original Qt module attribution and notice bundle (optional)')
+    ap.add_argument('--retained-plugin-notice-supplement',type=Path,help='Checksum-verified retained-plugin notice bundle')
     x=ap.parse_args()
     cleaned=x.cleaned.expanduser().resolve(); repo=x.repo.expanduser().resolve()
     vc=x.vc_redist.expanduser().resolve()
@@ -113,6 +114,10 @@ def main()->int:
         qt_notice_count=0
         if x.qt_notice_supplement:
             qt_notice_count=install_notice_supplement(x.qt_notice_supplement,out/'licenses'/'qt-module-notices')
+        plugin_notice_count=0
+        if x.retained_plugin_notice_supplement:
+            plugin_notice_count=install_notice_supplement(x.retained_plugin_notice_supplement,out/'licenses'/'retained-plugin-notices')
+        shutil.copy2(repo/'community'/'SOURCE_ACCESS_v9.md',out/'licenses'/'SOURCE_ACCESS_v9.md')
         shutil.copy2(repo/'THIRD_PARTY_NOTICES.md',out/'licenses'/'THIRD_PARTY_NOTICES-updated.md')
         shutil.copy2(repo/'community'/'WINDOWS_DLL_REPLACEMENT_GUIDE_v9.md',out/'licenses'/'WINDOWS_DLL_REPLACEMENT_GUIDE_v9.md')
         if x.omit_openh264:
@@ -123,7 +128,8 @@ def main()->int:
         shutil.copy2(vc,out/'vc_redist.x64.exe')
         (out/'licenses'/'SOURCE_AND_DISTRIBUTION_STATUS.txt').write_text(
             'OpenKJ Offline Remote Community Edition v9 - source, licences and LGPL rights\n\n'
-            'OpenKJ GPL-3 source: https://github.com/speedhawk77-art/OpenKJ/tree/offline-remote-v9\n'
+            'Exact application source: https://github.com/speedhawk77-art/OpenKJ/tree/016d5c3135bbc8073b96881e49e19feb97359101\n'
+            'Source access, archive versions and build instructions: licenses/SOURCE_ACCESS_v9.md\n'
             'Source mirror status: https://github.com/speedhawk77-art/OpenKJ/blob/offline-remote-v9/community/SOURCE_DISTRIBUTION_STATUS_v9.md\n'
             'Review archives are held in draft release ID 421204266; draft assets are not public source delivery.\n'
             'Original Qt 5.15.2 and GStreamer 1.26.9 licence texts, Cerbero package terms, '+
@@ -132,9 +138,9 @@ def main()->int:
             'Replacing Qt/GStreamer LGPL libraries: licenses/WINDOWS_DLL_REPLACEMENT_GUIDE_v9.md.\n'
             'License freedoms, including reverse-engineering for modification and replacing '+
             'the LGPL-covered libraries, are not restricted by this community edition.\n\n'
-            'STATUS: This copy is a TEST CANDIDATE; associated complete corresponding '+
-            'source/build matching, OpenH264 patent/licensing and other notices need '+
-            'independent completion before public binary distribution.\n',encoding='utf-8')
+            'Microsoft runtime and SDK component terms: licenses/upstream-verified-source-notices/microsoft/.\n'
+            'The SDK-built OpenH264 binary is omitted; any optional Cisco binary is downloaded separately by the end user.\n'
+            'Release packaging must make the source archives in SOURCE_ACCESS_v9.md available alongside this installer.\n',encoding='utf-8')
         after=bins(out)
         intended=set(OMIT_CODEC if x.omit_openh264 else ())
         if {k for k in expected if k not in after}!=intended or set(after)-set(expected) or any(expected[k]!=v for k,v in after.items()):
@@ -151,6 +157,8 @@ def main()->int:
             'original_license_directory_retained':True,
             'extra_source_notice_texts':len([p for p in supplemental.rglob('*') if p.is_file()]),
             'archive_derived_notice_files':archive_notice_count,
+            'retained_plugin_notice_files':plugin_notice_count,
+            'retained_plugin_notice_supplement_sha256':digest(x.retained_plugin_notice_supplement) if x.retained_plugin_notice_supplement else None,
             'qt_module_notice_files':qt_notice_count,
             'qt_notice_supplement_sha256':digest(x.qt_notice_supplement) if x.qt_notice_supplement else None,
             'rust_standard_notice_files':standard_notice_count,

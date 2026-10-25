@@ -1,3 +1,5 @@
+> Current status, 2026-10-25: [release completion and remaining reruns](RELEASE_COMPLETION_2026-10-25.md) supersedes the historical pending statements below. The hardware test passed by user report. Application source and installed-file verification are recorded there. Retained-plugin source/notice coverage has been extended locally; final Windows execution awaits GitHub Actions re-enablement. The old working draft must not be published wholesale. [Source access index](SOURCE_ACCESS_v9.md).
+
 # OpenKJ Offline Remote v9 — corresponding source distribution status
 
 **Current status: source mirroring is preparatory work, NOT release clearance.** Draft release ID: `421204266`; candidate filename: `OpenKJ-v9-Cleaned-Setup.exe`; SHA-256 `bc35c24ef25529b86b90bd3f5a215603de3b283d590620ec58820e02f83421ef`.

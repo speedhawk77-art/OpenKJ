@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       source_commit:
-        description: 'Successful source-build commit (blank selects latest successful build)'
+        description: 'Source-build commit (blank retains the hardware-tested 016d5c3 build)'
         required: false
         type: string
   workflow_run:
@@ -52,7 +52,7 @@ jobs:
           set -euo pipefail
           selected="$REQUESTED_SOURCE_COMMIT"
           if [ -z "$selected" ]; then
-            selected="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/build-openkj-v9-source-audit.yml/runs?branch=offline-remote-v9&status=success&per_page=1" --jq '.workflow_runs[0].head_sha')"
+            selected='016d5c3135bbc8073b96881e49e19feb97359101'
           fi
           [[ "$selected" =~ ^[0-9a-f]{40}$ ]]
           name="OpenKJ-v9-Source-Built-App-${selected}.zip"
@@ -127,6 +127,11 @@ jobs:
           qt_id="$(printf '%s' "$release" | jq -r --arg name "$qt_name" '.assets[] | select(.name==$name) | .id')"
           gh api -H 'Accept: application/octet-stream' "repos/${GITHUB_REPOSITORY}/releases/assets/${qt_id}" > qt-notices.zip
           printf '%s  %s\n' '0f9f9d177e18ff52c61264bad6cdb256db7a42bcf4c8a491407a5e34f4301238' qt-notices.zip | sha256sum -c -
+          plugin_name='OpenKJ-v9-Retained-Plugin-Notices.zip'
+          test "$(printf '%s' "$release" | jq --arg name "$plugin_name" '[.assets[] | select(.name==$name)] | length')" -eq 1
+          plugin_id="$(printf '%s' "$release" | jq -r --arg name "$plugin_name" '.assets[] | select(.name==$name) | .id')"
+          gh api -H 'Accept: application/octet-stream' "repos/${GITHUB_REPOSITORY}/releases/assets/${plugin_id}" > retained-plugin-notices.zip
+          printf '%s  %s\n' '2f4c0feebe91b8a1c42d20370288446ae73acec4290a8cc3b9257477632b5a3a' retained-plugin-notices.zip | sha256sum -c -
           python community/windows/STAGE_OPENKJ_COMPLIANCE_CANDIDATE_V9.py \
             --cleaned 'extracted/{app}' \
             --repo . \
@@ -136,10 +141,14 @@ jobs:
             --rust-notice-supplement rust-notices.zip \
             --rust-standard-notice-supplement rust-standard-notices.zip \
             --qt-notice-supplement qt-notices.zip \
+            --retained-plugin-notice-supplement retained-plugin-notices.zip \
             --omit-openh264
           python community/windows/PREPARE_SOURCE_BUILT_CANDIDATE_V9.py \
             --candidate candidate --original 'extracted/{app}' --bundle source-built-app.zip \
             --source-commit "$SOURCE_BUILT_COMMIT" --report audit-reports/OpenKJ-v9-Source-Candidate.json
+      - name: Require unchanged user-tested program files
+        shell: bash
+        run: python community/windows/VERIFY_TESTED_RUNTIME_V9.py --candidate candidate
       - name: Record source candidate identity
         shell: python
         run: |

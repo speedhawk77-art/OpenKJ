@@ -1,0 +1,25 @@
+name: Prepare clean public-release draft
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_run:
+        description: Successful documentation-refresh installer verification run ID
+        type: string
+        required: true
+permissions:
+  contents: write
+  actions: read
+jobs:
+  prepare:
+    if: github.repository == 'speedhawk77-art/OpenKJ'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify evidence and prepare a separate draft without publishing
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_RUN: ${{ inputs.candidate_run }}
+        run: python3 community/windows/PREPARE_PUBLIC_DRAFT_V9.py --candidate-run "$CANDIDATE_RUN" --work public-draft-inputs

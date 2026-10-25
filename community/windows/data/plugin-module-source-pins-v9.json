@@ -1,0 +1,27 @@
+[
+  {
+    "filename": "gst-plugins-bad-1.26.9.tar.xz",
+    "sha256": "a96bfb68c53a7c9ab1ae279eac7c101f4204fb5c0e4729683b2be64261707446",
+    "url": "https://gstreamer.freedesktop.org/src/gst-plugins-bad/gst-plugins-bad-1.26.9.tar.xz"
+  },
+  {
+    "filename": "gst-plugins-base-1.26.9.tar.xz",
+    "sha256": "11db4ec9ae5be2194ff8ccf2b5fecdc069252fe4416921b083a921ef71dd000a",
+    "url": "https://gstreamer.freedesktop.org/src/gst-plugins-base/gst-plugins-base-1.26.9.tar.xz"
+  },
+  {
+    "filename": "gst-plugins-good-1.26.9.tar.xz",
+    "sha256": "f38566fb53ae56b7019a039475311756a28eb978a781154d67813dcb551ff5fe",
+    "url": "https://gstreamer.freedesktop.org/src/gst-plugins-good/gst-plugins-good-1.26.9.tar.xz"
+  },
+  {
+    "filename": "gst-rtsp-server-1.26.9.tar.xz",
+    "sha256": "67e92e9a5b0f2b51eb571cc893b80da2ae2374f19b05d381d1e364393fe12654",
+    "url": "https://gstreamer.freedesktop.org/src/gst-rtsp-server/gst-rtsp-server-1.26.9.tar.xz"
+  },
+  {
+    "filename": "gstreamer-1.26.9.tar.xz",
+    "sha256": "8ee8772e468102ebe86d414d8c4c7440dd91d9f3e9396952ff23aecde80670c8",
+    "url": "https://gstreamer.freedesktop.org/src/gstreamer/gstreamer-1.26.9.tar.xz"
+  }
+]

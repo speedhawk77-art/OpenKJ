@@ -1,0 +1,37 @@
+[
+  {
+    "cargo_source": "git+https://github.com/gtk-rs/gtk-rs-core?branch=0.21#f1b0b52fb591d5164e90dc69d0567c5feb0276a5",
+    "git_commit": "f1b0b52fb591d5164e90dc69d0567c5feb0276a5",
+    "archive_url": "https://codeload.github.com/gtk-rs/gtk-rs-core/tar.gz/f1b0b52fb591d5164e90dc69d0567c5feb0276a5",
+    "filename": "gtk-rs__gtk-rs-core-f1b0b52fb591d5164e90dc69d0567c5feb0276a5.tar.gz",
+    "archive_sha256": "f56b197e9a159a0ad2cbe48a02d5abba339b7a5ba0d5bc4f99371076c86d0405"
+  },
+  {
+    "cargo_source": "git+https://github.com/gtk-rs/gtk4-rs?branch=0.10#063c412ba57218b237e497aed934aa9e690179bf",
+    "git_commit": "063c412ba57218b237e497aed934aa9e690179bf",
+    "archive_url": "https://codeload.github.com/gtk-rs/gtk4-rs/tar.gz/063c412ba57218b237e497aed934aa9e690179bf",
+    "filename": "gtk-rs__gtk4-rs-063c412ba57218b237e497aed934aa9e690179bf.tar.gz",
+    "archive_sha256": "b49e9976c3d31853c817885932c3d309cbbbde3a0a90c544e73509daf3c020fd"
+  },
+  {
+    "cargo_source": "git+https://github.com/rust-av/ffv1.git?rev=bd9eabfc14c9ad53c37b32279e276619f4390ab8#bd9eabfc14c9ad53c37b32279e276619f4390ab8",
+    "git_commit": "bd9eabfc14c9ad53c37b32279e276619f4390ab8",
+    "archive_url": "https://codeload.github.com/rust-av/ffv1/tar.gz/bd9eabfc14c9ad53c37b32279e276619f4390ab8",
+    "filename": "rust-av__ffv1-bd9eabfc14c9ad53c37b32279e276619f4390ab8.tar.gz",
+    "archive_sha256": "43e53cfdeba6c96b23b0b2837f39bd07c23fe1be5cffadd69122867ce7d5a356"
+  },
+  {
+    "cargo_source": "git+https://github.com/rust-av/flavors#833508af656d298c269f2397c8541a084264d992",
+    "git_commit": "833508af656d298c269f2397c8541a084264d992",
+    "archive_url": "https://codeload.github.com/rust-av/flavors/tar.gz/833508af656d298c269f2397c8541a084264d992",
+    "filename": "rust-av__flavors-833508af656d298c269f2397c8541a084264d992.tar.gz",
+    "archive_sha256": "79288d892a46f2c2a84ad7e96b48608fbf54518ecf3fa7b6035f9a4bab187dab"
+  },
+  {
+    "cargo_source": "git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs?branch=0.24#51e40346a321972fce9849af290dd6b3e1f2c587",
+    "git_commit": "51e40346a321972fce9849af290dd6b3e1f2c587",
+    "archive_url": "https://gitlab.freedesktop.org/gstreamer/gstreamer-rs/-/archive/51e40346a321972fce9849af290dd6b3e1f2c587/gstreamer-rs-51e40346a321972fce9849af290dd6b3e1f2c587.tar.gz",
+    "filename": "gstreamer__gstreamer-rs-51e40346a321972fce9849af290dd6b3e1f2c587.tar.gz",
+    "archive_sha256": "5571933b7f79ee0d6377768a03da867422fff1a069032da6810fad2dcafb392a"
+  }
+]

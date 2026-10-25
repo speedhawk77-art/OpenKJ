@@ -1,6 +1,6 @@
 # Replacing LGPL libraries in OpenKJ Offline Remote v9 — Windows x64
 
-**Work-in-progress installation and relinking guidance.** This document is for users of the Windows **cleaned candidate**. It does not establish that the candidate has been fully license-cleared or that replacement libraries are ABI compatible.
+This guide applies to the source-built Windows x64 candidate from application commit `016d5c3135bbc8073b96881e49e19feb97359101` and documentation-only refreshes with the same 339 program hashes. Library replacement still requires compatible interfaces.
 
 OpenKJ itself is distributed under GPL-3.0. The cleaned Windows build uses dynamically linked Qt 5.15.2 DLLs (various module licences, often LGPLv3) and GStreamer 1.26.9 DLLs (core LGPLv2.1 and plugin-specific terms). This project does not impose a restriction on modifying, reverse engineering for debugging such modifications, or replacing LGPL-covered libraries. Official terms control if this document is inconsistent.
 
@@ -23,10 +23,8 @@ OpenKJ does not intentionally lock the runtime to specific library hashes or pre
 
 ## Building and obtaining source
 
-- Application source is public: [OpenKJ branch `offline-remote-v9`](https://github.com/speedhawk77-art/OpenKJ/tree/offline-remote-v9). The current candidate manifest is **not** an exact binary build attestation.
-- Qt 5.15.2, GStreamer 1.26.9 and five related upstream source archives have been checksum-verified and mirrored as **draft assets** under release 421204266. They become publicly accessible only if and when the release is published.
-- For missing exact-library sources and build instructions, review `community/SOURCE_DISTRIBUTION_STATUS_v9.md`; these obligations **remain outstanding** for the candidate.
+The exact application and launcher source is [commit 016d5c3](https://github.com/speedhawk77-art/OpenKJ/tree/016d5c3135bbc8073b96881e49e19feb97359101). The standalone application source archive includes tracked submodule source and build files. Its source-build workflow records the Qt 5.15.2/MSVC 14.44 environment and commands. Bundled TagLib source is part of that archive; rebuilding the application builds that source as specified by its build files.
 
-**Do not redistribute the binary publicly yet:** the additional LGPL transitive-library source, patch/build provenance, and other component licences must be addressed first. This guide is not a substitute for complying with actual LGPLv2.1/v3 and GPLv3 requirements.
+See `SOURCE_ACCESS_v9.md` beside this guide for library source archives, Cargo lockfiles, Cerbero recipes/patches and build instructions. These sources must be supplied alongside a public installer. A private draft does not provide public source access. Original component terms are installed under `licenses/`; Microsoft terms apply only to Microsoft components.
 
 Relevant original terms: `community/licenses/qt-5.15.2/`, `community/licenses/gstreamer-1.26.9/`, `LICENSE`, `THIRD_PARTY_NOTICES.md`.
