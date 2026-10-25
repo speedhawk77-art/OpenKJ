@@ -48,44 +48,67 @@ documents. Runtime text, SDK terms and provenance are now checked in and
 staged as Microsoft-specific component terms. No agreement was accepted on
 anyone's behalf.
 
-## Remaining execution and publication gates
+## Final execution results
 
-GitHub's Actions page currently states: "Workflows are not currently being run
-on this fork due to the scale of GitHub Actions usage." A repository maintainer
-must re-enable Actions through GitHub's offered control. API access to files
-does not override this restriction. Do not evade the pause with another fork
-or account.
+Actions was re-enabled by the owner. The remaining remote checks completed:
 
-After re-enabling, on branch `offline-remote-v9`:
+| Check | Successful run | Result |
+| --- | --- | --- |
+| Retained-plugin source/notice mirror | [40222018007](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40222018007) | 753 source inputs and 8,230 notice/header documents preserved; output ZIP hashes match local results |
+| Exact Microsoft runtime and linked terms | [40222179367](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40222179367) | Embedded redist identity and linked original terms verified; 18 documents preserved |
+| Refreshed installer | [40222179361](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40222179361) | All 339 program files match the preceding user-tested candidate; 9,596 installed notice hashes and 11 installed HTTP checks pass |
+| Clean release draft | [40222885879](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40222885879) | Exactly 41 assets; all names and SHA-256 digests independently compared against the selection and calculated checksum file |
 
-1. Run **Preserve retained GStreamer plugin sources and notices**
-   (`mirror-openkj-v9-retained-plugin-sources.yml`). It uploads the three new
-   source/notice outputs to working draft 421204266, refusing conflicting assets.
-2. Run **Inspect embedded Microsoft runtime licence documents**
-   (`inspect-openkj-v9-microsoft-terms.yml`). It extracts the exact redist,
-   checks its embedded license link, downloads the pinned original terms and
-   preserves the evidence in the working draft.
-3. Run **Verify source-built OpenKJ v9 installer candidate**
-   (`verify-openkj-v9-source-candidate.yml`) with source commit
-   `016d5c3135bbc8073b96881e49e19feb97359101` (now the blank-input default).
-   The new plugin notices, Microsoft terms, source access index and replacement
-   guide are included. A new guard requires every one of the 339 program paths
-   and hashes to match the user-tested baseline. Existing import/media probes,
-   embedded runtime identity, installer round trip, installed notice hashes and
-   HTTP checks remain required. A changed program fails rather than inheriting
-   the hardware pass. Installer layout/installation is still checked in CI.
-4. Run **Prepare clean public-release draft** with that successful candidate
-   run ID. It copies only pinned source/notice assets and that verified installer
-   to a separate draft. It never publishes or replaces the working draft.
-   Review the resulting draft and source download index before publication.
+Normal/delay import checks, isolated playback pipelines, software renderer and
+supplier/toolchain checks, optional Cisco codec compatibility, embedded runtime
+identity, actual installer installation and installed-file checks all passed.
+The installer returned exit code 0. No program binary changed from the baseline;
+this carries the previous candidate's user-reported hardware result without
+claiming an additional physical test of this documentation-only refresh.
 
-Do not publish draft 421204266 wholesale: it retains historical installers,
-including the old SDK-built OpenH264 payload. Those historical assets are kept
-private for audit history. The new draft must contain one verified installer,
-matching checksums, notices, source archives and matching release notes.
+The Microsoft workflow's first upload attempt lacked GH_TOKEN in that step;
+that setting was corrected. Its archive timestamps are now deterministic.
+The first clean-draft attempt created the draft but a tag-based lookup returned
+404 for the unpublished release; preparation now uses numeric release IDs for
+creation responses and uploads. The successful reruns above supersede those
+failed preparation attempts; no verification check was bypassed.
 
-The remaining checks cannot be marked executed while Actions is paused. No
-new installer has been rebuilt, installed or uploaded by these local checks.
-No release has been published. A lawyer's certificate or exact reproduction
-of all upstream binaries is not being imposed as a new blanket release gate;
-specific unresolved licence obligations must still be resolved on their facts.
+## Ready draft and exact installer
+
+- [Clean draft release 423591307](https://github.com/speedhawk77-art/OpenKJ/releases/tag/untagged-0bda9e68a675f5c69a51), planned public tag `v9.0-offline-remote.2`.
+- Installer: `OpenKJ-v9-Source-Candidate-016d5c3135bbc8073b96881e49e19feb97359101-40222179361-1.exe`.
+- Size: **206,894,379 bytes**; SHA-256 **`7accc965efcc2a7f13df5699cc66bdd0c5f186cf09c829f737d77c89d62a1c12`**.
+- Installer asset in the clean draft: **675832181**.
+- `SHA256SUMS.txt` SHA-256: `4d8c89863996843219ce468c7274319c1e8250ee76cc4f903d884dba4fe01aef`.
+- Exactly one installer, 39 source/notice/evidence assets and the checksum file.
+- Exact asset IDs, sizes, hashes and test scope: `windows/data/verified-clean-draft-v9.json`.
+
+The owner can download this draft while signed in. All required selected source
+archives accompany it, but draft assets remain private until publication. The
+release was independently confirmed **draft=true, published_at=null**. No
+publication action has been taken.
+
+Do not publish working draft 421204266 wholesale: it retains historical
+installers, including the old SDK-built OpenH264 payload. Those assets remain
+private for audit history. The separate clean draft excludes those installers.
+
+## Reproduce the final checks
+
+Use branch `offline-remote-v9` and the Actions **Run workflow** controls:
+
+1. `mirror-openkj-v9-retained-plugin-sources.yml` reproduces and verifies the
+   source and notice archives. Existing matching assets are retained; conflicting
+   assets fail rather than being replaced.
+2. `inspect-openkj-v9-microsoft-terms.yml` reproduces the Microsoft evidence.
+3. `verify-openkj-v9-source-candidate.yml`, source commit
+   `016d5c3135bbc8073b96881e49e19feb97359101` (blank-input default), repeats all
+   program, codec, installer and installed notice/HTTP checks. Any program change
+   fails the 339-file baseline guard.
+4. A successful candidate run automatically starts clean-draft preparation.
+   It can also be run manually with the successful candidate run ID. A different
+   candidate will not overwrite a conflicting existing draft or source asset.
+
+The engineering and packaging checks listed here are complete. Publication is
+an owner decision, and the sources must remain available with the installer.
+These results do not claim independent reproduction of every upstream binary,
+exercise of every codec/hardware configuration, or a legal certification.

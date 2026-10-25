@@ -1,0 +1,273 @@
+{
+  "release_id": 423591307,
+  "tag": "v9.0-offline-remote.2",
+  "release_url": "https://github.com/speedhawk77-art/OpenKJ/releases/tag/untagged-0bda9e68a675f5c69a51",
+  "draft": true,
+  "published_at": null,
+  "application_source_commit": "016d5c3135bbc8073b96881e49e19feb97359101",
+  "source_mirror_run": 40222018007,
+  "microsoft_terms_run": 40222179367,
+  "installer_verification_run": 40222179361,
+  "clean_draft_preparation_run": 40222885879,
+  "installed_program_hash_matches": 339,
+  "installed_notice_hash_matches": 9596,
+  "installed_http_checks_passed": 11,
+  "all_program_hashes_match_user_tested_candidate": true,
+  "physical_test_basis": "Andrew reported MP3+CDG, H.264 with sound, singer display and phone/tablet remote passed on 2026-10-25 for the preceding candidate. No separate physical test of the documentation-only installer refresh was claimed.",
+  "installer": {
+    "id": 675832181,
+    "name": "OpenKJ-v9-Source-Candidate-016d5c3135bbc8073b96881e49e19feb97359101-40222179361-1.exe",
+    "bytes": 206894379,
+    "sha256": "7accc965efcc2a7f13df5699cc66bdd0c5f186cf09c829f737d77c89d62a1c12"
+  },
+  "verified_assets": [
+    {
+      "id": 675832553,
+      "name": "gst-plugins-bad-1.26.9.tar.xz",
+      "bytes": 7787684,
+      "sha256": "a96bfb68c53a7c9ab1ae279eac7c101f4204fb5c0e4729683b2be64261707446"
+    },
+    {
+      "id": 675832595,
+      "name": "gst-plugins-base-1.26.9.tar.xz",
+      "bytes": 2499200,
+      "sha256": "11db4ec9ae5be2194ff8ccf2b5fecdc069252fe4416921b083a921ef71dd000a"
+    },
+    {
+      "id": 675832654,
+      "name": "gst-plugins-good-1.26.9.tar.xz",
+      "bytes": 3007176,
+      "sha256": "f38566fb53ae56b7019a039475311756a28eb978a781154d67813dcb551ff5fe"
+    },
+    {
+      "id": 675832698,
+      "name": "gst-rtsp-server-1.26.9.tar.xz",
+      "bytes": 291996,
+      "sha256": "67e92e9a5b0f2b51eb571cc893b80da2ae2374f19b05d381d1e364393fe12654"
+    },
+    {
+      "id": 675832747,
+      "name": "gstreamer-1.26.9.tar.xz",
+      "bytes": 1894152,
+      "sha256": "8ee8772e468102ebe86d414d8c4c7440dd91d9f3e9396952ff23aecde80670c8"
+    },
+    {
+      "id": 675832775,
+      "name": "GStreamer-cerbero-1.26.9-source-and-recipes.tar.gz",
+      "bytes": 3455696,
+      "sha256": "1a5732762e29b3db189ddc0ac68f6efba7bc31d7e8f73d4f0fd61ca4a991d86a"
+    },
+    {
+      "id": 675832816,
+      "name": "OpenKJ-v9-Application-Source-016d5c3135bbc8073b96881e49e19feb97359101.zip",
+      "bytes": 2286471,
+      "sha256": "d2a5b3dce09cf482ed48378e5ceb842dfdf1fa8259e8d98c4382f80beee8ef02"
+    },
+    {
+      "id": 675832844,
+      "name": "OpenKJ-v9-librsvg-2.59.2-Cargo-Sources.zip",
+      "bytes": 58734931,
+      "sha256": "dc45d766ef02a71bf8a6015b674e2e236171c9ff657aaeab51b01a802cb08c47"
+    },
+    {
+      "id": 675832960,
+      "name": "OpenKJ-v9-librsvg-Cargo-Source-Manifest.json",
+      "bytes": 89940,
+      "sha256": "17f871e5433a1300990f2afa2741796a9271db167ae595137eadff78649a62d8"
+    },
+    {
+      "id": 675832999,
+      "name": "OpenKJ-v9-librsvg-Rust-Notices-v2.zip",
+      "bytes": 1201300,
+      "sha256": "ed4998c77dcd9f0d2a9378860579011f7c12ae781cd66ce84025c17299d43a3f"
+    },
+    {
+      "id": 675835797,
+      "name": "OpenKJ-v9-Microsoft-Runtime-Legal-Documents.zip",
+      "bytes": 72006,
+      "sha256": "e3e94ebf560d3b6393d2406682323e77f86f3cacc0eb12e38730e3a46164318b"
+    },
+    {
+      "id": 675835817,
+      "name": "OpenKJ-v9-Microsoft-Runtime-Legal-Manifest.json",
+      "bytes": 3957,
+      "sha256": "fe91864549c3021a10369793bfd72d7c20006e3b8affc06fe8f4f02eaf9102fe"
+    },
+    {
+      "id": 675833044,
+      "name": "OpenKJ-v9-Official-Supplier-Audit-40099815324.json",
+      "bytes": 87707,
+      "sha256": "5dbd5a0094acef46cab62c02165666ef97b554f7b385fbe808d0d2875014c6d7"
+    },
+    {
+      "id": 675833067,
+      "name": "OpenKJ-v9-Qt-Notice-Evidence.json",
+      "bytes": 64891,
+      "sha256": "0bbed899dc6759697d75073b57ed8d89440ebf48b5b9a1516a16a81c6ef6a4b2"
+    },
+    {
+      "id": 675833097,
+      "name": "OpenKJ-v9-Qt-Notices.zip",
+      "bytes": 351970,
+      "sha256": "0f9f9d177e18ff52c61264bad6cdb256db7a42bcf4c8a491407a5e34f4301238"
+    },
+    {
+      "id": 675835845,
+      "name": "OpenKJ-v9-Retained-Plugin-Notices.zip",
+      "bytes": 8474014,
+      "sha256": "2f4c0feebe91b8a1c42d20370288446ae73acec4290a8cc3b9257477632b5a3a"
+    },
+    {
+      "id": 675835888,
+      "name": "OpenKJ-v9-Retained-Plugin-Source-Manifest.json",
+      "bytes": 7388906,
+      "sha256": "3fbf90ece8e0db0c0898eb5008cbc590629fd99d44f9ee4f9f885ced6f351692"
+    },
+    {
+      "id": 675835922,
+      "name": "OpenKJ-v9-Retained-Plugin-Sources.zip",
+      "bytes": 195002719,
+      "sha256": "ad8b9b160c80b3a642e88cdf51ded6b8b873b6677f75ea638c27710adb27f9cc"
+    },
+    {
+      "id": 675833127,
+      "name": "OpenKJ-v9-Rust-Standard-Notices.zip",
+      "bytes": 453675,
+      "sha256": "049b80431100e4108e6d26cfeaa6a00433b7231f2f03024d03ddd42f688a57eb"
+    },
+    {
+      "id": 675833162,
+      "name": "OpenKJ-v9-Rust-Standard-Source-Manifest.json",
+      "bytes": 93342,
+      "sha256": "889c683658fe7cfa72aab28c8a02e7e2d5e763007d34a7a51d9e7b93fa376778"
+    },
+    {
+      "id": 675833181,
+      "name": "OpenKJ-v9-Rust-Standard-Sources.zip",
+      "bytes": 25988812,
+      "sha256": "c77f014a1299b5c6048fd052a2e23a702efc292e5bc499c39001fc2d50c6cead"
+    },
+    {
+      "id": 675833576,
+      "name": "OpenKJ-v9-Software-OpenGL-Source-Manifest.json",
+      "bytes": 3552,
+      "sha256": "93e9da4c9aeb74d0ee8eb7eb3e121d16f04443107133223c9fbbcf47fced2b5b"
+    },
+    {
+      "id": 675833610,
+      "name": "OpenKJ-v9-Software-OpenGL-Sources.zip",
+      "bytes": 21371754,
+      "sha256": "03593861589b98eaa16b84fe09221029a53caafb4b6dc3f04a7c9106af945c1b"
+    },
+    {
+      "id": 675832181,
+      "name": "OpenKJ-v9-Source-Candidate-016d5c3135bbc8073b96881e49e19feb97359101-40222179361-1.exe",
+      "bytes": 206894379,
+      "sha256": "7accc965efcc2a7f13df5699cc66bdd0c5f186cf09c829f737d77c89d62a1c12"
+    },
+    {
+      "id": 675833668,
+      "name": "OpenKJ-v9-Transitive-Source-Batch1-Manifest.json",
+      "bytes": 5867,
+      "sha256": "7f0cffef41d21cf529f3c7839f8a5eea73d555bbfb856f48f99b43cb7aa5474b"
+    },
+    {
+      "id": 675833711,
+      "name": "OpenKJ-v9-Transitive-Source-Batch1.zip",
+      "bytes": 25859997,
+      "sha256": "00795c4fe6d887dc620cc039934d512d26433c76616fea2ead51547fc10e9aa3"
+    },
+    {
+      "id": 675833788,
+      "name": "OpenKJ-v9-Transitive-Source-Batch2-Manifest.json",
+      "bytes": 8093,
+      "sha256": "8ef40eb1b95177fde3b82a225c629bc9a8e5fbd663b0ee9fce606ec20aed7746"
+    },
+    {
+      "id": 675833825,
+      "name": "OpenKJ-v9-Transitive-Source-Batch2.zip",
+      "bytes": 54866947,
+      "sha256": "cfaecddfcd239b21677b15e6e2fb856c0eac493ed8c27cd3b882d520762f9f61"
+    },
+    {
+      "id": 675833939,
+      "name": "OpenKJ-v9-Transitive-Source-Batch3-Manifest.json",
+      "bytes": 20851,
+      "sha256": "0859c7a5f4a1624562f7140f4ec875c6968a5432ca2892bcab883dacfbb390ab"
+    },
+    {
+      "id": 675833984,
+      "name": "OpenKJ-v9-Transitive-Source-Batch3.zip",
+      "bytes": 199105015,
+      "sha256": "5082a5247b09761eb4d4bc7fe03a6b6220196535e40118ca3af540cb0ef0424b"
+    },
+    {
+      "id": 675834389,
+      "name": "OpenKJ-v9-Transitive-Source-Batch4-Manifest.json",
+      "bytes": 1911,
+      "sha256": "09ae2d7d4c8453e9bf51116f0ef4a1fde9a6652cf7acc383ce6a02b8f8307180"
+    },
+    {
+      "id": 675834430,
+      "name": "OpenKJ-v9-Transitive-Source-Batch4.zip",
+      "bytes": 3951617,
+      "sha256": "c9812f67a540096f2c512f7dfda7ae4769f02d385c1ac793d9b7b842a5307525"
+    },
+    {
+      "id": 675834474,
+      "name": "OpenKJ-v9-Transitive-Source-Batch5-Manifest.json",
+      "bytes": 5557,
+      "sha256": "df18e3ae368b36a9a346904c057b32fc8b038172ebfb966858f68c1ae9adc0c7"
+    },
+    {
+      "id": 675834499,
+      "name": "OpenKJ-v9-Transitive-Source-Batch5.zip",
+      "bytes": 151671850,
+      "sha256": "7d3e1b62f0118ec0f34ceb4b5a73bf63c4c9daa5b8c9f96cd7d418e269311d10"
+    },
+    {
+      "id": 675834787,
+      "name": "OpenKJ-v9-Transitive-Source-Batch6-Manifest.json",
+      "bytes": 1994,
+      "sha256": "a8fc00c70e54dc3dd8f056f0c7f5fda9e6b8eb097f7277efa92bfcb5339f5733"
+    },
+    {
+      "id": 675834821,
+      "name": "OpenKJ-v9-Transitive-Source-Batch6.zip",
+      "bytes": 3652912,
+      "sha256": "cf84a86046a1934920f0c798c1179b37f4fbe1ffbb5399f5654c9a922053ce44"
+    },
+    {
+      "id": 675834869,
+      "name": "OpenKJ-v9-Upstream-Notice-Evidence-v2.json",
+      "bytes": 109972,
+      "sha256": "e6d2bdae7331e9ce21c019c5712e50561176653c20726125d5625022667dd09d"
+    },
+    {
+      "id": 675834919,
+      "name": "OpenKJ-v9-Upstream-Notices-v2.zip",
+      "bytes": 846348,
+      "sha256": "e84daa9fb5afb05ba86508a52d67bd535082f4020d056551c3288363389f540a"
+    },
+    {
+      "id": 675834959,
+      "name": "proxy-libintl-0.4-source.tar.gz",
+      "bytes": 13033,
+      "sha256": "13ef3eea0a3bc0df55293be368dfbcff5a8dd5f4759280f28e030d1494a5dffb"
+    },
+    {
+      "id": 675834995,
+      "name": "qt-everywhere-src-5.15.2.tar.xz",
+      "bytes": 586690220,
+      "sha256": "3a530d1b243b5dec00bc54937455471aaa3e56849d2593edb8ded07228202240"
+    },
+    {
+      "id": 675836125,
+      "name": "SHA256SUMS.txt",
+      "bytes": 4323,
+      "sha256": "4d8c89863996843219ce468c7274319c1e8250ee76cc4f903d884dba4fe01aef"
+    }
+  ],
+  "checksums_independently_compared": true,
+  "public_release_published": false
+}

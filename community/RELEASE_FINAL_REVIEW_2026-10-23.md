@@ -1,4 +1,4 @@
-> Current status, 2026-10-25: [release completion and remaining reruns](RELEASE_COMPLETION_2026-10-25.md) supersedes the historical pending statements below. The hardware test passed by user report. Application source and installed-file verification are recorded there. Retained-plugin source/notice coverage has been extended locally; final Windows execution awaits GitHub Actions re-enablement. The old working draft must not be published wholesale. [Source access index](SOURCE_ACCESS_v9.md).
+> Current status, 2026-10-25: [completed release checks and clean draft](RELEASE_COMPLETION_2026-10-25.md) supersedes historical pending statements below. Actions is re-enabled; source/notice mirroring, Microsoft terms verification and the refreshed installer checks passed. All 339 program hashes match the user-tested candidate; 9,596 installed notices and 11 HTTP checks passed. Clean draft 423591307 has exactly 41 checksum-verified assets and remains unpublished. Do not publish the historical working draft wholesale. [Source access index](SOURCE_ACCESS_v9.md).
 
 # OpenKJ v9 — final available-evidence review (2026-10-23)
 
