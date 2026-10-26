@@ -1,0 +1,32 @@
+{
+  "application_source_commit": "39da17fed3644b8ae93d5e114fb77892b8da6655",
+  "verification_run": 40239122777,
+  "checks": {
+    "native_regressions": 52,
+    "optional_codec": 22,
+    "source_http": 11,
+    "installed_http": 11,
+    "installed_program_hashes": 339,
+    "unchanged_dependencies": 337,
+    "installed_notice_hashes": 9597,
+    "installer_exit_code": 0
+  },
+  "installer": {
+    "asset_id": 676294470,
+    "name": "OpenKJ-v9-Maintenance-Candidate-39da17fed3644b8ae93d5e114fb77892b8da6655-40239122777-1.exe",
+    "bytes": 206896527,
+    "sha256": "8851c2aaf04085f0a6802da6645c268cf8e69a3140707322f5ade406b6d5466d"
+  },
+  "application_source": {
+    "asset_id": 676294806,
+    "sha256": "a5dd5132c7481a1895213c8d5087b51eb3461cbd2a3108b1521e28de9b9eb150"
+  },
+  "audit": {
+    "asset_id": 676294368,
+    "sha256": "8117ca8dc5c64b726b0f96edd7a7a88c85a1c0d1579b953291f5737e0779a083"
+  },
+  "working_release_id": 421204266,
+  "draft": true,
+  "public_release_replaced": false,
+  "physical_playback_tested": false
+}

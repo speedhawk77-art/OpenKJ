@@ -31,3 +31,36 @@ executables may change; all 337 dependency paths and hashes must match released 
 Successful test installers and matching application sources are held in the
 existing private working draft. Publishing an update is a separate action after
 review of its results and a hands-on playback/remote check of the changed program.
+
+## Executed Windows verification
+
+[Run 40239122777](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40239122777)
+passed for exact application source commit `39da17fed3644b8ae93d5e114fb77892b8da6655`.
+
+- **52/52 native maintenance regressions** passed. The app and test executable share
+  the same compiled application objects. Recording tests use the production encoder
+  graph with only the microphone replaced by a synthetic source.
+- **22/22 optional-codec tests**, **11/11 source-app HTTP checks** and **11/11
+  installed-launcher HTTP checks** passed.
+- All **337 dependency paths and hashes** match released v9. Only the two
+  source-attested application executables change; runtime inventory remains 339.
+- Installer extraction, exact embedded VC runtime, installation (exit 0), all
+  **339 installed program hashes** and **9,597 installed notice hashes** passed.
+- Existing import, media-pipeline, renderer, compiler-runtime and separately
+  downloaded Cisco compatibility checks passed.
+
+Installer: `OpenKJ-v9-Maintenance-Candidate-39da17fed3644b8ae93d5e114fb77892b8da6655-40239122777-1.exe`.
+Size: 206,896,527 bytes. SHA-256:
+`8851c2aaf04085f0a6802da6645c268cf8e69a3140707322f5ade406b6d5466d`.
+The installer and matching application source are retained in private working
+release 421204266. Full asset identities are in `windows/data/maintenance-verification-v9.json`.
+
+The first test build exposed a duplicate QString streaming helper in the test
+harness. Removing that duplicate and sharing the production objects resolved the
+linker error. The successful run includes the final product code and all tests;
+no failing check was bypassed.
+
+The existing public installer remains available. Before publishing this changed
+application, check playback/singer display, EQ, history refresh, ticker,
+phone/tablet remote and recording if used on the karaoke machine. No physical
+hardware test of this maintenance candidate is claimed by the automated results.
