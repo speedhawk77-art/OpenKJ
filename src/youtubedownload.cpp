@@ -276,7 +276,8 @@ YouTubeDownload::Result YouTubeDownload::verifyAndSave(const QString &source, co
         const auto suffix = i == 0 ? QString() : QString(" (%1)").arg(i + 1);
         const auto path = QDir(destination).filePath(filename + " [YT-" + videoId + "]" + suffix + ".mp4");
         // Same-directory rename publishes a complete file and never overwrites an existing song.
-        if (QFile::rename(output.fileName(), path)) { result.path = QDir::fromNativeSeparators(QFileInfo(path).absoluteFilePath()); return result; }
+        // Use this temporary file's engine: Qt 5 close() retains its Windows handle.
+        if (output.rename(path)) { output.setAutoRemove(false); result.path = QDir::fromNativeSeparators(QFileInfo(path).absoluteFilePath()); return result; }
         if (!QFileInfo::exists(path)) { result.error = tr("Could not save the video. Check the folder permissions and path length."); return result; }
     }
     result.error = tr("Too many existing copies of this video in the selected folder."); return result;

@@ -162,7 +162,7 @@ int main(int argc, char **argv) {
             auto id = model.addDownloadedVideo(completed, "O'Neil é", completedTitle, "00000000001", completedDuration);
             check("completed_video_added_as_local_song", id > 0 && model.getIdForPath(completed) == id && model.getSong(id).artist == "O'Neil é");
             sql.exec("UPDATE dbSongs SET plays=7");
-            check("watched_folder_import_is_deduplicated", model.addDownloadedVideo(completed, "Edited artist", "Edited title", "00000000001", completedDuration) == id);
+            check("watched_folder_import_is_deduplicated", id > 0 && model.addDownloadedVideo(completed, "Edited artist", "Edited title", "00000000001", completedDuration) == id);
             sql.exec("SELECT count(*),artist,title,plays,path,duration FROM dbSongs"); sql.next();
             check("import_keeps_play_history_and_chosen_metadata", sql.value(0).toInt() == 1 && sql.value(1).toString() == "Edited artist" && sql.value(2).toString() == "Edited title" && sql.value(3).toInt() == 7 && sql.value(4).toString() == completed && sql.value(5).toInt() > 0);
             check("invalid_import_rejected", model.addDownloadedVideo(completed, "", "title", "00000000001", 1000) == -1);
