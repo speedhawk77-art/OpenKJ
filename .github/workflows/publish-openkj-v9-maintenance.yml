@@ -1,0 +1,26 @@
+name: Publish owner-tested OpenKJ v9 maintenance release
+on:
+  push:
+    branches: [offline-remote-v9]
+    paths:
+      - .github/workflows/publish-openkj-v9-maintenance.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: publish-openkj-v9-maintenance-3
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.repository == 'speedhawk77-art/OpenKJ'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify pinned installer, matching sources and evidence before publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 community/windows/PUBLISH_MAINTENANCE_V9.py
