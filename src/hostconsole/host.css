@@ -12,3 +12,4 @@
 @media(max-width:599px){.player{grid-template-areas:'track track' 'timeline timeline' 'transport volume' 'tuning tuning'}.tuning{margin-top:5px;gap:12px}.stepper button{min-width:44px;min-height:44px}.stepper button.number{min-width:40px}.volume{gap:5px}.volume output{min-width:30px}.item-actions button{min-height:44px}.transport .ghost{min-width:40px}}
 @media(min-width:700px) and (max-width:900px){.workspace{display:grid;grid-template-columns:1.2fr 1fr;gap:12px}.workspace-panel:not(.mobile-active){display:flex}#queuePanel{grid-column:1/-1}.workspace-panel .item-list{grid-template-columns:1fr}#queueList{grid-template-columns:1fr 1fr}.workspace-panel{min-height:380px;max-height:570px}.workspace-panel .item-list{overflow:auto}}
 @media(min-width:901px){.workspace-panel{min-height:450px;height:calc(100dvh - 360px);max-height:none}}
+@media(max-width:900px){input:not([type=range]):not([type=checkbox]),select,textarea{font-size:16px}}
