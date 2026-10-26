@@ -139,7 +139,7 @@ jobs:
       run: |
         set -euo pipefail
         python community/windows/PROBE_APPLICATION_HTTP_V9.py \
-          --app source-build/openkj.exe --report source-app-http-probe.json
+          --app source-build/openkj.exe --host-downloads --report source-app-http-probe.json
     - name: Record source commit and executable hash
       shell: python
       run: |
@@ -391,7 +391,7 @@ jobs:
       run: |
         set -euo pipefail
         python community/windows/PROBE_APPLICATION_HTTP_V9.py \
-          --app installer-roundtrip/installed/OpenKJ-Remote.exe \
+          --app installer-roundtrip/installed/OpenKJ-Remote.exe --host-downloads \
           --report audit-reports/OpenKJ-v9-Installed-App-HTTP-Probe.json
     - name: Preserve text audit evidence only
       if: always()

@@ -42,7 +42,9 @@ checks are retained. A physical phone test is still required before release appr
 The first host-remote Windows build passed 76 native download/remote checks, 52
 maintenance checks, 22 optional-codec checks and 14 HTTP checks. Packaging's HTTP
 count is explicitly set to 14 for this candidate; legacy callers retain their original
-11-check requirement. The installer must also pass the full roundtrip before delivery.
+11-check requirement. Both source and installed-app probes explicitly select
+`--host-downloads` to add the three host authentication checks, leaving other
+existing workflows on their unchanged baseline. The installer must also pass the full roundtrip before delivery.
 
 The optional DOM test can be run with Node and jsdom 30.1.3 installed in an isolated
 test folder: set NODE_PATH to that folder's node_modules, then run
