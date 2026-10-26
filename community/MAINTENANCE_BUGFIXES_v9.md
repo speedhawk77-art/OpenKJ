@@ -64,3 +64,14 @@ The existing public installer remains available. Before publishing this changed
 application, check playback/singer display, EQ, history refresh, ticker,
 phone/tablet remote and recording if used on the karaoke machine. No physical
 hardware test of this maintenance candidate is claimed by the automated results.
+
+## Owner testing and public release
+
+After testing the maintenance candidate, the owner reported “all seems to be working”
+and explicitly approved publication. This is an owner report, separate from the
+automated results above; it does not imply exhaustive hardware or media coverage.
+
+The exact tested installer and matching sources are published as
+[`v9.0-offline-remote.3`](https://github.com/speedhawk77-art/OpenKJ/releases/tag/v9.0-offline-remote.3).
+The release asset pins are in `windows/data/maintenance-publication-v9.json`.
+The previous public release and private historical working draft are retained.

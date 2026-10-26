@@ -1,7 +1,7 @@
 <!-- OFFLINE_REMOTE_COMMUNITY_V9 -->
 > **Unofficial OpenKJ Offline Remote Community Edition (Windows v9).** Not an official release by the OpenKJ maintainers. See [offline remote features, installation, source and security information](OFFLINE_REMOTE_README.md). For an installation package, see [Releases](https://github.com/speedhawk77-art/OpenKJ/releases).
 
-**[Download Offline Remote v9 for Windows x64](https://github.com/speedhawk77-art/OpenKJ/releases/tag/v9.0-offline-remote.2)** — installer, matching sources and SHA-256 checksums.
+**[Download Offline Remote v9 for Windows x64](https://github.com/speedhawk77-art/OpenKJ/releases/tag/v9.0-offline-remote.3)** — installer, matching sources and SHA-256 checksums.
 
 ---
 

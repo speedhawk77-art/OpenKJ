@@ -26,7 +26,12 @@
     "sha256": "8117ca8dc5c64b726b0f96edd7a7a88c85a1c0d1579b953291f5737e0779a083"
   },
   "working_release_id": 421204266,
-  "draft": true,
-  "public_release_replaced": false,
-  "physical_playback_tested": false
+  "draft": false,
+  "public_release_replaced": true,
+  "physical_playback_tested": false,
+  "public_release_tag": "v9.0-offline-remote.3",
+  "owner_reported_playback_passed": true,
+  "owner_approved_publication": true,
+  "physical_playback_tested_scope": "Automated run did not test physical hardware; owner subsequently reported the candidate working.",
+  "public_release_id": 423762834
 }

@@ -1,20 +1,20 @@
 # OpenKJ v9 source access and library changes
 
 The application and launcher in the user-tested installer were built from
-[`016d5c3135bbc8073b96881e49e19feb97359101`](https://github.com/speedhawk77-art/OpenKJ/tree/016d5c3135bbc8073b96881e49e19feb97359101).
+[`39da17fed3644b8ae93d5e114fb77892b8da6655`](https://github.com/speedhawk77-art/OpenKJ/tree/39da17fed3644b8ae93d5e114fb77892b8da6655).
 The application is GPL-3.0; each bundled library retains its own terms.
 
 ## Source archives to accompany the installer
 
 The public release is
-[`v9.0-offline-remote.2`](https://github.com/speedhawk77-art/OpenKJ/releases/tag/v9.0-offline-remote.2).
+[`v9.0-offline-remote.3`](https://github.com/speedhawk77-art/OpenKJ/releases/tag/v9.0-offline-remote.3).
 The matching source assets accompany the installer and are publicly accessible
 without signing in. Keep these source downloads available with the binary.
 No written source offer is substituted for those files.
 
 | Component | Source assets |
 | --- | --- |
-| OpenKJ and launcher | `OpenKJ-v9-Application-Source-016d5c3135bbc8073b96881e49e19feb97359101.zip`; includes tracked submodule source |
+| OpenKJ and launcher | `OpenKJ-v9-Application-Source-39da17fed3644b8ae93d5e114fb77892b8da6655.zip`; includes tracked submodule source |
 | Qt 5.15.2 | `qt-everywhere-src-5.15.2.tar.xz` |
 | GStreamer 1.26.9 | Core, base, good, bad and RTSP server `1.26.9.tar.xz` archives |
 | SDK recipes, patches and build instructions | `GStreamer-cerbero-1.26.9-source-and-recipes.tar.gz`, commit `c8981c6e66a7c877a9a9a9cdc7a14668296f3f64` |
@@ -25,13 +25,13 @@ No written source offer is substituted for those files.
 | Qt software renderer | `OpenKJ-v9-Software-OpenGL-Sources.zip` and manifest, Mesa/LLVM sources |
 
 The exact selected existing asset IDs, names, sizes and SHA-256 values are in
-`community/windows/data/public-release-source-assets-v9.json`. New plugin
-archive hashes are recorded in `community/RELEASE_COMPLETION_2026-10-25.md`.
+`community/windows/data/maintenance-publication-v9.json`. Dependency assets
+are unchanged from the preceding public release.
 Keep source manifests, build recipes and patches with the corresponding archives.
 
 ## Building and modifying
 
-The source commit's `.github/workflows/build-openkj-v9-source-audit.yml`
+The source commit's `.github/workflows/verify-openkj-v9-maintenance.yml`
 records the application build commands and dependency selection. It uses Qt
 5.15.2 MSVC x64 and MSVC 14.44; newer compiler versions are not an equivalent
 drop-in build environment. The source archive preserves the application build
