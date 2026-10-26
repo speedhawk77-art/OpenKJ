@@ -22,6 +22,7 @@ struct HostConsoleTestAccess {
     static void reload(MainWindow &w){w.m_karaokeSongsModel.loadData();w.m_tableModelBreakSongs.loadDatabase();}
     static QJsonObject state(MainWindow &w,int id=0){return w.remoteHostState({{"singer_id",QString::number(id)}});}
     static QJsonObject search(MainWindow &w,QJsonObject args){return w.remoteHostSearch(args);}
+    static void history(MainWindow &w,const QString &path){w.m_historySongsModel.saveSong("Andrew B",path,"History Artist","History Title","TEST",2);}
     static int key(MainWindow &w){return w.findChild<QSpinBox *>("spinBoxKey")->value();}
     static int tempo(MainWindow &w){return w.findChild<QSpinBox *>("spinBoxTempo")->value();}
     static int selected(MainWindow &w){return w.m_qModel.getSingerId();}
@@ -57,7 +58,8 @@ int main(int argc,char **argv){
   check("correct_pin_survives_failed_attempts",state().value("ok").toBool());
   check("invalid_host_session_rejected",call("volume",{{"target","karaoke"},{"value",10},{"session","old"}}).status==400);
   check("unknown_host_command_rejected",call("run_shell",{{"path","arbitrary.exe"}}).status==400);
-  auto initial=state();check("full_catalog_count",initial.value("library_count").toInt()==76010);
+  auto initial=state();const auto initialLibraryRevision=initial.value("library_revision");HostConsoleTestAccess::reload(window);check("library_changes_have_live_revision",state().value("library_revision").toInt()>initialLibraryRevision.toInt());
+  check("full_catalog_count",initial.value("library_count").toInt()==76010);
   check("state_contains_no_pin_or_local_paths",!QJsonDocument(initial).toJson().contains(server->accessPin().toUtf8())&&!QJsonDocument(initial).toJson().contains(media.path().toUtf8()));
   auto search=HostConsoleTestAccess::search(window,{{"mode","all"},{"offset","0"}});check("full_library_paginated",search.value("ok").toBool()&&search.value("results").toArray().size()==50&&search.value("more").toBool());
   auto next=HostConsoleTestAccess::search(window,{{"mode","all"},{"offset","50"}});check("search_next_page_distinct",next.value("results").toArray().first().toObject().value("id")!=search.value("results").toArray().first().toObject().value("id"));
@@ -116,6 +118,23 @@ int main(int argc,char **argv){
   check("equalizer_updates_native",call("eq",{{"target","karaoke"},{"band",2},{"value",4}}).status==200&&state().value("settings").toObject().value("eq_k").toArray().at(2).toInt()==4);
   check("equalizer_invalid_band_rejected",call("eq",{{"target","karaoke"},{"band",10},{"value",0}}).status==400);
   check("equalizer_invalid_level_rejected",call("eq",{{"target","karaoke"},{"band",0},{"value",13}}).status==400);
+  HostConsoleTestAccess::history(window,songPath);
+  const auto history=HostConsoleTestAccess::search(window,{{"mode","history"},{"name","Andrew B"},{"offset","0"}}).value("results").toArray();
+  check("native_history_search_joins_local_catalog",history.size()==1&&history.first().toObject().value("id").toInt()==songId&&history.first().toObject().value("key_change").toInt()==2);
+  check("saved_singer_search",!HostConsoleTestAccess::search(window,{{"mode","regulars"},{"q","Andrew"}}).value("results").toArray().isEmpty());
+  sql.prepare("INSERT INTO bmsongs(artist,title,path,filename,duration,searchstring) VALUES('Break Artist','Break Track',:path,'break.mp4','180','break track')");sql.bindValue(":path",songPath);check("break_fixture_insert",sql.exec());const int breakId=sql.lastInsertId().toInt();HostConsoleTestAccess::reload(window);
+  check("break_library_search",!HostConsoleTestAccess::search(window,{{"mode","break"},{"q","Break Track"}}).value("results").toArray().isEmpty());
+  check("native_break_playlist_add",call("break_add",{{"id",breakId}}).status==200&&state().value("break_queue").toArray().size()==1);
+  const auto breakState=state();const int breakQueueId=breakState.value("break_queue").toArray().first().toObject().value("id").toInt();
+  check("break_play_requires_confirmation",call("break_play_song",{{"id",breakQueueId}}).status==400);
+  check("break_remove_requires_confirmation",call("break_remove",{{"id",breakQueueId}}).status==400);
+  check("stale_break_playlist_rejected",call("break_remove",{{"id",breakQueueId},{"confirmed",true},{"break_revision","stale"}}).status==400);
+  check("native_break_playlist_remove",call("break_remove",{{"id",breakQueueId},{"confirmed",true}}).status==200&&state().value("break_queue").toArray().isEmpty());
+  check("missing_break_playlist_rejected",call("break_playlist",{{"id",99999999}}).status==400);
+  check("native_multiplex_control",call("setting",{{"name","multiplex"},{"value",1}}).status==200&&state().value("settings").toObject().value("multiplex").toInt()==1);
+  check("break_eq_control",call("eq",{{"target","break"},{"band",3},{"value",-5}}).status==200&&state().value("settings").toObject().value("eq_b").toArray().at(3).toInt()==-5);
+  settings.setRecordingOutputDir(media.filePath("not-configured"));check("recording_requires_laptop_setup",call("setting",{{"name","recording"},{"value",true}}).status==400);
+  check("invalid_sound_clip_rejected",call("sound_clip",{{"id",9999},{"name","Not configured"}}).status==400);
   check("unconfirmed_play_rejected",call("play_singer",{},andrew).status==400);
   check("empty_playback_rejected",call("play_singer",{{"confirmed",true}},andrew).status==400);
   check("empty_next_rejected",call("next",{{"confirmed",true}}).status==400);

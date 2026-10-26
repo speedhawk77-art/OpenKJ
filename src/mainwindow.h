@@ -81,6 +81,7 @@ private:
     bool m_remoteConfirmedAction{false};
     QString m_hostSession;
     int m_hostPlaybackRevision{0};
+    int m_hostLibraryRevision{0};
     QPointer<YouTubeDownloadDialog> m_youtubeDownloadDialog;
     Settings m_settings;
     RemoteControlServer *m_remoteServer{nullptr};

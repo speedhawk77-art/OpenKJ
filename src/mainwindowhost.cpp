@@ -79,7 +79,7 @@ QJsonObject MainWindow::remoteHostState(const QJsonObject &args) {
         {"rotation",singers},{"rotation_revision",revision(singers)},{"selected_singer_id",selected},
         {"queue",queue},{"queue_revision",revision(queue)},{"karaoke",karaoke},{"break_music",bm},
         {"playlists",playlists},{"playlist_id",m_tableModelPlaylistSongs.currentPlaylist()},
-        {"break_queue",breakQueue},{"break_revision",revision(breakQueue)},{"library_count",libraryCount},
+        {"break_queue",breakQueue},{"break_revision",revision(breakQueue)},{"library_count",libraryCount},{"library_revision",m_hostLibraryRevision},
         {"settings",settings},{"settings_revision",revision(settings)},{"sound_clips",clips},
         {"youtube_download",legacy.value("youtube_download")},{"guest_requests",legacy.value("guest_requests")}};
 }

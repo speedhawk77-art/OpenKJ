@@ -656,8 +656,11 @@ MainWindow::MainWindow(QWidget *parent) :
     setupConnections();
     // Start the local embedded remote. No PHP, Internet, or shell script required.
     m_hostSession = QUuid::createUuid().toString(QUuid::WithoutBraces);
-    connect(&m_mediaBackendKar,&MediaBackend::stateChanged,this,[this](MediaBackend::State){++m_hostPlaybackRevision;});
+    connect(&m_mediaBackendKar,&MediaBackend::stateChanged,this,[this](MediaBackend::State){++m_hostPlaybackRevision;++m_hostLibraryRevision;});
     connect(&m_mediaBackendBm,&MediaBackend::stateChanged,this,[this](MediaBackend::State){++m_hostPlaybackRevision;});
+    connect(&m_historySongsModel,&QAbstractItemModel::modelReset,this,[this](){++m_hostLibraryRevision;});
+    connect(&m_karaokeSongsModel,&QAbstractItemModel::modelReset,this,[this](){++m_hostLibraryRevision;});
+    connect(&m_karaokeSongsModel,&QAbstractItemModel::dataChanged,this,[this](){++m_hostLibraryRevision;});
     m_remoteServer = new RemoteControlServer(this);
     m_remoteServer->setHostProviders(
         [this](const QJsonObject &args) { return remoteHostState(args); },

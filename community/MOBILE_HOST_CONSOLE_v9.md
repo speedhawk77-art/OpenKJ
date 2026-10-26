@@ -44,7 +44,9 @@ remain enabled. Import, media verification and optional-codec consent are preser
 
 The classic APIs remain available. Synchronization polls once a second, pauses while
 the browser is hidden, refreshes after actions and reconnects after Wi-Fi loss. Search
-is paginated (50 results), debounced and cancellable; no full 76,000-song catalog is
+is paginated (50 results), debounced and cancellable; metadata/history revisions
+refresh visible results after laptop changes even when the catalog count is unchanged.
+Saved singer names have their own searchable, paged picker. No full 76,000-song catalog is
 sent to the phone. Updates use DOM text/value properties for external names/titles.
 
 ## Laptop-only setup and limits
