@@ -122,7 +122,10 @@ def main()->int:
             plugin_notice_count=install_notice_supplement(x.retained_plugin_notice_supplement,out/'licenses'/'retained-plugin-notices')
         source_access=(repo/'community'/'SOURCE_ACCESS_v9.md').read_text(encoding='utf-8')
         if x.maintenance_source_commit:
-            source_access='MAINTENANCE TEST CANDIDATE. Matching application source: https://github.com/speedhawk77-art/OpenKJ/tree/'+x.maintenance_source_commit+'\nNew source archive: OpenKJ-v9-Application-Source-'+x.maintenance_source_commit+'.zip in working draft 421204266. Dependency sources are unchanged from the public v9 release below.\n\n'+source_access.replace('016d5c3135bbc8073b96881e49e19feb97359101',x.maintenance_source_commit)
+            prior_application_sources=set(re.findall(r'OpenKJ-v9-Application-Source-([0-9a-f]{40})\.zip',source_access))
+            if len(prior_application_sources)!=1:
+                raise RuntimeError('Expected one application source revision in source-access documentation')
+            source_access='MAINTENANCE TEST CANDIDATE. Matching application source: https://github.com/speedhawk77-art/OpenKJ/tree/'+x.maintenance_source_commit+'\nNew source archive: OpenKJ-v9-Application-Source-'+x.maintenance_source_commit+'.zip in working draft 421204266. Dependency sources are unchanged from the public v9 release below.\n\n'+source_access.replace(next(iter(prior_application_sources)),x.maintenance_source_commit)
         (out/'licenses'/'SOURCE_ACCESS_v9.md').write_text(source_access,encoding='utf-8')
         shutil.copy2(repo/'THIRD_PARTY_NOTICES.md',out/'licenses'/'THIRD_PARTY_NOTICES-updated.md')
         shutil.copy2(repo/'community'/'WINDOWS_DLL_REPLACEMENT_GUIDE_v9.md',out/'licenses'/'WINDOWS_DLL_REPLACEMENT_GUIDE_v9.md')

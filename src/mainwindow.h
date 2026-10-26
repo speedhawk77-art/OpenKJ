@@ -22,6 +22,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QPointer>
+class YouTubeDownloadDialog;
 #include "customlineedit.h"
 #include <QtSql>
 #include <QSortFilterProxyModel>
@@ -75,6 +77,7 @@ class MainWindow : public QMainWindow {
 Q_OBJECT
 
 private:
+    QPointer<YouTubeDownloadDialog> m_youtubeDownloadDialog;
     Settings m_settings;
     RemoteControlServer *m_remoteServer{nullptr};
     std::unique_ptr<Ui::MainWindow> ui;
@@ -190,6 +193,7 @@ private slots:
     void remoteStartBreakAtPosition(int position);
     void remoteBreakNext();
     void remoteBreakPrevious();
+    void ensureYouTubeDownloadDialog();
     QJsonObject remoteLibraryStatus();
     QJsonObject remoteSongSearch(const QString &query);
     QJsonObject remoteLibraryAction(const QString &command, const QJsonObject &args);

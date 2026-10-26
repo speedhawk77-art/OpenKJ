@@ -1,0 +1,470 @@
+name: Build and verify OpenKJ v9 download-first candidate
+'on':
+  push:
+    branches:
+    - feature/youtube-download-first
+    paths:
+    - .github/workflows/verify-openkj-v9-download-first.yml
+    - src/**
+    - tests/**
+    - CMakeLists.txt
+    - community/windows/STAGE_OPENKJ_COMPLIANCE_CANDIDATE_V9.py
+    - community/windows/VERIFY_MAINTENANCE_RUNTIME_V9.py
+    - community/windows/VERIFY_WINDOWS_ICONS_V9.py
+    - community/windows/PACK_SOURCE_BUILT_APP_V9.py
+    - community/windows/PROBE_APPLICATION_HTTP_V9.py
+  workflow_dispatch: null
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: openkj-v9-download-first-candidate
+  cancel-in-progress: true
+jobs:
+  maintenance-build-verify:
+    if: github.repository == 'speedhawk77-art/OpenKJ'
+    runs-on: windows-2025
+    timeout-minutes: 65
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        persist-credentials: false
+    - name: Install Qt 5.15.2 build headers and libraries
+      uses: jurplel/install-qt-action@a9c63c7c123f3069cff414e7e482d95dfa9d8125
+      with:
+        version: 5.15.2
+        arch: win64_msvc2019_64
+        archives: qtbase qtsvg
+    - name: Install checksum-pinned GStreamer 1.26.9 development SDK
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+        $ProgressPreference = 'SilentlyContinue'
+        $msi = Join-Path $pwd 'gstreamer-devel-1.26.9.msi'
+        curl.exe -fLsS --retry 2 -o $msi 'https://gstreamer.freedesktop.org/data/pkg/windows/1.26.9/mingw/gstreamer-1.0-devel-mingw-x86_64-1.26.9.msi'
+        if ($LASTEXITCODE -ne 0) { throw 'SDK download failed' }
+        if ((Get-FileHash $msi -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'e88e22054411fa5424e9e58266a2ec17d0cae098eafe785b79338c131315234c') { throw 'GStreamer SDK checksum mismatch' }
+        $p = Start-Process msiexec.exe -ArgumentList "/i `"$msi`" /qn /norestart ADDLOCAL=ALL" -Wait -PassThru
+        if ($p.ExitCode -notin @(0,3010)) { throw "SDK installation failed: $($p.ExitCode)" }
+        if (!(Test-Path 'C:\Program Files\gstreamer\1.0\mingw_x86_64\include\gstreamer-1.0\gst\gst.h')) { throw 'SDK was not installed at the path required by CMake' }
+    - name: Install pinned runtime for an isolated app startup probe
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+        $ProgressPreference = 'SilentlyContinue'
+        $msi = Join-Path $pwd 'gstreamer-runtime-1.26.9.msi'
+        curl.exe -fLsS --retry 2 -o $msi 'https://gstreamer.freedesktop.org/data/pkg/windows/1.26.9/mingw/gstreamer-1.0-mingw-x86_64-1.26.9.msi'
+        if ($LASTEXITCODE -ne 0) { throw 'Runtime download failed' }
+        if ((Get-FileHash $msi -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'f06f729f965deaff5d499a7feb596a001c25badbc8e9d5a791d0f23a530d66ab') { throw 'GStreamer runtime checksum mismatch' }
+        $p = Start-Process msiexec.exe -ArgumentList "/i `"$msi`" /qn /norestart ADDLOCAL=ALL" -Wait -PassThru
+        if ($p.ExitCode -notin @(0,3010)) { throw "Runtime installation failed: $($p.ExitCode)" }
+        Add-Content -LiteralPath $env:GITHUB_PATH -Value 'C:\Program Files\gstreamer\1.0\mingw_x86_64\bin'
+    - name: Select the Qt 5.15.2-compatible MSVC 14.44 toolset
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+        # MSVC 14.51 removed stdext iterators still used by Qt 5.15.2.
+        # The hosted VS2026 image also provides the supported 14.44 toolset.
+        $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+        $vs = (& $vswhere -products '*' -latest -format json | ConvertFrom-Json | Select-Object -First 1)
+        $tools = Join-Path $vs.installationPath 'Common7\Tools'
+        $module = Join-Path $tools 'Microsoft.VisualStudio.DevShell.dll'
+        if (!(Test-Path $module)) { $module = Join-Path $tools 'vsdevshell\Microsoft.VisualStudio.DevShell.dll' }
+        Import-Module $module
+        Enter-VsDevShell -VsInstanceId $vs.instanceId -SkipAutomaticLocation -DevCmdArguments '-arch=x64 -host_arch=x64 -vcvars_ver=14.44' | Out-Null
+        if (!$env:VCToolsVersion.StartsWith('14.44.')) { throw "Wrong MSVC toolset: $env:VCToolsVersion" }
+        foreach ($name in @('Path','INCLUDE','LIB','LIBPATH','VCToolsInstallDir','VCToolsVersion','VCINSTALLDIR','VSINSTALLDIR','VisualStudioVersion','VSCMD_VER','VSCMD_ARG_HOST_ARCH','VSCMD_ARG_TGT_ARCH','WindowsSdkDir','WindowsSDKVersion','WindowsSDKLibVersion','UniversalCRTSdkDir','UCRTVersion')) {
+          $value = [Environment]::GetEnvironmentVariable($name,'Process')
+          if ($value) { Add-Content -LiteralPath $env:GITHUB_ENV -Value "$name=$value" }
+        }
+        Write-Host "Selected MSVC $env:VCToolsVersion"
+    - name: Configure current source with the exact spdlog submodule
+      shell: pwsh
+      run: cmake -S . -B source-build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSPDLOG_USE_BUNDLED=ON -DOPENKJ_BUILD_CODEC_TESTS=ON
+        '-DCMAKE_POLICY_VERSION_MINIMUM=3.5' -DOPENKJ_BUILD_MAINTENANCE_TESTS=ON
+    - name: Compile source without replacing any release binary
+      shell: pwsh
+      run: cmake --build source-build --parallel 4
+    - name: Compile the launcher from this same recorded source commit
+      shell: pwsh
+      run: |
+        rc.exe /nologo /I src /fo source-build/OpenKJRemoteLauncher.res src/appicon.rc
+        if ($LASTEXITCODE -ne 0) { throw 'Launcher icon resource compilation failed' }
+        cl.exe /nologo /std:c++17 /utf-8 /O2 /MT /EHsc /Fe:source-build/OpenKJ-Remote.exe community/windows/OpenKJRemoteLauncher.cpp source-build/OpenKJRemoteLauncher.res /link /SUBSYSTEM:WINDOWS user32.lib
+        if ($LASTEXITCODE -ne 0) { throw 'Source launcher compilation failed' }
+        python community/windows/VERIFY_WINDOWS_ICONS_V9.py
+        if ($LASTEXITCODE -ne 0) { throw 'Windows icon verification failed' }
+    - name: Verify optional end-user codec integration on the isolated runner
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+        $gst = 'C:\Program Files\gstreamer\1.0\mingw_x86_64'
+        Get-ChildItem "$gst\bin\*.dll" | Where-Object { $_.Name -ne 'libopenh264-7.dll' } | Copy-Item -Destination source-build/
+        New-Item -ItemType Directory -Force source-build/gst-plugins | Out-Null
+        Get-ChildItem "$gst\lib\gstreamer-1.0\*.dll" | Where-Object { $_.Name -ne 'libgstopenh264.dll' } | Copy-Item -Destination source-build/gst-plugins/
+        New-Item -ItemType Directory -Force source-build/optional-codecs/openh264 | Out-Null
+        Copy-Item "$gst\lib\gstreamer-1.0\libgstopenh264.dll" source-build/optional-codecs/openh264/
+        $env:LOCALAPPDATA = Join-Path $pwd 'isolated-codec-profile'
+        $env:APPDATA = Join-Path $pwd 'isolated-codec-roaming'
+        $env:GST_PLUGIN_SYSTEM_PATH_1_0 = Join-Path $pwd 'source-build/gst-plugins'
+        ./source-build/openkj_codec_test.exe "$pwd/community/windows/PROBE_GSTREAMER_CANDIDATE_V9.py" "$pwd/community/windows/blue-h264.mp4.b64"
+        if ($LASTEXITCODE -ne 0) { throw 'Optional codec integration tests failed' }
+    - name: Exercise the maintenance fixes with isolated profiles and synthetic media
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+        $env:LOCALAPPDATA = Join-Path $pwd 'isolated-maintenance-profile'
+        $env:APPDATA = Join-Path $pwd 'isolated-maintenance-roaming'
+        $env:GST_PLUGIN_SYSTEM_PATH_1_0 = Join-Path $pwd 'source-build/gst-plugins'
+        $env:QT_QPA_PLATFORM = 'offscreen'
+        ./source-build/openkj_maintenance_test.exe
+        if ($LASTEXITCODE -ne 0) { throw 'Maintenance regression tests failed' }
+        New-Item -ItemType Directory -Force audit-reports | Out-Null
+        Copy-Item maintenance-regression-evidence.json audit-reports/OpenKJ-v9-Maintenance-Regressions.json
+        Copy-Item source-build/windows-icon-evidence.json audit-reports/OpenKJ-v9-Windows-Icons.json
+    - name: Exercise download-first without YouTube or user media
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+        $env:LOCALAPPDATA = Join-Path $pwd 'isolated-youtube-profile'
+        $env:APPDATA = Join-Path $pwd 'isolated-youtube-roaming'
+        $env:GST_PLUGIN_SYSTEM_PATH_1_0 = Join-Path $pwd 'source-build/gst-plugins'
+        $env:QT_QPA_PLATFORM = 'offscreen'
+        ./source-build/openkj_youtube_test.exe
+        if ($LASTEXITCODE -ne 0) { throw 'Download-first integration tests failed' }
+        Copy-Item youtube-download-evidence.json audit-reports/OpenKJ-v9-YouTube-Download-First.json
+    - name: Probe freshly compiled app without publishing its executable
+      shell: bash
+      run: |
+        set -euo pipefail
+        python community/windows/PROBE_APPLICATION_HTTP_V9.py \
+          --app source-build/openkj.exe --host-downloads --report source-app-http-probe.json
+    - name: Record source commit and executable hash
+      shell: python
+      run: |
+        import hashlib,json,os,subprocess
+        from pathlib import Path
+        exe=Path('source-build/openkj.exe')
+        if not exe.is_file(): raise RuntimeError('Compiled executable not found')
+        def cmd(*args):
+            p=subprocess.run(args,text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,errors='replace')
+            return p.stdout.strip()
+        result={
+            'source_commit':os.environ['GITHUB_SHA'],
+            'source_tree':cmd('git','rev-parse','HEAD^{tree}'),
+            'submodules':cmd('git','submodule','status','--recursive'),
+            'executable_sha256':hashlib.sha256(exe.read_bytes()).hexdigest(),
+            'executable_bytes':exe.stat().st_size,
+            'launcher_sha256':hashlib.sha256(Path('source-build/OpenKJ-Remote.exe').read_bytes()).hexdigest(),
+            'launcher_source':'community/windows/OpenKJRemoteLauncher.cpp',
+            'launcher_compile_options':'MSVC 14.44 /std:c++17 /utf-8 /O2 /MT /EHsc OpenKJRemoteLauncher.res /SUBSYSTEM:WINDOWS user32.lib',
+            'compiler':cmd('cl'),
+            'qt_version':cmd('qmake','-query','QT_VERSION'),
+            'gstreamer_development_sdk_version':'1.26.9',
+            'gstreamer_development_sdk_sha256':'e88e22054411fa5424e9e58266a2ec17d0cae098eafe785b79338c131315234c',
+            'current_build_source_attested':True,
+            'existing_draft_executable_source_attested':False,
+            'gstreamer_runtime_sdk_sha256':'f06f729f965deaff5d499a7feb596a001c25badbc8e9d5a791d0f23a530d66ab',
+            'binary_published':False,'physical_playback_tested':False,'release_approved':False,
+        }
+        Path('source-build-evidence.json').write_text(json.dumps(result,indent=2)+'\n',encoding='utf-8')
+        print('Compiled current source; executable SHA-256:',result['executable_sha256'])
+    - name: Preserve build evidence only
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: OpenKJ-v9-Maintenance-Build-Evidence
+        path: |-
+          codec-controller-*/probes.json
+          optional-codec-test-evidence.json
+          source-build-evidence.json
+          source-app-http-probe.json
+          source-build/windows-icon-evidence.json
+          source-build/CMakeCache.txt
+          source-build/CMakeFiles/CMakeConfigureLog.yaml
+
+          maintenance-regression-evidence.json
+          youtube-download-evidence.json
+          youtube-download-dialog.png
+        if-no-files-found: warn
+        retention-days: 30
+    - name: Preserve the source-built app and exact source in the unchanged draft
+      env:
+        GH_TOKEN: ${{ github.token }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        python community/windows/PACK_SOURCE_BUILT_APP_V9.py --expected-http-checks 14
+        name="OpenKJ-v9-Source-Built-App-${GITHUB_SHA}.zip"
+        expected="sha256:$(sha256sum "$name" | awk '{print $1}')"
+        release="$(gh api "repos/${GITHUB_REPOSITORY}/releases/421204266")"
+        printf '%s' "$release" | jq -e --arg name "$name" '.draft==true and .published_at==null and ([.assets[]|select(.name==$name)]|length)==0' >/dev/null
+        curl -fLsS -X POST -H "Authorization: Bearer ${GH_TOKEN}" -H 'Content-Type: application/zip' \
+          --data-binary "@$name" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/421204266/assets?name=${name}" > uploaded-source-app.json
+        jq -e --arg pin "$expected" '.digest==$pin and .state=="uploaded"' uploaded-source-app.json >/dev/null
+        gh api "repos/${GITHUB_REPOSITORY}/releases/421204266" | jq -e '.draft==true and .published_at==null' >/dev/null
+    - name: Verify draft release and download its exact installer
+      env:
+        GH_TOKEN: ${{ github.token }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        data="$(gh api "repos/${GITHUB_REPOSITORY}/releases/421204266")"
+        printf '%s' "$data" | jq -e '.draft==true and .published_at==null' >/dev/null
+        id="$(printf '%s' "$data" | jq -r '.assets[] | select(.name=="OpenKJ-v9-Cleaned-Setup.exe") | .id')"
+        test "$id" = '667394901' || { echo "Installer asset has changed"; exit 2; }
+        gh api -H 'Accept: application/octet-stream' "repos/${GITHUB_REPOSITORY}/releases/assets/${id}" > OpenKJ-v9-Cleaned-Setup.exe
+        printf '%s  %s\n' 'bc35c24ef25529b86b90bd3f5a215603de3b283d590620ec58820e02f83421ef' 'OpenKJ-v9-Cleaned-Setup.exe' | sha256sum -c -
+    - name: Download a successful source-built app with its exact source evidence
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REQUESTED_SOURCE_COMMIT: ${{ github.sha }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        selected="$REQUESTED_SOURCE_COMMIT"
+        if [ -z "$selected" ]; then
+          selected='016d5c3135bbc8073b96881e49e19feb97359101'
+        fi
+        [[ "$selected" =~ ^[0-9a-f]{40}$ ]]
+        name="OpenKJ-v9-Source-Built-App-${selected}.zip"
+        release="$(gh api "repos/${GITHUB_REPOSITORY}/releases/421204266")"
+        printf '%s' "$release" | jq -e --arg name "$name" '.draft==true and .published_at==null and ([.assets[]|select(.name==$name)]|length)==1' >/dev/null
+        id="$(printf '%s' "$release" | jq -r --arg name "$name" '.assets[]|select(.name==$name)|.id')"
+        sha="$(printf '%s' "$release" | jq -r --arg name "$name" '.assets[]|select(.name==$name)|.digest' | sed 's/^sha256://')"
+        gh api -H 'Accept: application/octet-stream' "repos/${GITHUB_REPOSITORY}/releases/assets/${id}" > source-built-app.zip
+        printf '%s  %s\n' "$sha" source-built-app.zip | sha256sum -c -
+        echo "SOURCE_BUILT_COMMIT=$selected" >> "$GITHUB_ENV"
+    - name: Download checksum-pinned Inno Setup 7 unpacker
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+        # innounp 2.71.2 supports Inno Setup through 7.1.0.
+        # Pin both the upstream revision and the downloaded archive bytes.
+        $url = 'https://raw.githubusercontent.com/jrathlev/InnoUnpacker-Windows-GUI/032d64c782efc6b36766d8f9c3b1b2f042144a58/innounp-2/bin/innounp-2.zip'
+        Invoke-WebRequest -Uri $url -OutFile innounp-2.zip
+        $sha = (Get-FileHash innounp-2.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($sha -ne '10fce27b6344b7674d5625cc34afca1c88c12183d957c6d93e401097fa2556cd') {
+          throw 'Inno unpacker archive checksum mismatch'
+        }
+        Expand-Archive -LiteralPath innounp-2.zip -DestinationPath unpacker
+    - name: Inspect Inno Setup 7 embedded Microsoft redistributable with innounp
+      shell: bash
+      run: |
+        set -euo pipefail
+        echo 'Looking for the embedded VC++ redistributable in the Inno archive.'
+        # -n rejects unsupported formats; -a includes duplicate file entries.
+        ./unpacker/innounp.exe -v -a -b -n OpenKJ-v9-Cleaned-Setup.exe > listing.txt || { cat listing.txt; echo 'Unpacker failed; no conclusion about embedded redist.'; exit 3; }
+        grep -Fi 'vc_redist.x64.exe' listing.txt || { echo 'No matching VC++ file in archive listing; inspect manually.'; exit 4; }
+        mkdir extracted
+        ./unpacker/innounp.exe -x -a -b -n -y -dextracted OpenKJ-v9-Cleaned-Setup.exe
+        count="$(find extracted -type f -iname 'vc_redist.x64.exe' | wc -l)"
+        test "$count" -eq 1 || { echo "Expected one redistributable; found $count"; exit 5; }
+        path="$(find extracted -type f -iname 'vc_redist.x64.exe' -print -quit)"
+        sha="$(sha256sum "$path" | awk '{print $1}')"
+        bytes="$(stat -c%s "$path")"
+        echo "Embedded Microsoft VC++ file size: $bytes bytes"
+        echo "Embedded Microsoft VC++ SHA-256: $sha"
+        test "$bytes" -eq 18731856 || { echo "Unexpected redist size"; exit 6; }
+        test "$sha" = '843068991daaa1f73ad9f6239bce4d0f6a07a51f18c37ea2a867e9beca71295c' || { echo "EMBEDDED REDIST DOES NOT MATCH SIGNED VS2026 CANDIDATES"; exit 7; }
+        echo 'PASS: Embedded vc_redist.x64.exe is byte-identical to Microsoft-signed VS2026 Community redistributable candidates.'
+        echo 'NOTE: Valid Visual Studio licensing and use terms still apply.'
+    - name: Stage separate notice and codec test candidate
+      env:
+        GH_TOKEN: ${{ github.token }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        release="$(gh api "repos/${GITHUB_REPOSITORY}/releases/421204266")"
+        printf '%s' "$release" | jq -e '.draft==true and .published_at==null' >/dev/null
+        notice_name='OpenKJ-v9-Upstream-Notices-v2.zip'
+        notice_count="$(printf '%s' "$release" | jq --arg name "$notice_name" '[.assets[] | select(.name==$name)] | length')"
+        test "$notice_count" -eq 1
+        notice_id="$(printf '%s' "$release" | jq -r --arg name "$notice_name" '.assets[] | select(.name==$name) | .id')"
+        notice_sha="$(printf '%s' "$release" | jq -r --arg name "$notice_name" '.assets[] | select(.name==$name) | .digest' | sed 's/^sha256://')"
+        gh api -H 'Accept: application/octet-stream' "repos/${GITHUB_REPOSITORY}/releases/assets/${notice_id}" > upstream-notices.zip
+        printf '%s  %s\n' "$notice_sha" upstream-notices.zip | sha256sum -c -
+        rust_name='OpenKJ-v9-librsvg-Rust-Notices-v2.zip'
+        test "$(printf '%s' "$release" | jq --arg name "$rust_name" '[.assets[] | select(.name==$name)] | length')" -eq 1
+        rust_id="$(printf '%s' "$release" | jq -r --arg name "$rust_name" '.assets[] | select(.name==$name) | .id')"
+        gh api -H 'Accept: application/octet-stream' "repos/${GITHUB_REPOSITORY}/releases/assets/${rust_id}" > rust-notices.zip
+        printf '%s  %s\n' 'ed4998c77dcd9f0d2a9378860579011f7c12ae781cd66ce84025c17299d43a3f' rust-notices.zip | sha256sum -c -
+        std_name='OpenKJ-v9-Rust-Standard-Notices.zip'
+        test "$(printf '%s' "$release" | jq --arg name "$std_name" '[.assets[] | select(.name==$name)] | length')" -eq 1
+        std_id="$(printf '%s' "$release" | jq -r --arg name "$std_name" '.assets[] | select(.name==$name) | .id')"
+        gh api -H 'Accept: application/octet-stream' "repos/${GITHUB_REPOSITORY}/releases/assets/${std_id}" > rust-standard-notices.zip
+        printf '%s  %s\n' '049b80431100e4108e6d26cfeaa6a00433b7231f2f03024d03ddd42f688a57eb' rust-standard-notices.zip | sha256sum -c -
+        qt_name='OpenKJ-v9-Qt-Notices.zip'
+        test "$(printf '%s' "$release" | jq --arg name "$qt_name" '[.assets[] | select(.name==$name)] | length')" -eq 1
+        qt_id="$(printf '%s' "$release" | jq -r --arg name "$qt_name" '.assets[] | select(.name==$name) | .id')"
+        gh api -H 'Accept: application/octet-stream' "repos/${GITHUB_REPOSITORY}/releases/assets/${qt_id}" > qt-notices.zip
+        printf '%s  %s\n' '0f9f9d177e18ff52c61264bad6cdb256db7a42bcf4c8a491407a5e34f4301238' qt-notices.zip | sha256sum -c -
+        plugin_name='OpenKJ-v9-Retained-Plugin-Notices.zip'
+        test "$(printf '%s' "$release" | jq --arg name "$plugin_name" '[.assets[] | select(.name==$name)] | length')" -eq 1
+        plugin_id="$(printf '%s' "$release" | jq -r --arg name "$plugin_name" '.assets[] | select(.name==$name) | .id')"
+        gh api -H 'Accept: application/octet-stream' "repos/${GITHUB_REPOSITORY}/releases/assets/${plugin_id}" > retained-plugin-notices.zip
+        printf '%s  %s\n' '2f4c0feebe91b8a1c42d20370288446ae73acec4290a8cc3b9257477632b5a3a' retained-plugin-notices.zip | sha256sum -c -
+        python community/windows/STAGE_OPENKJ_COMPLIANCE_CANDIDATE_V9.py \
+          --cleaned 'extracted/{app}' \
+          --repo . \
+          --vc-redist "$(find extracted -type f -iname 'vc_redist.x64.exe' -print -quit)" \
+          --out candidate \
+          --notice-supplement upstream-notices.zip \
+          --rust-notice-supplement rust-notices.zip \
+          --rust-standard-notice-supplement rust-standard-notices.zip \
+          --qt-notice-supplement qt-notices.zip \
+          --retained-plugin-notice-supplement retained-plugin-notices.zip \
+          --maintenance-source-commit "$SOURCE_BUILT_COMMIT" \
+          --omit-openh264
+        python community/windows/PREPARE_SOURCE_BUILT_CANDIDATE_V9.py \
+          --candidate candidate --original 'extracted/{app}' --bundle source-built-app.zip \
+          --source-commit "$SOURCE_BUILT_COMMIT" --report audit-reports/OpenKJ-v9-Source-Candidate.json
+    - name: Require unchanged released dependencies and attested maintenance executables
+      shell: bash
+      run: python community/windows/VERIFY_MAINTENANCE_RUNTIME_V9.py --candidate candidate --attestation audit-reports/OpenKJ-v9-Source-Candidate.json
+    - name: Record source candidate identity
+      shell: python
+      run: |
+        import json
+        from pathlib import Path
+        d=json.loads(Path('audit-reports/OpenKJ-v9-Source-Candidate.json').read_text())
+        assert d['candidate_runtime_binary_count']==339 and d['cisco_binary_bundled'] is False
+        assert d['current_build_source_attested'] is True and d['release_approved'] is False
+        print('Source application commit:',d['source_commit'])
+        print('Source application SHA256:',d['executable_sha256'])
+        print('Candidate notice files:',len(list(p for p in Path('candidate/licenses').rglob('*') if p.is_file())))
+    - name: Install checksum-pinned static PE parser
+      shell: bash
+      run: |
+        python -m pip install --require-hashes --only-binary=:all: --no-deps -r community/windows/pe-audit-requirements.txt
+    - name: Inspect retained binaries for imports of omitted OpenH264 components
+      shell: bash
+      run: |
+        set -euo pipefail
+        python community/windows/AUDIT_CANDIDATE_IMPORTS_V9.py \
+          --original 'extracted/{app}' --candidate candidate \
+          --report audit-reports/OpenKJ-v9-Candidate-Import-Audit.json --isolated-optional-adapter
+    - name: Probe isolated GStreamer media pipelines
+      shell: bash
+      run: |
+        set -euo pipefail
+        python community/windows/PROBE_GSTREAMER_CANDIDATE_V9.py \
+          --candidate candidate --fixture community/windows/blue-h264.mp4.b64 \
+          --report audit-reports/OpenKJ-v9-GStreamer-Probes.json
+    - name: Identify the packaged software OpenGL renderer
+      shell: bash
+      run: |
+        python community/windows/PROBE_SOFTWARE_OPENGL_V9.py --candidate candidate \
+          --report audit-reports/OpenKJ-v9-Software-OpenGL-Probe.json
+    - name: Compare software renderer with the exact Qt-published reference
+      shell: bash
+      run: |
+        python community/windows/VERIFY_QT_SOFTWARE_OPENGL_ORIGIN_V9.py \
+          --candidate candidate --work qt-renderer-reference \
+          --report audit-reports/OpenKJ-v9-Software-OpenGL-Origin.json
+    - name: Match GNU runtime DLLs to pinned compiler toolchains
+      shell: bash
+      run: |
+        set -euo pipefail
+        python community/windows/VERIFY_TOOLCHAIN_RUNTIME_V9.py \
+          --candidate candidate --cache toolchain-cache \
+          --report audit-reports/OpenKJ-v9-Toolchain-Runtime-Audit.json
+    - name: Experiment with separately downloaded official Cisco codec
+      shell: bash
+      run: |
+        set -euo pipefail
+        python community/windows/EXPERIMENT_CISCO_CODEC_V9.py \
+          --candidate candidate --original 'extracted/{app}' \
+          --output cisco-experiment --fixture community/windows/blue-h264.mp4.b64 \
+          --report audit-reports/OpenKJ-v9-Cisco-Compatibility-Experiment.json
+    - name: Build and verify a separate test installer on the isolated runner
+      shell: bash
+      run: |
+        set -euo pipefail
+        python community/windows/VERIFY_INSTALLER_ROUNDTRIP_V9.py \
+          --candidate candidate --work installer-roundtrip --unpacker unpacker/innounp.exe \
+          --report audit-reports/OpenKJ-v9-Installer-Roundtrip.json \
+          --source-attestation audit-reports/OpenKJ-v9-Source-Candidate.json
+    - name: Probe installed application startup and localhost HTTP routes
+      shell: bash
+      run: |
+        set -euo pipefail
+        python community/windows/PROBE_APPLICATION_HTTP_V9.py \
+          --app installer-roundtrip/installed/OpenKJ-Remote.exe --host-downloads \
+          --report audit-reports/OpenKJ-v9-Installed-App-HTTP-Probe.json
+    - name: Preserve text audit evidence only
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: OpenKJ-v9-Maintenance-Audit
+        path: audit-reports/*.json
+        if-no-files-found: warn
+        retention-days: 30
+    - name: Preserve successful text evidence in the unchanged draft
+      env:
+        GH_TOKEN: ${{ github.token }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        python - <<'PYCODE'
+        from pathlib import Path
+        import zipfile
+        files=sorted(Path('audit-reports').glob('*.json'))+[Path('candidate/CANDIDATE-BUILD-EVIDENCE-v9.json')]
+        assert files and all(p.is_file() and p.suffix=='.json' for p in files)
+        with zipfile.ZipFile('remote-audit-evidence.zip','w',zipfile.ZIP_DEFLATED) as z:
+            for p in files:z.write(p,p.name)
+        PYCODE
+        name="OpenKJ-v9-Maintenance-Candidate-Audit-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.zip"
+        expected="sha256:$(sha256sum remote-audit-evidence.zip | awk '{print $1}')"
+        release="$(gh api "repos/${GITHUB_REPOSITORY}/releases/421204266")"
+        printf '%s' "$release" | jq -e --arg name "$name" '.draft==true and .published_at==null and ([.assets[]|select(.name==$name)]|length)==0' >/dev/null
+        curl -fLsS -X POST -H "Authorization: Bearer ${GH_TOKEN}" -H 'Content-Type: application/zip' \
+          --data-binary @remote-audit-evidence.zip "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/421204266/assets?name=${name}" > uploaded-audit.json
+        jq -e --arg pin "$expected" '.digest==$pin and .state=="uploaded"' uploaded-audit.json >/dev/null
+        gh api "repos/${GITHUB_REPOSITORY}/releases/421204266" | jq -e --arg name "$name" --arg pin "$expected" '.draft==true and .published_at==null and ([.assets[]|select(.name==$name and .digest==$pin)]|length)==1' >/dev/null
+    - name: Preserve verified source-built installer in the unchanged draft
+      env:
+        GH_TOKEN: ${{ github.token }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        python - <<'PYCODE'
+        import json
+        from pathlib import Path
+        d=json.loads(Path('audit-reports/OpenKJ-v9-Installed-App-HTTP-Probe.json').read_text())
+        assert d['passed'] and len(d['checks'])==14
+        r=json.loads(Path('audit-reports/OpenKJ-v9-Installer-Roundtrip.json').read_text())
+        assert r['passed'] and r['application_binary_build_commit_attested'] is True
+        PYCODE
+        name="OpenKJ-v9-Maintenance-Candidate-${SOURCE_BUILT_COMMIT}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.exe"
+        file='OpenKJ-Installer-Output/OpenKJ-v9-Setup.exe'
+        expected="sha256:$(sha256sum "$file" | awk '{print $1}')"
+        release="$(gh api "repos/${GITHUB_REPOSITORY}/releases/421204266")"
+        printf '%s' "$release" | jq -e --arg name "$name" '.draft==true and .published_at==null and ([.assets[]|select(.name==$name)]|length)==0' >/dev/null
+        curl -fLsS -X POST -H "Authorization: Bearer ${GH_TOKEN}" -H 'Content-Type: application/octet-stream' \
+          --data-binary "@$file" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/421204266/assets?name=${name}" > uploaded-installer.json
+        jq -e --arg pin "$expected" '.digest==$pin and .state=="uploaded"' uploaded-installer.json >/dev/null
+        gh api "repos/${GITHUB_REPOSITORY}/releases/421204266" | jq -e '.draft==true and .published_at==null' >/dev/null
+    - name: Preserve standalone exact application source for eventual matching delivery
+      env:
+        GH_TOKEN: ${{ github.token }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        name="OpenKJ-v9-Application-Source-${SOURCE_BUILT_COMMIT}.zip"
+        expected="sha256:$(sha256sum "$name" | awk '{print $1}')"
+        release="$(gh api "repos/${GITHUB_REPOSITORY}/releases/421204266")"
+        printf '%s' "$release" | jq -e '.draft==true and .published_at==null' >/dev/null
+        count="$(printf '%s' "$release" | jq --arg name "$name" '[.assets[]|select(.name==$name)]|length')"
+        if [ "$count" -eq 0 ]; then
+          curl -fLsS -X POST -H "Authorization: Bearer ${GH_TOKEN}" -H 'Content-Type: application/zip' \
+            --data-binary "@$name" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/421204266/assets?name=${name}" > uploaded-application-source.json
+          jq -e --arg pin "$expected" '.digest==$pin and .state=="uploaded"' uploaded-application-source.json >/dev/null
+        elif [ "$count" -eq 1 ]; then
+          actual="$(printf '%s' "$release" | jq -r --arg name "$name" '.assets[]|select(.name==$name)|.digest')"
+          test "$actual" = "$expected" || { echo 'Conflicting existing source asset'; exit 2; }
+        else
+          exit 3
+        fi
+        gh api "repos/${GITHUB_REPOSITORY}/releases/421204266" | jq -e --arg name "$name" --arg pin "$expected" '.draft==true and .published_at==null and ([.assets[]|select(.name==$name and .digest==$pin)]|length)==1' >/dev/null

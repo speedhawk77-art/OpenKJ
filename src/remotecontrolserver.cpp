@@ -1410,6 +1410,9 @@ input[type=search]{letter-spacing:normal;text-align:left;padding:0 12px;font-siz
 .add-singer input{min-width:0;letter-spacing:normal;text-align:left;font-size:1rem;padding:0 12px}
 .add-singer button{min-width:110px;padding:10px}
 label{display:block;margin:0 0 8px}input{width:100%;min-height:52px;border-radius:10px;background:#111822;color:white;border:1px solid #8492a8;text-align:center;font:22px system-ui;letter-spacing:.22em}
+#youtubeHost input{letter-spacing:normal;text-align:left;font-size:1rem;padding:10px 12px;margin-bottom:12px}
+#youtubeHost[hidden]{display:none}
+#youtubeStatus,#youtubeFeedback{white-space:pre-wrap;overflow-wrap:anywhere}
 #pinBlock{margin-bottom:10px}#message{font-size:.88rem;min-height:1.25em;text-align:center;color:#f9ce85}
 </style></head><body><main>
 <header><h1>🎤 OpenKJ Remote</h1><p>Works on your local Wi-Fi without Internet.</p></header>
@@ -1450,6 +1453,21 @@ label{display:block;margin:0 0 8px}input{width:100%;min-height:52px;border-radiu
 <input id="songQuery" type="search" placeholder="Artist, title, or disc ID" autocomplete="off">
 <p id="searchInfo" class="sub">Select a singer, then enter at least two characters.</p>
 <div class="list" id="songResults"></div>
+</section>
+<section id="youtubeHost" hidden>
+<h2>YouTube Downloads <span class="badge">Host only</span></h2>
+<p class="sub">The laptop downloads and checks the video. Internet is required on the laptop. Uses its saved helper programs and save folder.</p>
+<label for="youtubeUrl">YouTube video link</label>
+<input id="youtubeUrl" type="url" maxlength="2048" placeholder="https://www.youtube.com/watch?v=…" autocomplete="off">
+<div class="controls"><button id="youtubeStart" class="primary">Download video</button><button id="youtubeCancel" disabled>Cancel download</button></div>
+<p id="youtubeStatus" role="status" aria-live="polite">Connecting…</p>
+<label for="youtubeArtist">Artist or karaoke channel</label>
+<input id="youtubeArtist" type="text" maxlength="256" disabled>
+<label for="youtubeTitle">Title</label>
+<input id="youtubeTitle" type="text" maxlength="512" disabled>
+<button id="youtubeImport" class="primary" disabled>Add to library</button>
+<p id="youtubeFeedback" role="status" aria-live="polite"></p>
+<p class="sub">After adding, select a singer and use Find &amp; Add Songs above to queue it. Downloads never start playback or change the current singer.</p>
 </section>
 <section id="guestPendingBox">
 <h2>Singer Song Requests <span id="guestReqCount" class="badge">0 pending</span></h2>
@@ -1655,16 +1673,61 @@ document.addEventListener('click',e=>{
  else if(button.dataset.guestApprove)libraryAction('approve_guest_request',null,null,null,null,Number(button.dataset.guestApprove));
  else if(button.dataset.guestReject)libraryAction('reject_guest_request',null,null,null,null,Number(button.dataset.guestReject));
 });
+// Authenticated host download controls. Render external titles/status as text only.
+let youtubeState={},youtubeSending=false,youtubeSession='',youtubeWasReady=false;
+function youtubeButtons(){
+ const busy=!!youtubeState.busy,ready=!!youtubeState.ready;
+ get('youtubeStart').disabled=youtubeSending||busy;
+ get('youtubeCancel').disabled=youtubeSending||!busy;
+ get('youtubeUrl').disabled=youtubeSending||busy;
+ get('youtubeArtist').disabled=youtubeSending||!ready;
+ get('youtubeTitle').disabled=youtubeSending||!ready;
+ get('youtubeImport').disabled=youtubeSending||!ready||!get('youtubeArtist').value.trim()||!get('youtubeTitle').value.trim();
+}
+function drawYoutube(state){
+ const changed=state.session!==youtubeSession;
+ if(changed||(!youtubeWasReady&&state.ready)){
+  get('youtubeArtist').value=state.artist||'';get('youtubeTitle').value=state.title||'';
+  get('youtubeFeedback').textContent='';
+ }
+ youtubeState=state;youtubeSession=state.session||'';youtubeWasReady=!!state.ready;
+ get('youtubeHost').hidden=false;
+ get('youtubeStatus').textContent=state.message||'Ready. Configure the downloader on the laptop before first use.';
+ youtubeButtons();
+}
+async function youtubeAction(cmd){
+ if(youtubeSending)return;
+ const pin=pinBox.value.trim();if(pin.length!==6){msg.textContent='Enter your PIN first.';return;}
+ if(cmd==='youtube_download'&&youtubeState.ready&&!confirm('Start another download? The saved video will remain in the laptop folder, but its pending library import will be replaced.'))return;
+ const title=get('youtubeTitle').value.trim();
+ const payload={cmd,pin,session:youtubeSession,url:get('youtubeUrl').value.trim(),artist:get('youtubeArtist').value.trim(),title};
+ youtubeSending=true;youtubeButtons();get('youtubeFeedback').textContent='Sending…';
+ try{
+  const response=await fetch('/remote',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify(payload)});
+  const data=await response.json();
+  if(data.youtube_download)drawYoutube(data.youtube_download);
+  get('youtubeFeedback').textContent=response.ok?(cmd==='youtube_import'?'Added to library. Search above to add it to a singer.':'Request accepted.'):data.error||'Download action failed.';
+  if(response.ok&&cmd==='youtube_import'){get('songQuery').value=title;searchSongs();}
+  if(response.status===403)get('youtubeHost').hidden=true;
+  updateStatus();
+ }catch(e){get('youtubeFeedback').textContent='Connection lost. Reconnect to check the laptop status before retrying.';}
+ finally{youtubeSending=false;youtubeButtons();}
+}
+get('youtubeStart').addEventListener('click',()=>youtubeAction('youtube_download'));
+get('youtubeCancel').addEventListener('click',()=>youtubeAction('youtube_cancel'));
+get('youtubeImport').addEventListener('click',()=>youtubeAction('youtube_import'));
+get('youtubeArtist').addEventListener('input',youtubeButtons);
+get('youtubeTitle').addEventListener('input',youtubeButtons);
 async function updateStatus(){
  const pin=pinBox.value.trim();
- if(pin.length!==6){get('connection').textContent='Enter your PIN to connect';return;}
+ if(pin.length!==6){get('youtubeHost').hidden=true;get('connection').textContent='Enter your PIN to connect';return;}
  if(working)return;working=true;
  try {
   const response=await fetch('/status?pin='+encodeURIComponent(pin),{cache:'no-store'});
-  if(!response.ok){get('connection').textContent=response.status===403?'Incorrect PIN':'Connection issue';return;}
+  if(!response.ok){get('youtubeHost').hidden=true;get('connection').textContent=response.status===403?'Incorrect PIN':'Connection issue';return;}
   const data=await response.json();
   get('connection').textContent='● Connected to OpenKJ';
-  draw('k',data.karaoke||{});draw('b',data.break_music||{});drawRotation(data);drawGuestRequests(data);
+  draw('k',data.karaoke||{});draw('b',data.break_music||{});drawRotation(data);drawGuestRequests(data);drawYoutube(data.youtube_download||{});
  }catch(e){get('connection').textContent='Offline Wi-Fi connection lost';}
  finally{working=false;}
 }
@@ -1952,7 +2015,10 @@ void RemoteControlServer::processRequest(QTcpSocket *socket, const QByteArray &h
         cmd == QStringLiteral("remove_singer") ||
         cmd == QStringLiteral("move_singer") ||
         cmd == QStringLiteral("approve_guest_request") ||
-        cmd == QStringLiteral("reject_guest_request")) {
+        cmd == QStringLiteral("reject_guest_request") ||
+        cmd == QStringLiteral("youtube_download") ||
+        cmd == QStringLiteral("youtube_cancel") ||
+        cmd == QStringLiteral("youtube_import")) {
         if (method != "POST" || !m_libraryActionHandler) {
             reply(socket, 405, "Method Not Allowed", "application/json", jsonError("POST required"));
             return;

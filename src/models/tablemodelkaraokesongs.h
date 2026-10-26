@@ -57,6 +57,7 @@ public:
     DeleteStatus removeBadSong(QString path);
     QString findCdgAudioFile(const QString& path);
     int addSong(okj::KaraokeSong song);
+    int addDownloadedVideo(const QString &path, const QString &artist, const QString &title, const QString &videoId, int durationMs);
 
 
 private:

@@ -1,0 +1,38 @@
+name: Verify real downloader CLI against generated local media
+on:
+  push:
+    branches: [feature/youtube-download-first]
+    paths:
+      - .github/workflows/verify-openkj-ytdlp-contract.yml
+      - community/windows/VERIFY_YTDLP_DOWNLOAD_CONTRACT_V9.py
+      - src/youtubedownload.cpp
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: openkj-ytdlp-contract
+  cancel-in-progress: true
+jobs:
+  contract:
+    if: github.repository == 'speedhawk77-art/OpenKJ'
+    runs-on: windows-2025
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Download the exact official external helper for this isolated test only
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          curl.exe -fLsS --retry 2 --max-time 120 -o yt-dlp.exe https://github.com/yt-dlp/yt-dlp/releases/download/2026.10.21/yt-dlp.exe
+          if ($LASTEXITCODE -ne 0) { throw 'Downloader fetch failed' }
+          if ((Get-FileHash yt-dlp.exe -Algorithm SHA256).Hash.ToLower() -ne '33121d192d706e62f684a06f80918e3f3a8ba52ac3a65213b6951c39c7d9f555') { throw 'External helper checksum mismatch' }
+      - name: Test actual downloader arguments and metadata without contacting YouTube
+        run: python community/windows/VERIFY_YTDLP_DOWNLOAD_CONTRACT_V9.py --downloader yt-dlp.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenKJ-Real-Downloader-Contract
+          path: youtube-real-downloader-contract.json
+          if-no-files-found: error
+          retention-days: 30

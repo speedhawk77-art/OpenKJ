@@ -1808,3 +1808,10 @@ bool Settings::tickerReducedCpuMode() {
 void Settings::setTickerReducedCpuMode(bool enabled) {
     settings->setValue("tickerReducedCpuMode", enabled);
 }
+
+QVariantMap Settings::youtubeDownloadOptions() const {
+    return settings->value("youtubeDownload/options").toMap();
+}
+void Settings::setYoutubeDownloadOptions(const QVariantMap &options) {
+    settings->setValue("youtubeDownload/options", options);
+}

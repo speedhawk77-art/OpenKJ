@@ -412,6 +412,10 @@ set(SOURCE_FILES
         src/miniz/miniz.h
         src/miniz/miniz.c
         src/main.cpp
+        src/youtubedownload.cpp
+        src/youtubedownload.h
+        src/dlgyoutubedownload.cpp
+        src/dlgyoutubedownload.h
         src/optionalcodec.cpp
         src/optionalcodec.h
         src/dlgaddsong.cpp
@@ -798,4 +802,6 @@ endif ()
 if (WIN32 AND OPENKJ_BUILD_MAINTENANCE_TESTS)
     add_executable(openkj_maintenance_test tests/maintenance_regression.cpp $<TARGET_OBJECTS:openkj_maintenance_core>)
     target_link_libraries(openkj_maintenance_test PRIVATE ${LIBRARIES})
+    add_executable(openkj_youtube_test tests/youtube_download_test.cpp $<TARGET_OBJECTS:openkj_maintenance_core>)
+    target_link_libraries(openkj_youtube_test PRIVATE ${LIBRARIES})
 endif ()
