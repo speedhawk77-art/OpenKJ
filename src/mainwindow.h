@@ -193,6 +193,7 @@ private slots:
     void remoteStartBreakAtPosition(int position);
     void remoteBreakNext();
     void remoteBreakPrevious();
+    void ensureYouTubeDownloadDialog();
     QJsonObject remoteLibraryStatus();
     QJsonObject remoteSongSearch(const QString &query);
     QJsonObject remoteLibraryAction(const QString &command, const QJsonObject &args);

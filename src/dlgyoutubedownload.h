@@ -2,6 +2,7 @@
 #ifndef OPENKJ_DLGYOUTUBEDOWNLOAD_H
 #define OPENKJ_DLGYOUTUBEDOWNLOAD_H
 #include <QDialog>
+#include <QJsonObject>
 #include "youtubedownload.h"
 #include "settings.h"
 class QLineEdit;
@@ -14,6 +15,8 @@ class YouTubeDownloadDialog : public QDialog {
 public:
     explicit YouTubeDownloadDialog(QWidget *parent = nullptr);
     void libraryImportFinished(bool success, const QString &message);
+    QJsonObject remoteStatus() const;
+    QJsonObject remoteAction(const QString &command, const QJsonObject &args);
 signals:
     void addToLibrary(QString path, QString artist, QString title, QString videoId, int durationMs);
 protected:
@@ -28,7 +31,8 @@ private:
     QProgressBar *m_progress;
     QString m_path, m_videoId;
     int m_durationMs{0};
-    bool m_closeWhenStopped{false};
+    bool m_closeWhenStopped{false}, m_importSucceeded{false};
+    QString m_session, m_remoteMessage;
     void startDownload();
     void updateControls();
     void stopped();

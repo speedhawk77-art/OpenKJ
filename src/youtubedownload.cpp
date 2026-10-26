@@ -253,7 +253,7 @@ YouTubeDownload::Result YouTubeDownload::verifyAndSave(const QString &source, co
     if (discoverer) g_object_unref(discoverer);
     if (error) g_error_free(error);
     if (cancelled->load()) { result.cancelled = true; return result; }
-    if (!valid) { result.error = tr("OpenKJ could not verify both audio and video in this download. Nothing was added to the library."); return result; }
+    if (!valid) { result.error = tr("OpenKJ could not verify both audio and video in this download. On the laptop, check Help → Optional H.264 codec…, enable it if you agree to the terms, then restart OpenKJ and retry. If it is already enabled, the file may be damaged or unsupported. Nothing was added to the library."); return result; }
     result.durationMs = static_cast<int>(duration / GST_MSECOND);
     QTemporaryFile output(QDir(destination).filePath(".openkj-import-XXXXXX"));
     QFile input(source);

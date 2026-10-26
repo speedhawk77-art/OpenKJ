@@ -1066,25 +1066,7 @@ void MainWindow::setupConnections() {
     auto *downloadVideo = ui->menuTools->addAction(tr("Download YouTube video…"));
     downloadVideo->setObjectName("actionDownloadYouTubeVideo");
     connect(downloadVideo, &QAction::triggered, this, [this] {
-        if (!m_youtubeDownloadDialog) {
-            auto *dialog = new YouTubeDownloadDialog(this);
-            m_youtubeDownloadDialog = dialog;
-            dialog->setAttribute(Qt::WA_DeleteOnClose);
-            connect(dialog, &YouTubeDownloadDialog::addToLibrary, this,
-                    [this, dialog](const QString &path, const QString &artist, const QString &title, const QString &videoId, int durationMs) {
-                if (m_shuttingDown || artist.isEmpty() || title.isEmpty() || !QFileInfo(path).isFile()) {
-                    dialog->libraryImportFinished(false, tr("The completed video is no longer available. Download it again."));
-                    return;
-                }
-                const auto id = m_karaokeSongsModel.addDownloadedVideo(path, artist, title, videoId, durationMs);
-                if (id < 0) {
-                    dialog->libraryImportFinished(false, tr("The video was saved, but it could not be added to the library. You can retry Add to library."));
-                    return;
-                }
-                requestsDialog->databaseSongAdded();
-                dialog->libraryImportFinished(true, tr("Added to your library. Search for %1 and add it to a singer's queue as usual.").arg(title));
-            });
-        }
+        ensureYouTubeDownloadDialog();
         m_youtubeDownloadDialog->showNormal();
         m_youtubeDownloadDialog->raise();
         m_youtubeDownloadDialog->activateWindow();
@@ -1385,6 +1367,28 @@ void MainWindow::dbInit(const QDir &okjDataDir) {
 }
 
 
+void MainWindow::ensureYouTubeDownloadDialog() {
+    if (!m_youtubeDownloadDialog) {
+        auto *dialog = new YouTubeDownloadDialog(this);
+        m_youtubeDownloadDialog = dialog;
+        dialog->setAttribute(Qt::WA_DeleteOnClose);
+        connect(dialog, &YouTubeDownloadDialog::addToLibrary, this,
+                [this, dialog](const QString &path, const QString &artist, const QString &title, const QString &videoId, int durationMs) {
+            if (m_shuttingDown || artist.isEmpty() || title.isEmpty() || !QFileInfo(path).isFile()) {
+                dialog->libraryImportFinished(false, tr("The completed video is no longer available. Download it again."));
+                return;
+            }
+            const auto id = m_karaokeSongsModel.addDownloadedVideo(path, artist, title, videoId, durationMs);
+            if (id < 0) {
+                dialog->libraryImportFinished(false, tr("The video was saved, but it could not be added to the library. You can retry Add to library."));
+                return;
+            }
+            requestsDialog->databaseSongAdded();
+            dialog->libraryImportFinished(true, tr("Added to your library. Search for %1 and add it to a singer's queue as usual.").arg(title));
+        });
+    }
+}
+
 QJsonObject MainWindow::remoteLibraryStatus() {
     QJsonArray rotation;
     const int count = static_cast<int>(m_rotModel.singerCount());
@@ -1455,6 +1459,10 @@ QJsonObject MainWindow::remoteLibraryStatus() {
         {QStringLiteral("selected_singer_id"), selectedId},
         {QStringLiteral("selected_queue"), queue}
     };
+    output.insert(QStringLiteral("youtube_download"), m_youtubeDownloadDialog
+        ? m_youtubeDownloadDialog->remoteStatus()
+        : QJsonObject{{"busy", false}, {"ready", false}, {"session", ""},
+                      {"message", tr("Ready. Uses the helper programs and save folder configured on the laptop.")}});
     output.insert(QStringLiteral("guest_requests"), requests);
     return output;
 }
@@ -1510,6 +1518,11 @@ QJsonObject MainWindow::remoteSongSearch(const QString &term) {
 }
 
 QJsonObject MainWindow::remoteLibraryAction(const QString &command, const QJsonObject &args) {
+    if (command == "youtube_download" || command == "youtube_cancel" || command == "youtube_import") {
+        if (m_shuttingDown) return {{"ok", false}, {"error", tr("OpenKJ is closing.")}};
+        ensureYouTubeDownloadDialog();
+        return m_youtubeDownloadDialog->remoteAction(command, args);
+    }
     // OKJ_REMOTE_V5_GUEST_REQUESTS
     if (command == QStringLiteral("guest_submit") ||
         command == QStringLiteral("approve_guest_request") ||

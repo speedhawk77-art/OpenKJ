@@ -17,6 +17,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QCloseEvent>
+#include <QUuid>
 
 YouTubeDownloadDialog::YouTubeDownloadDialog(QWidget *parent) : QDialog(parent), m_download(this) {
     setWindowTitle(tr("Download a YouTube karaoke video"));
@@ -92,11 +93,15 @@ YouTubeDownloadDialog::YouTubeDownloadDialog(QWidget *parent) : QDialog(parent),
     connect(close, &QPushButton::clicked, this, &YouTubeDownloadDialog::reject);
     connect(m_start, &QPushButton::clicked, this, &YouTubeDownloadDialog::startDownload);
     connect(m_cancel, &QPushButton::clicked, &m_download, &YouTubeDownload::cancel);
-    connect(&m_download, &YouTubeDownload::progress, m_status, &QPlainTextEdit::setPlainText);
-    connect(&m_download, &YouTubeDownload::failed, this, [this](const QString &error) { m_status->setPlainText(error); stopped(); });
-    connect(&m_download, &YouTubeDownload::cancelled, this, [this] { m_status->setPlainText(tr("Download cancelled. Nothing was added to the library.")); stopped(); });
+    m_remoteMessage = tr("Ready. Downloads need an internet connection on the laptop.");
+    connect(&m_download, &YouTubeDownload::progress, this, [this](const QString &message) {
+        m_remoteMessage = message; m_status->setPlainText(message);
+    });
+    connect(&m_download, &YouTubeDownload::failed, this, [this](const QString &error) { m_remoteMessage = error; m_status->setPlainText(error); stopped(); });
+    connect(&m_download, &YouTubeDownload::cancelled, this, [this] { m_remoteMessage = tr("Download cancelled. Nothing was added to the library."); m_status->setPlainText(m_remoteMessage); stopped(); });
     connect(&m_download, &YouTubeDownload::ready, this, [this](const QString &path, const QString &title, const QString &id, int duration) {
         m_path = path; m_videoId = id; m_durationMs = duration; m_title->setText(title);
+        m_remoteMessage = tr("Video saved and checked. Confirm its artist and title, then add it to the library.");
         m_status->setPlainText(tr("Video saved and checked. Confirm its artist and title, then click Add to library.\n%1").arg(path)); stopped();
     });
     connect(m_title, &QLineEdit::textChanged, this, &YouTubeDownloadDialog::updateControls);
@@ -110,6 +115,9 @@ YouTubeDownloadDialog::YouTubeDownloadDialog(QWidget *parent) : QDialog(parent),
 }
 
 void YouTubeDownloadDialog::startDownload() {
+    if (m_download.isBusy()) return;
+    m_session = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    m_importSucceeded = false;
     m_path.clear(); m_videoId.clear(); m_durationMs = 0; m_title->clear(); m_artist->clear();
     YouTubeDownload::Request request{m_url->text(), m_downloader->text().trimmed(), m_ffmpeg->text().trimmed(), m_deno->text().trimmed(), m_folder->text().trimmed()};
     if (m_download.start(request)) {
@@ -135,6 +143,7 @@ void YouTubeDownloadDialog::stopped() {
 }
 
 void YouTubeDownloadDialog::libraryImportFinished(bool success, const QString &message) {
+    m_remoteMessage = message; m_importSucceeded = success;
     m_status->setPlainText(message);
     if (success) { m_path.clear(); m_artist->clear(); m_title->clear(); }
     updateControls();
@@ -148,4 +157,47 @@ void YouTubeDownloadDialog::reject() {
 void YouTubeDownloadDialog::closeEvent(QCloseEvent *event) {
     if (m_download.isBusy()) { event->ignore(); reject(); }
     else QDialog::closeEvent(event);
+}
+
+QJsonObject YouTubeDownloadDialog::remoteStatus() const {
+    return {{"session", m_session}, {"busy", m_download.isBusy()},
+            {"ready", !m_download.isBusy() && !m_path.isEmpty()},
+            {"imported", m_importSucceeded}, {"message", m_remoteMessage.left(1200)},
+            {"title", m_title->text()}, {"artist", m_artist->text()}};
+}
+
+QJsonObject YouTubeDownloadDialog::remoteAction(const QString &command, const QJsonObject &args) {
+    const auto error = [](const QString &message) { return QJsonObject{{"ok", false}, {"error", message}}; };
+    if (command == "youtube_download") {
+        if (m_download.isBusy()) return error(tr("A download is already running on the laptop."));
+        const auto url = args.value("url").toString().trimmed();
+        if (url.size() > 2048 || YouTubeDownload::canonicalUrl(url).isEmpty())
+            return error(tr("Paste a link to one YouTube video."));
+        m_url->setText(url);
+        startDownload();
+        if (!m_download.isBusy()) return error(m_remoteMessage);
+    } else {
+        // Reject old tabs/late requests before they can cancel or import a newer download.
+        if (m_session.isEmpty() || args.value("session").toString() != m_session)
+            return error(tr("This download has changed. Refresh the remote and try again."));
+        if (command == "youtube_cancel") {
+            if (!m_download.isBusy()) return error(tr("No download is running."));
+            m_download.cancel();
+        } else if (command == "youtube_import") {
+            if (m_download.isBusy() || m_path.isEmpty()) return error(tr("Wait for a verified video before adding it."));
+            const auto artist = args.value("artist").toString().trimmed();
+            const auto title = args.value("title").toString().trimmed();
+            const auto clean = [](const QString &value) {
+                for (const auto ch : value) if (ch.isNull() || ch.category() == QChar::Other_Control) return false;
+                return true;
+            };
+            if (artist.isEmpty() || artist.size() > 256 || title.isEmpty() || title.size() > 512 || !clean(artist) || !clean(title))
+                return error(tr("Enter an artist (1–256 characters) and title (1–512 characters)."));
+            m_artist->setText(artist); m_title->setText(title);
+            m_importSucceeded = false;
+            emit addToLibrary(m_path, artist, title, m_videoId, m_durationMs);
+            if (!m_importSucceeded) return error(m_remoteMessage);
+        } else return error(tr("Unknown download command."));
+    }
+    return {{"ok", true}, {"youtube_download", remoteStatus()}};
 }

@@ -50,6 +50,9 @@ def main():
                     ('/public/request','GET',None,405),
                     ('/public/request','POST',b'not-json',400),
                     ('/nonexistent-audit-route','GET',None,404),
+                    ('/remote','POST',b'{"cmd":"youtube_download","url":"https://youtu.be/00000000001"}',403),
+                    ('/remote','POST',b'{"cmd":"youtube_cancel"}',403),
+                    ('/remote','POST',b'{"cmd":"youtube_import"}',403),
                 ):
                     code,body=request(path,method,data)
                     checks.append({'path':path,'method':method,'expected':expected,

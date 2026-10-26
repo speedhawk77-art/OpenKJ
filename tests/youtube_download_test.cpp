@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Real controller, file validation, dialog and library import; synthetic helper/media only.
 #include "youtubedownload.h"
+#include "remotecontrolserver.h"
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
+#include <QNetworkReply>
+#include <QHostAddress>
+#include <QUrlQuery>
 #include "dlgyoutubedownload.h"
 #include "models/tablemodelkaraokesongs.h"
 #include "idledetect.h"
@@ -18,6 +24,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QLabel>
+#include <QPlainTextEdit>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QStandardPaths>
@@ -201,6 +208,71 @@ int main(int argc, char **argv) {
             dialog.findChild<QLineEdit *>("youtubeUrl")->setText(request(9).url);
             dialog.show(); dialog.findChild<QPushButton *>("downloadButton")->click(); dialog.close();
             check("closing_dialog_cancels_starting_download", waitFor([&] { return !dialog.isVisible(); }));
+        }
+        {
+            // Real local HTTP server -> same dialog/controller -> real media validator -> library callback.
+            YouTubeDownloadDialog dialog;
+            for (const auto &name : {"downloaderPath", "ffmpegPath", "denoPath"}) dialog.findChild<QLineEdit *>(name)->setText(program);
+            dialog.findChild<QLineEdit *>("downloadFolder")->setText(output.path());
+            RemoteControlServer server;
+            check("host_http_server_listens", server.listen(QHostAddress::LocalHost, 0));
+            int commands=0, imports=0;
+            QString importedArtist, importedTitle;
+            server.setStatusProvider([&] { return QJsonObject{{"youtube_download", dialog.remoteStatus()}}; });
+            server.setLibraryActionHandler([&](const QString &command, const QJsonObject &args) {
+                if (command == "guest_submit") return QJsonObject{{"ok", false}, {"error", "Guests cannot download"}};
+                ++commands; return dialog.remoteAction(command, args);
+            });
+            QObject::connect(&dialog, &YouTubeDownloadDialog::addToLibrary, &app,
+                [&](QString path, QString artist, QString title, QString id, int duration) {
+                    TableModelKaraokeSongs model;
+                    const auto song = model.addDownloadedVideo(path, artist, title, id, duration);
+                    if (song > 0) { ++imports; importedArtist=artist; importedTitle=title; }
+                    dialog.libraryImportFinished(song > 0, song > 0 ? "Added" : "Import failed");
+                });
+            QNetworkAccessManager network;
+            struct Response { int status; QJsonObject json; QByteArray bytes; };
+            auto http = [&](QString path, QJsonObject body=QJsonObject{}, bool post=false) {
+                QNetworkRequest req(QUrl(QString("http://127.0.0.1:%1").arg(server.serverPort())+path));
+                req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+                auto *reply = post ? network.post(req, QJsonDocument(body).toJson(QJsonDocument::Compact)) : network.get(req);
+                if (!waitFor([&] { return reply->isFinished(); }, 4000)) reply->abort();
+                const auto bytes = reply->readAll();
+                Response result{reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt(), QJsonDocument::fromJson(bytes).object(), bytes};
+                delete reply; return result;
+            };
+            auto call = [&](QString command, QJsonObject args=QJsonObject{}) {
+                args.insert("cmd", command); args.insert("pin", server.accessPin());
+                return http("/remote", args, true);
+            };
+            for (const auto &command : {"youtube_download", "youtube_cancel", "youtube_import"}) {
+                const auto response = http("/remote", {{"cmd", command}, {"url", request(1).url}}, true);
+                check(QString("host_download_requires_pin_")+command, response.status==403 && commands==0);
+                const auto get = http("/remote?pin="+server.accessPin()+"&cmd="+command);
+                check(QString("host_download_requires_post_")+command, get.status==405 && commands==0);
+            }
+            check("host_download_wrong_pin_denied", http("/remote", {{"cmd", "youtube_download"}, {"pin", "wrong"}}, true).status==403 && commands==0);
+            check("guest_page_has_no_download_controls", !http("/request").bytes.contains("youtubeStart"));
+            check("host_page_contains_download_controls", http("/").bytes.contains("youtubeStart"));
+            check("guest_command_cannot_reach_downloader", http("/public/request", {{"cmd", "youtube_download"}, {"url", request(1).url}}, true).status==400 && commands==0 && !dialog.remoteStatus().value("busy").toBool());
+            check("host_rejects_non_youtube_link", call("youtube_download", {{"url", "file:///secret"}}).status==400);
+            check("host_cannot_override_helper_paths", call("youtube_download", {{"url", request(1).url}, {"downloader", "not-installed"}, {"folder", "not-a-folder"}}).status==200);
+            auto session=dialog.remoteStatus().value("session").toString();
+            check("host_and_desktop_share_busy_download", call("youtube_download", {{"url", request(1).url}}).status==400 && dialog.remoteStatus().value("session").toString()==session);
+            check("host_download_completes_without_auto_import", waitFor([&] { return dialog.remoteStatus().value("ready").toBool(); }) && imports==0);
+            auto state=http("/status?pin="+server.accessPin()).json.value("youtube_download").toObject();
+            check("host_progress_contains_no_local_file_paths", state.value("ready").toBool() && !state.contains("path") && !state.contains("downloader") && !state.value("message").toString().contains(output.path()));
+            check("host_stale_import_rejected", call("youtube_import", {{"session", "old"}, {"artist", "Artist"}, {"title", "Title"}}).status==400 && imports==0);
+            check("host_empty_artist_rejected", call("youtube_import", {{"session", session}, {"artist", ""}, {"title", "Title"}}).status==400 && imports==0);
+            check("host_oversized_title_rejected", call("youtube_import", {{"session", session}, {"artist", "Artist"}, {"title", QString(513, 'x')}}).status==400 && imports==0);
+            check("host_control_characters_rejected", call("youtube_import", {{"session", session}, {"artist", "Artist\n"}, {"title", "Ti\ntle"}}).status==400 && imports==0);
+            check("host_explicit_import_updates_real_library", call("youtube_import", {{"session", session}, {"artist", "Remote O'Neil"}, {"title", "Remote <title>"}}).status==200 && imports==1 && importedArtist=="Remote O'Neil" && importedTitle=="Remote <title>");
+            check("host_repeat_import_cannot_duplicate", call("youtube_import", {{"session", session}, {"artist", "Artist"}, {"title", "Title"}}).status==400 && imports==1);
+            check("host_can_start_next_download", call("youtube_download", {{"url", request(9).url}}).status==200);
+            auto nextSession=dialog.remoteStatus().value("session").toString();
+            check("host_stale_cancel_cannot_stop_new_download", nextSession!=session && call("youtube_cancel", {{"session", session}}).status==400 && dialog.remoteStatus().value("busy").toBool());
+            check("host_can_cancel_active_download", call("youtube_cancel", {{"session", nextSession}}).status==200 && waitFor([&] { return !dialog.remoteStatus().value("busy").toBool(); }) && !dialog.remoteStatus().value("ready").toBool());
+            check("host_and_desktop_show_same_cancellation", dialog.findChild<QPlainTextEdit *>("downloadStatus")->toPlainText()==dialog.remoteStatus().value("message").toString());
         }
     } catch (const std::exception &error) { check(QString("exception: ") + error.what(), false); }
     writeFile("youtube-download-evidence.json", QJsonDocument(QJsonObject{{"passed", all}, {"live_youtube_tested", false}, {"checks", checks}}).toJson());
