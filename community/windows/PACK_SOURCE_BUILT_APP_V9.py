@@ -3,7 +3,7 @@
 
 Draft-only packaging; no codec DLL, SDK binary, credentials or profiles included.
 """
-import hashlib,json,os,subprocess,zipfile
+import argparse,hashlib,json,os,subprocess,zipfile
 from pathlib import Path
 
 def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
@@ -13,11 +13,14 @@ def writezip(path,items):
             i=zipfile.ZipInfo(name,(1980,1,1,0,0,0));i.compress_type=zipfile.ZIP_DEFLATED;i.external_attr=0o100644<<16
             z.writestr(i,p.read_bytes())
 def main():
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--expected-http-checks",type=int,choices=(11,14),default=11)
+    args=parser.parse_args()
     evidence=Path('source-build-evidence.json');data=json.loads(evidence.read_text())
     assert data['source_commit']==os.environ['GITHUB_SHA']
     app=Path('source-build/openkj.exe');assert digest(app)==data['executable_sha256']
     launcher=Path('source-build/OpenKJ-Remote.exe');assert digest(launcher)==data['launcher_sha256']
-    probe=json.loads(Path('source-app-http-probe.json').read_text());assert probe['passed'] and len(probe['checks'])==11
+    probe=json.loads(Path('source-app-http-probe.json').read_text());assert probe['passed'] and len(probe['checks'])==args.expected_http_checks and all(c['passed'] for c in probe['checks'])
     tests=json.loads(Path('optional-codec-test-evidence.json').read_text());assert tests['passed']
     names=subprocess.check_output(['git','ls-files','--recurse-submodules','-z']).decode().split('\0')
     files=[]

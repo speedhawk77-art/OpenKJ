@@ -11,6 +11,8 @@ name: Build and verify OpenKJ v9 download-first candidate
     - community/windows/STAGE_OPENKJ_COMPLIANCE_CANDIDATE_V9.py
     - community/windows/VERIFY_MAINTENANCE_RUNTIME_V9.py
     - community/windows/VERIFY_WINDOWS_ICONS_V9.py
+    - community/windows/PACK_SOURCE_BUILT_APP_V9.py
+    - community/windows/PROBE_APPLICATION_HTTP_V9.py
   workflow_dispatch: null
 permissions:
   contents: write
@@ -193,7 +195,7 @@ jobs:
       shell: bash
       run: |
         set -euo pipefail
-        python community/windows/PACK_SOURCE_BUILT_APP_V9.py
+        python community/windows/PACK_SOURCE_BUILT_APP_V9.py --expected-http-checks 14
         name="OpenKJ-v9-Source-Built-App-${GITHUB_SHA}.zip"
         expected="sha256:$(sha256sum "$name" | awk '{print $1}')"
         release="$(gh api "repos/${GITHUB_REPOSITORY}/releases/421204266")"
