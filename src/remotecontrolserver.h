@@ -22,6 +22,10 @@ public:
     void setSongSearchProvider(std::function<QJsonObject(const QString &)> callback);
     void setLibraryActionHandler(std::function<QJsonObject(const QString &, const QJsonObject &)> callback);
 
+    void setHostProviders(std::function<QJsonObject(const QJsonObject &)> state,
+                          std::function<QJsonObject(const QJsonObject &)> search,
+                          std::function<QJsonObject(const QString &, const QJsonObject &)> action);
+
 signals:
     void playRequested();
     void pauseRequested();
@@ -51,6 +55,8 @@ private:
 
     QHash<QTcpSocket *, QByteArray> m_pending;
     QString m_pin;
+    std::function<QJsonObject(const QJsonObject &)> m_hostState, m_hostSearch;
+    std::function<QJsonObject(const QString &, const QJsonObject &)> m_hostAction;
     std::function<QJsonObject()> m_statusProvider;
     std::function<QJsonObject(const QString &)> m_songSearchProvider;
     std::function<QJsonObject(const QString &, const QJsonObject &)> m_libraryActionHandler;

@@ -21,6 +21,7 @@
 #include <qglobal.h>
 #include "mainwindow.h"
 #include "dlgyoutubedownload.h"
+#include <QUuid>
 #include "remotecontrolserver.h"
 #include <QJsonObject>
 #include <QJsonArray>
@@ -654,7 +655,14 @@ MainWindow::MainWindow(QWidget *parent) :
     setupShortcuts();
     setupConnections();
     // Start the local embedded remote. No PHP, Internet, or shell script required.
+    m_hostSession = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    connect(&m_mediaBackendKar,&MediaBackend::stateChanged,this,[this](MediaBackend::State){++m_hostPlaybackRevision;});
+    connect(&m_mediaBackendBm,&MediaBackend::stateChanged,this,[this](MediaBackend::State){++m_hostPlaybackRevision;});
     m_remoteServer = new RemoteControlServer(this);
+    m_remoteServer->setHostProviders(
+        [this](const QJsonObject &args) { return remoteHostState(args); },
+        [this](const QJsonObject &args) { return remoteHostSearch(args); },
+        [this](const QString &command, const QJsonObject &args) { return remoteHostAction(command,args); });
     connect(m_remoteServer, &RemoteControlServer::playRequested, this, [this]() {
         const auto state = m_mediaBackendKar.state();
         if (state == MediaBackend::PausedState) m_mediaBackendKar.play();
@@ -1894,7 +1902,7 @@ void MainWindow::playNextQueuedSong() {
         }
         if (auto state = m_mediaBackendKar.state(); state == MediaBackend::PlayingState ||
                                                     state == MediaBackend::PausedState) {
-            if (m_settings.showSongInterruptionWarning()) {
+            if (m_settings.showSongInterruptionWarning() && !m_remoteConfirmedAction) {
                 QMessageBox msgBox(this);
                 auto *cb = new QCheckBox("Show this warning in the future");
                 cb->setChecked(m_settings.showSongInterruptionWarning());
@@ -2150,7 +2158,7 @@ void MainWindow::databaseCleared() {
 
 void MainWindow::buttonStopClicked() {
     if (m_mediaBackendKar.state() == MediaBackend::PlayingState) {
-        if (m_settings.showSongPauseStopWarning()) {
+        if (m_settings.showSongPauseStopWarning() && !m_remoteConfirmedAction) {
             QMessageBox msgBox(this);
             auto *cb = new QCheckBox("Show warning on pause/stop in the future");
             cb->setChecked(m_settings.showSongPauseStopWarning());
@@ -2184,7 +2192,7 @@ void MainWindow::buttonPauseClicked() {
     if (m_mediaBackendKar.state() == MediaBackend::PausedState) {
         m_mediaBackendKar.play();
     } else if (m_mediaBackendKar.state() == MediaBackend::PlayingState) {
-        if (m_settings.showSongPauseStopWarning()) {
+        if (m_settings.showSongPauseStopWarning() && !m_remoteConfirmedAction) {
             QMessageBox msgBox(this);
             auto *cb = new QCheckBox("Show warning on pause/stop in the future");
             cb->setChecked(m_settings.showSongPauseStopWarning());
@@ -2235,7 +2243,7 @@ void MainWindow::tableViewRotationDoubleClicked(const QModelIndex &index) {
         int singerId = index.data(Qt::UserRole).toInt();
         QString nextSongPath = m_rotModel.getSinger(singerId).nextSongPath();
         if (nextSongPath != "") {
-            if ((m_mediaBackendKar.state() == MediaBackend::PlayingState) && (m_settings.showSongInterruptionWarning())) {
+            if ((m_mediaBackendKar.state() == MediaBackend::PlayingState) && (m_settings.showSongInterruptionWarning()) && !m_remoteConfirmedAction) {
                 QMessageBox msgBox(this);
                 auto *cb = new QCheckBox("Show this warning in the future");
                 cb->setChecked(m_settings.showSongInterruptionWarning());
@@ -2365,7 +2373,7 @@ void MainWindow::tableViewQueueDoubleClicked(const QModelIndex &index) {
     auto singer = m_rotModel.getSinger(song.singerId);
     m_k2kTransition = false;
     if (m_mediaBackendKar.state() == MediaBackend::PlayingState) {
-        if (m_settings.showSongInterruptionWarning()) {
+        if (m_settings.showSongInterruptionWarning() && !m_remoteConfirmedAction) {
             QMessageBox msgBox(this);
             auto *cb = new QCheckBox("Show this warning in the future");
             cb->setChecked(m_settings.showSongInterruptionWarning());
@@ -4838,7 +4846,7 @@ void MainWindow::buttonHistoryPlayClicked() {
     auto index = selRows.at(0);
     m_k2kTransition = false;
     if (m_mediaBackendKar.state() == MediaBackend::PlayingState) {
-        if (m_settings.showSongInterruptionWarning()) {
+        if (m_settings.showSongInterruptionWarning() && !m_remoteConfirmedAction) {
             QMessageBox msgBox(this);
             auto *cb = new QCheckBox("Show this warning in the future");
             cb->setChecked(m_settings.showSongInterruptionWarning());

@@ -1,6 +1,7 @@
 #include "remotecontrolserver.h"
 
 #include <QAbstractSocket>
+#include <QFile>
 #include <QHostAddress>
 #include <QDateTime>
 #include <QJsonDocument>
@@ -1773,6 +1774,12 @@ void RemoteControlServer::setLibraryActionHandler(
     m_libraryActionHandler = std::move(callback);
 }
 
+void RemoteControlServer::setHostProviders(std::function<QJsonObject(const QJsonObject &)> state,
+        std::function<QJsonObject(const QJsonObject &)> search,
+        std::function<QJsonObject(const QString &, const QJsonObject &)> action) {
+    m_hostState=std::move(state); m_hostSearch=std::move(search); m_hostAction=std::move(action);
+}
+
 bool RemoteControlServer::start(quint16 preferredPort) {
     if (isListening()) return true;
     if (listen(QHostAddress::AnyIPv4, preferredPort)) return true;
@@ -1951,16 +1958,23 @@ void RemoteControlServer::processRequest(QTcpSocket *socket, const QByteArray &h
             reply(socket, 200, "OK", "application/javascript; charset=utf-8", QByteArray(kQrLibrary));
         return;
     }
-    if (method == "GET" && url.path() == QStringLiteral("/")) {
-        reply(socket, 200, "OK", "text/html; charset=utf-8", QByteArray(kControlPage));
-        return;
+    if (method == "GET" && url.path() == QStringLiteral("/classic")) {
+        reply(socket,200,"OK","text/html; charset=utf-8",QByteArray(kControlPage)); return;
+    }
+    const QHash<QString,QString> assets{{"/", "index.html"},{"/host-console.css","host.css"},{"/host-console.js","host.js"}};
+    if (method == "GET" && assets.contains(url.path())) {
+        QFile asset(":/host-console/"+assets.value(url.path()));
+        if (!asset.open(QIODevice::ReadOnly)) { reply(socket,500,"Internal Server Error","text/plain","Host interface unavailable"); return; }
+        const auto type=url.path().endsWith(".css") ? "text/css; charset=utf-8" : url.path().endsWith(".js") ? "application/javascript; charset=utf-8" : "text/html; charset=utf-8";
+        reply(socket,200,"OK",type,asset.readAll()); return;
     }
     if (method != "GET" && method != "POST") {
         reply(socket, 405, "Method Not Allowed", "application/json", jsonError("GET or POST required"));
         return;
     }
     if (url.path() != QStringLiteral("/remote") && url.path() != QStringLiteral("/status") &&
-        url.path() != QStringLiteral("/songs")) {
+        url.path() != QStringLiteral("/songs") && url.path() != "/host/state" &&
+        url.path() != "/host/search" && url.path() != "/host/action") {
         reply(socket, 404, "Not Found", "application/json", jsonError("Unknown endpoint"));
         return;
     }
@@ -1988,6 +2002,23 @@ void RemoteControlServer::processRequest(QTcpSocket *socket, const QByteArray &h
     if (pin != m_pin) {
         reply(socket, 403, "Forbidden", "application/json", jsonError("Incorrect PIN"));
         return;
+    }
+    if (url.path().startsWith("/host/")) {
+        const bool action=url.path()=="/host/action";
+        if ((action && method!="POST") || (!action && method!="GET")) {
+            reply(socket,405,"Method Not Allowed","application/json",jsonError(action?"POST required":"GET required")); return;
+        }
+        QJsonObject args=posted;
+        if (!action) {
+            for (const auto &item:QUrlQuery(url).queryItems()) if (item.first!="pin") args.insert(item.first,item.second);
+        }
+        QJsonObject result;
+        if (action && m_hostAction) result=m_hostAction(cmd,args);
+        else if (url.path()=="/host/state" && m_hostState) result=m_hostState(args);
+        else if (url.path()=="/host/search" && m_hostSearch) result=m_hostSearch(args);
+        else result=QJsonObject{{"ok",false},{"error","Host service unavailable"}};
+        const bool ok=result.value("ok").toBool();
+        reply(socket,ok?200:400,ok?"OK":"Bad Request","application/json",QJsonDocument(result).toJson(QJsonDocument::Compact)); return;
     }
     if (url.path() == QStringLiteral("/songs")) {
         if (method != "GET") {
