@@ -115,7 +115,7 @@ int main(int argc, char **argv) {
         {
             YouTubeDownload job; int ready = 0, failed = 0, progress = 0, heartbeats = 0;
             QTimer heartbeat; heartbeat.setInterval(1); QObject::connect(&heartbeat, &QTimer::timeout, &app, [&] { ++heartbeats; }); heartbeat.start();
-            QObject::connect(&job, &YouTubeDownload::ready, &app, [&](QString path, QString title, QString, int duration) { completed = path; completedTitle = title; completedDuration = duration; ++ready; });
+            QObject::connect(&job, &YouTubeDownload::ready, &app, [&](QString path, QString title, QString, int duration) { if (ready == 0) { completed = path; completedTitle = title; completedDuration = duration; } ++ready; });
             QObject::connect(&job, &YouTubeDownload::failed, &app, [&](QString error) { std::cerr << error.toStdString() << std::endl; ++failed; });
             QObject::connect(&job, &YouTubeDownload::progress, &app, [&](QString) { ++progress; });
             check("download_starts", job.start(request(1)));
@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
             QString second;
             QObject::connect(&job, &YouTubeDownload::ready, &app, [&](QString path, QString, QString, int) { second = path; });
             check("same_controller_can_download_again", job.start(request(1)) && waitFor([&] { return !job.isBusy(); }) && ready == 2);
-            check("existing_song_never_overwritten", !second.isEmpty() && second != completed && readFile(completed) == readFile(second));
+            check("existing_song_never_overwritten", !second.isEmpty() && second != completed && QFileInfo(completed).isFile() && QFileInfo(second).isFile() && readFile(completed) == readFile(base + "/youtube-fixture.mp4") && readFile(second) == readFile(base + "/youtube-fixture.mp4"));
         }
         for (int mode : {2, 3, 4, 5, 6, 7, 8}) {
             YouTubeDownload job; int ready = 0, failed = 0;
