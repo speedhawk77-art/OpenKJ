@@ -191,7 +191,7 @@ AppVersion=9.0
 AppVerName={APP_DISPLAY}
 DefaultDirName={{autopf}}\\OpenKJ Custom
 DefaultGroupName=OpenKJ
-UninstallDisplayIcon={{app}}\\OpenKJ-Remote.exe
+UninstallDisplayIcon={{app}}\\openkj.exe
 PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -215,8 +215,8 @@ Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription:
 [Files]
 {files}
 [Icons]
-Name: "{{autoprograms}}\\OpenKJ"; Filename: "{{app}}\\OpenKJ-Remote.exe"; WorkingDir: "{{app}}"
-Name: "{{autodesktop}}\\OpenKJ"; Filename: "{{app}}\\OpenKJ-Remote.exe"; WorkingDir: "{{app}}"; Tasks: desktopicon
+Name: "{{autoprograms}}\\OpenKJ"; Filename: "{{app}}\\OpenKJ-Remote.exe"; WorkingDir: "{{app}}"; IconFilename: "{{app}}\\openkj.exe"
+Name: "{{autodesktop}}\\OpenKJ"; Filename: "{{app}}\\OpenKJ-Remote.exe"; WorkingDir: "{{app}}"; IconFilename: "{{app}}\\openkj.exe"; Tasks: desktopicon
 
 [Run]
 ; Bundled official Microsoft C++ x64 Runtime. Runs only if not installed.
