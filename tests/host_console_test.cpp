@@ -83,7 +83,10 @@ int main(int argc,char **argv){
   check("duplicate_singer_rejected",call("add_singer",{{"singer_name","Andrew"}}).status==400);check("invalid_singer_rejected",call("add_singer",{{"singer_name",QString(71,'x')}}).status==400);
   check("fractional_singer_id_rejected",call("rename_singer",{{"singer_id",1.5},{"name","bad"}}).status==400);
   check("independent_queue_inspection",state(andrew).value("selected_singer_id").toInt()==andrew&&state(mike).value("selected_singer_id").toInt()==mike&&HostConsoleTestAccess::selected(window)<=0);
+  auto rotationSinger=[&](int id){for(const auto &entry:state().value("rotation").toArray())if(entry.toObject().value("id").toInt()==id)return entry.toObject();return QJsonObject{};};
+  check("rotation_empty_singer_has_no_next_song",!rotationSinger(andrew).value("has_song").toBool()&&rotationSinger(andrew).value("next_song").toString().isEmpty());
   check("native_song_added",call("add_song",{{"song_id",songId}},andrew).status==200);
+  check("rotation_next_song_matches_native_queue",rotationSinger(andrew).value("has_song").toBool()&&rotationSinger(andrew).value("next_song").toString()=="O'Neil - Karaoke 00000");
   check("fractional_song_rejected",call("add_song",{{"song_id",1.5}},andrew).status==400);
   check("missing_song_rejected",call("add_song",{{"song_id",99999999}},andrew).status==400);
   auto first=state(andrew);const int queueId=first.value("queue").toArray().first().toObject().value("id").toInt();check("queue_state_uses_stable_ids",queueId>0&&first.value("queue").toArray().first().toObject().value("song_id").toInt()==songId);
@@ -93,6 +96,7 @@ int main(int argc,char **argv){
   check("cross_singer_queue_id_rejected",call("queue_remove",{{"queue_song_id",queueId},{"confirmed",true}},mike).status==400);
   check("song_removal_needs_confirmation",call("queue_remove",{{"queue_song_id",queueId}},andrew).status==400);
   check("queue_mark_played",call("queue_played",{{"queue_song_id",queueId},{"value",true}},andrew).status==200&&state(andrew).value("queue").toArray().first().toObject().value("played").toBool());
+  check("rotation_played_song_is_not_up_next",!rotationSinger(andrew).value("has_song").toBool()&&rotationSinger(andrew).value("next_song").toString().isEmpty());
   check("queue_played_requires_boolean",call("queue_played",{{"queue_song_id",queueId},{"value","false"}},andrew).status==400);
   check("queue_mark_unplayed",call("queue_played",{{"queue_song_id",queueId},{"value",false}},andrew).status==200);
   check("queue_second_add",call("add_song",{{"song_id",songId}},andrew).status==200);
@@ -102,6 +106,7 @@ int main(int argc,char **argv){
   check("queue_edit_does_not_select_on_laptop",HostConsoleTestAccess::selected(window)<=0);
   check("queue_clear_needs_confirmation",call("queue_clear",{},andrew).status==400);
   check("queue_clear_uses_native_model",call("queue_clear",{{"confirmed",true}},andrew).status==200&&state(andrew).value("queue").toArray().isEmpty());
+  check("rotation_cleared_queue_has_no_next_song",!rotationSinger(andrew).value("has_song").toBool()&&rotationSinger(andrew).value("next_song").toString().isEmpty());
   check("native_singer_rename",call("rename_singer",{{"name","Andrew B"}},andrew).status==200);
   check("duplicate_rename_rejected",call("rename_singer",{{"name","Mike"}},andrew).status==400);
   check("regular_tracking_requires_confirmation",call("regular_singer",{{"value",true}},andrew).status==400);

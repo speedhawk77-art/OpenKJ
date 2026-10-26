@@ -13,3 +13,7 @@
 @media(min-width:700px) and (max-width:900px){.workspace{display:grid;grid-template-columns:1.2fr 1fr;gap:12px}.workspace-panel:not(.mobile-active){display:flex}#queuePanel{grid-column:1/-1}.workspace-panel .item-list{grid-template-columns:1fr}#queueList{grid-template-columns:1fr 1fr}.workspace-panel{min-height:380px;max-height:570px}.workspace-panel .item-list{overflow:auto}}
 @media(min-width:901px){.workspace-panel{min-height:450px;height:calc(100dvh - 360px);max-height:none}}
 @media(max-width:900px){input:not([type=range]):not([type=checkbox]),select,textarea{font-size:16px}}
+
+/* Keep the classic rotation's song overview and direct playback on touch cards. */
+.singer-song{font-size:12px;line-height:1.5;overflow-wrap:anywhere;margin-top:7px;color:var(--muted)}
+.now-singing{color:#90e4bd}.next-song{color:#bcd9ff}.performing-tag{margin-top:6px}
