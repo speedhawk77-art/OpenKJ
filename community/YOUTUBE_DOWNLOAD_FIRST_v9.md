@@ -78,3 +78,37 @@ cancellation, timeout and explicit library import. No real account or user media
 is accessed. Passing these tests does not claim a live YouTube download or physical
 playback test. A dedicated Windows workflow also runs all existing maintenance,
 codec, runtime-origin, icon, installed-notice, installer and remote HTTP checks.
+
+## Executed verification and test installer
+
+[Windows run 40258090100](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40258090100)
+passed for application source commit `8ceff2b3c8d84787678c6693a876902eb6aa5d82`:
+50 download/import checks, 52 maintenance checks, 22 optional-codec checks, 11 source
+HTTP checks, 11 installed HTTP checks, all 339 installed program hashes, all 9,597
+notice hashes and all existing dependency/media/runtime audits. Both Windows
+executables retain the original icon. Tests use the offscreen platform to check
+widget state and actions; they do not claim physical display or font rendering.
+
+[Real yt-dlp Windows CLI contract run 40256799228](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40256799228)
+also passed. It used the official 2026.10.21 executable and the same controller
+source blob as the final candidate, with generated local media. An independent
+Linux check used the real official downloader plus FFmpeg to download separate
+local video/audio tracks, merge them and validate the H.264/AAC output and metadata.
+
+A live YouTube attempt could not complete in the cloud environment: media URLs
+returned a 195-byte HTML “Site Unavailable” page instead of video/audio. TLS
+verification was retained. A live download and physical playback on the owner's
+network are still required before treating this feature as release-tested.
+
+[Download the private test installer](https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Maintenance-Candidate-8ceff2b3c8d84787678c6693a876902eb6aa5d82-40258090100-1.exe)
+while signed into the maintainer's GitHub account. It includes the icon repair.
+The public release remains unchanged. Installer SHA-256:
+`d8ddc01d31a0e020c1f5acac7976f648c99236ca63d5613dfa24b3178a0f82fe`.
+Exact asset identities and results are in
+`windows/data/youtube-download-first-verification-v9.json`.
+
+Before trying the test installer, close OpenKJ and back up the existing database
+and settings. Try one authorized public karaoke video: download, confirm its
+artist/title, add it to the library, then queue and play the completed local file.
+Check audio, singer display and the existing key/tempo controls. Disconnect internet
+after the download to confirm local playback. The feature is not published yet.

@@ -1,0 +1,64 @@
+{
+  "application_source_commit": "8ceff2b3c8d84787678c6693a876902eb6aa5d82",
+  "verification_run": 40258090100,
+  "passed": true,
+  "checks": {
+    "youtube_download": 50,
+    "native_maintenance": 52,
+    "optional_codec": 22,
+    "source_http": 11,
+    "installed_http": 11,
+    "installed_program_hashes": 339,
+    "unchanged_dependencies": 337,
+    "installed_notice_hashes": 9597,
+    "installer_exit_code": 0
+  },
+  "installer": {
+    "asset_id": 676758567,
+    "bytes": 207000229,
+    "sha256": "d8ddc01d31a0e020c1f5acac7976f648c99236ca63d5613dfa24b3178a0f82fe"
+  },
+  "application_source": {
+    "asset_id": 676759025,
+    "sha256": "bcd82d321052acd7f7d5d19f00d5324d640b17f743b6b63c54bc8bea02b0b1b2"
+  },
+  "audit": {
+    "asset_id": 676758293,
+    "sha256": "7af6ce457d278d42cce31aa7145100508cbb4e125556badaf52b9eb46dfbb144"
+  },
+  "real_downloader_windows_contract": {
+    "run": 40256799228,
+    "source_commit": "7507a3089eb4e69ebc9c0117ac45003e6951b33b",
+    "same_controller_blob_as_candidate": "667fcb6458b087b00db9f2c42220cb6010d35461",
+    "passed": true
+  },
+  "real_downloader_and_ffmpeg_local_merge": {
+    "passed": true,
+    "platform": "Linux external-helper integration; Windows UI/controller checked separately",
+    "downloader_version": "2026.10.21",
+    "separate_video_audio_downloads_tested": true,
+    "ffmpeg_merge_tested": true,
+    "final_metadata_contract_tested": true,
+    "unicode_percent_paths_tested": true,
+    "codecs": [
+      "h264",
+      "aac"
+    ],
+    "live_youtube_tested": false
+  },
+  "live_download_attempt": {
+    "attempted": true,
+    "passed": false,
+    "reason": "Downloaded audio/video URLs returned a 195-byte HTML Site Unavailable page, not media.",
+    "tls_verification_disabled": false,
+    "environment_only_adjustment": "Use the managed system CA trust store for the standalone helper.",
+    "video": "https://www.youtube.com/watch?v=YE7VzlLtp-4",
+    "downloader_version": "2026.10.21",
+    "deno_version": "2.9.8",
+    "live_youtube_on_user_connection_still_required": true
+  },
+  "working_release_id": 421204266,
+  "draft": true,
+  "physical_playback_tested": false,
+  "publicly_published": false
+}
