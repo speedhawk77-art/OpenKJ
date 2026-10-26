@@ -61,3 +61,29 @@ archive) can still require attention to OpenKJ's error dialog on the laptop.
 
 This is a staged test candidate, not a public release. Physical phone/tablet playback,
 queue editing, simultaneous-device synchronization and reconnect tests remain required.
+
+## Laptop, phone and tablet acceptance test
+
+1. Close OpenKJ and install the verified candidate on the laptop using the existing installation and saved configuration. Reopen it and read its remote address and current PIN from the status bar.
+2. On the same local Wi-Fi, refresh that address on the phone and enter the PIN. No phone app, Node server or desktop-sharing program is required. Check Library, Singers, Queue, Tools and Settings in the bottom tabs.
+3. On a tablet, check portrait and landscape layouts. Landscape shows library, singers and queue together; narrower tablet layouts rearrange the panels.
+4. Add a test singer and two known-working local songs. Reorder songs, edit a saved key, mark played/unplayed and rename/reorder the singer. Check changes in OpenKJ and on a second device. Each device can inspect a different singer without changing the laptop selection.
+5. Play a song, then test pause/resume, seek, volume/mute, key/tempo and stop. Listen/watch on the laptop's outputs; the phone/tablet plays no media.
+6. Check break music, guest request approval/decline and a configured sound clip. In Tools, repeat YouTube download/verify/import using the existing helpers and H.264 setup.
+7. Edit library metadata on the laptop and verify visible phone results refresh. Check a ticker/show setting and an EQ band in both directions.
+8. Disconnect/reconnect one device's Wi-Fi while the laptop continues running. Check status reconnects and failed actions are not automatically replayed.
+9. The existing remote is available at the same base address plus `/classic`. Singer requests and QR keep their existing routes.
+
+Physical-device results remain separate from the automated tests.
+
+## Verified Windows candidate
+
+[Download the mobile host console test installer](https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Maintenance-Candidate-2b83e82f5b3ec23b0b681e38a488cbe16fe3b806-40410416271-1.exe). The download is in the owner's private working draft; sign into GitHub if needed.
+
+- Exact compiled source: `2b83e82f5b3ec23b0b681e38a488cbe16fe3b806`.
+- Installer SHA256: `a17a0d0b1942c4d5b6215d8185cadf40d61abaa72ca974fd0145ef95b63f61f6` (207,052,859 bytes).
+- [Windows verification run 40410416271](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40410416271) passed: 99 native host checks, 38 browser checks, 76 existing download checks, 52 maintenance checks, 22 codec checks, and 20 source plus 20 installed HTTP checks.
+- Native tests used a synthetic 76,010-song catalog. Browser checks covered 320/390/600/768/1024/1366-pixel layouts, two-device queue inspection, reconnect behaviour, metadata refresh, saved-singer paging and rapid tuning taps across a held network response.
+- Installer roundtrip matched all 339 programs and 9,597 notices; all 337 dependency programs are unchanged. Both EXEs retain all ten original icon sizes; the exact embedded VC redistributable remains verified.
+
+Exact assets and check names are recorded in `community/windows/data/mobile-host-console-verification-v9.json`. The matching application source and complete audit ZIP are retained with the installer. This remains a draft candidate for physical phone/tablet testing, not a public release.
