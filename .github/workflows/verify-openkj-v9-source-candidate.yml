@@ -27,7 +27,17 @@ permissions:
 
 jobs:
   verify-source-candidate:
-    if: github.repository == 'speedhawk77-art/OpenKJ' && (github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository))
+    # This job checks documentation-only repackaging of the immutable 016d5c3
+    # application. Changed applications use the maintenance/download-first audit,
+    # which still pins all 337 dependencies and attests the two source-built EXEs.
+    # Do not automatically compare newer application builds with the old 339 hashes.
+    if: >-
+      github.repository == 'speedhawk77-art/OpenKJ' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_repository.full_name == github.repository &&
+        github.event.workflow_run.head_sha == '016d5c3135bbc8073b96881e49e19feb97359101'))
     runs-on: windows-2025
     timeout-minutes: 45
     steps:
