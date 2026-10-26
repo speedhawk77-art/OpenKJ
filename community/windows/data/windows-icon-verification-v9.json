@@ -1,0 +1,27 @@
+{
+  "source_commit": "01697f4336755dc00df9e6508e7f38c64efe91d7",
+  "run_id": 40252595723,
+  "passed": true,
+  "installer_asset_id": 676632414,
+  "installer_bytes": 206984249,
+  "installer_sha256": "7856df9f5a05c8eb5749f265410416dcc6c039828708e38e5460ab80e8fdfc1d",
+  "installed_program_hashes": 339,
+  "installed_notice_hashes": 9597,
+  "icon_checks": [
+    {
+      "executable": "openkj.exe",
+      "original_icon_images_verified": 10,
+      "passed": true
+    },
+    {
+      "executable": "OpenKJ-Remote.exe",
+      "original_icon_images_verified": 10,
+      "passed": true
+    }
+  ],
+  "native_regressions": 52,
+  "codec_checks": 22,
+  "installed_http_checks": 11,
+  "working_release_id": 421204266,
+  "publicly_published": false
+}
