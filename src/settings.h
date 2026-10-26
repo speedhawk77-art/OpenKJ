@@ -24,6 +24,7 @@
 #include <QHeaderView>
 #include <QObject>
 #include <QSettings>
+#include <QVariantMap>
 #include <QSplitter>
 #include <QTableView>
 #include <QTreeView>
@@ -54,6 +55,9 @@ private:
     bool m_safeStartupMode{false};
 
 public:
+    QVariantMap youtubeDownloadOptions() const;
+    void setYoutubeDownloadOptions(const QVariantMap &options);
+
     enum {
         LOG_LEVEL_DISABLED,
         LOG_LEVEL_CRITICAL,

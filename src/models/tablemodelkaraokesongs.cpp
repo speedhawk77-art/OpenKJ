@@ -9,6 +9,7 @@
 #include <QDirIterator>
 #include <QSvgRenderer>
 #include <QMimeData>
+#include <QRegularExpression>
 #include <array>
 
 std::ostream & operator<<(std::ostream& os, const QString& s);
@@ -546,4 +547,34 @@ int TableModelKaraokeSongs::addSong(okj::KaraokeSong song) {
         search(m_lastSearch);
         return lastInsertId;
     }
+}
+
+int TableModelKaraokeSongs::addDownloadedVideo(const QString &path, const QString &artist,
+        const QString &title, const QString &videoId, int durationMs) {
+    const QFileInfo file(path);
+    if (!file.isFile() || file.suffix().compare("mp4", Qt::CaseInsensitive) != 0
+        || artist.trimmed().isEmpty() || title.trimmed().isEmpty() || durationMs <= 0
+        || !QRegularExpression("^[A-Za-z0-9_-]{11}$").match(videoId).hasMatch()) return -1;
+    const auto normalized = QDir::fromNativeSeparators(file.absoluteFilePath());
+    // A watched folder may already have indexed the new file. Update its metadata
+    // without duplicating it or resetting existing play/history information.
+    QSqlQuery query;
+    query.prepare("INSERT INTO dbSongs (discid,artist,title,path,duration,filename,searchstring) "
+                  "VALUES(:discid,:artist,:title,:path,:duration,:filename,:search) "
+                  "ON CONFLICT(path) DO UPDATE SET discid=excluded.discid,artist=excluded.artist,"
+                  "title=excluded.title,duration=excluded.duration,filename=excluded.filename,searchstring=excluded.searchstring");
+    query.bindValue(":discid", "YT-" + videoId);
+    query.bindValue(":artist", artist.trimmed()); query.bindValue(":title", title.trimmed());
+    query.bindValue(":path", normalized); query.bindValue(":duration", durationMs);
+    query.bindValue(":filename", file.completeBaseName());
+    query.bindValue(":search", file.completeBaseName() + " " + artist.trimmed() + " " + title.trimmed() + " YT-" + videoId);
+    if (!query.exec()) {
+        m_logger->error("{} Could not add downloaded video: {}", m_loggingPrefix, query.lastError().text().toStdString());
+        return -1;
+    }
+    query.prepare("SELECT songid FROM dbSongs WHERE path=:path"); query.bindValue(":path", normalized);
+    if (!query.exec() || !query.next()) return -1;
+    const auto id = query.value(0).toInt();
+    loadData();
+    return id;
 }
