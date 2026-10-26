@@ -2,17 +2,17 @@
   "verified_date": "2026-10-26",
   "repository": "speedhawk77-art/OpenKJ",
   "branch": "feature/mobile-host-console",
-  "compiled_source_commit": "2b83e82f5b3ec23b0b681e38a488cbe16fe3b806",
-  "application_sha256": "ec2a4cf322b9f4be5000fc8c6696b8a795ac6c93342c20dd3fd225b7b23643fe",
+  "compiled_source_commit": "958a56747230883675a8cc90a8d8f6296e834ec7",
+  "application_sha256": "42bc086e6224a016952f8ab559d7cfb97eb1439109787a9c211454b1da5aecfb",
   "pull_request": "https://github.com/speedhawk77-art/OpenKJ/pull/2",
   "workflow": {
-    "run_id": 40410416271,
+    "run_id": 40419895167,
     "attempt": 1,
     "conclusion": "success",
-    "url": "https://github.com/speedhawk77-art/OpenKJ/actions/runs/40410416271"
+    "url": "https://github.com/speedhawk77-art/OpenKJ/actions/runs/40419895167"
   },
   "checks": {
-    "native_host": 99,
+    "native_host": 107,
     "browser": 38,
     "legacy_youtube_download": 76,
     "maintenance": 52,
@@ -62,6 +62,13 @@
     "search_bad_offset_rejected",
     "search_oversized_query_rejected",
     "search_apostrophe_and_words",
+    "http_search_form_encoded_words",
+    "http_search_percent_encoded_spaces",
+    "http_search_encoded_apostrophe",
+    "http_search_repeated_spaces",
+    "http_search_words_across_artist_title",
+    "http_search_literal_plus_preserved",
+    "http_search_percent_decoded_once",
     "native_singer_added",
     "second_singer_added",
     "duplicate_singer_rejected",
@@ -115,6 +122,7 @@
     "equalizer_invalid_band_rejected",
     "equalizer_invalid_level_rejected",
     "native_history_search_joins_local_catalog",
+    "http_history_form_encoded_singer_and_words",
     "saved_singer_search",
     "break_fixture_insert",
     "break_library_search",
@@ -176,51 +184,46 @@
     "disconnect_returns_to_login",
     "no_browser_javascript_errors"
   ],
-  "local_browser": {
-    "version": "153.0.8010.0",
-    "passed": 38,
-    "rapid_tuning_regression_failed_against_previous_mutable_implementation": true
-  },
   "evidence_artifacts": [
     {
-      "id": 12694225090,
+      "id": 12697738011,
       "name": "OpenKJ-v9-Maintenance-Build-Evidence",
-      "bytes": 774097
+      "bytes": 774147
     },
     {
-      "id": 12693088651,
+      "id": 12697733709,
       "name": "OpenKJ-v9-Maintenance-Audit",
-      "bytes": 429811
+      "bytes": 429894
     }
   ],
   "assets": [
     {
-      "id": 679668450,
-      "name": "OpenKJ-v9-Application-Source-2b83e82f5b3ec23b0b681e38a488cbe16fe3b806.zip",
-      "bytes": 2500727,
-      "sha256": "8f4e8bad50106861ccf54c0e8608b33ba781a18ea790a004b708d4cb14ca02d5",
-      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Application-Source-2b83e82f5b3ec23b0b681e38a488cbe16fe3b806.zip"
+      "id": 679835713,
+      "name": "OpenKJ-v9-Application-Source-958a56747230883675a8cc90a8d8f6296e834ec7.zip",
+      "bytes": 2505692,
+      "sha256": "e1960266c6b108714ded238bd9dcce17ebac1d20f1574fb3f5624cc01db3e36f",
+      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Application-Source-958a56747230883675a8cc90a8d8f6296e834ec7.zip"
     },
     {
-      "id": 679667904,
-      "name": "OpenKJ-v9-Maintenance-Candidate-2b83e82f5b3ec23b0b681e38a488cbe16fe3b806-40410416271-1.exe",
-      "bytes": 207052859,
-      "sha256": "a17a0d0b1942c4d5b6215d8185cadf40d61abaa72ca974fd0145ef95b63f61f6",
-      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Maintenance-Candidate-2b83e82f5b3ec23b0b681e38a488cbe16fe3b806-40410416271-1.exe"
+      "id": 679835383,
+      "name": "OpenKJ-v9-Maintenance-Candidate-958a56747230883675a8cc90a8d8f6296e834ec7-40419895167-1.exe",
+      "bytes": 207053833,
+      "sha256": "d7bc5cc1316be4503ead480b6fc20fcbeee786fe9a59475b70f96bbc7e7791f5",
+      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Maintenance-Candidate-958a56747230883675a8cc90a8d8f6296e834ec7-40419895167-1.exe"
     },
     {
-      "id": 679667785,
-      "name": "OpenKJ-v9-Maintenance-Candidate-Audit-40410416271-1.zip",
-      "bytes": 823781,
-      "sha256": "ad50e08fb3debe234c63c9307c6e11188f40fcf8711491321424ba7b415877a2",
-      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Maintenance-Candidate-Audit-40410416271-1.zip"
+      "id": 679835289,
+      "name": "OpenKJ-v9-Maintenance-Candidate-Audit-40419895167-1.zip",
+      "bytes": 823875,
+      "sha256": "1a4dc1b353649d716ee8b68be46a615ea03d1a1305444b3bfe718eb13b5a948e",
+      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Maintenance-Candidate-Audit-40419895167-1.zip"
     },
     {
-      "id": 679653317,
-      "name": "OpenKJ-v9-Source-Built-App-2b83e82f5b3ec23b0b681e38a488cbe16fe3b806.zip",
-      "bytes": 4053755,
-      "sha256": "6ff084b28138b4b5a07f9d89e8d10cca3d64991d27300a925165ca49a0e54567",
-      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Source-Built-App-2b83e82f5b3ec23b0b681e38a488cbe16fe3b806.zip"
+      "id": 679828921,
+      "name": "OpenKJ-v9-Source-Built-App-958a56747230883675a8cc90a8d8f6296e834ec7.zip",
+      "bytes": 4058889,
+      "sha256": "3db124c51bbf496571224999e524f3f8e910a6c087fb4a3e711e0996b957f36b",
+      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Source-Built-App-958a56747230883675a8cc90a8d8f6296e834ec7.zip"
     }
   ],
   "manual_testing": {
@@ -235,5 +238,20 @@
     "Classic remote remains at /classic; guest and QR routes retain their original roles.",
     "Hardware, file-path and codec-consent setup remains on the laptop.",
     "The private working draft contains historical assets; this verification selects only the exact assets listed here."
-  ]
+  ],
+  "search_fix": {
+    "cause": "Browser URLSearchParams encodes spaces as '+', which QUrlQuery does not automatically convert to spaces.",
+    "change": "Decode host GET parameters as form encoding: replace raw '+' with a space before percent decoding exactly once.",
+    "regression_checks": [
+      "http_search_form_encoded_words",
+      "http_search_percent_encoded_spaces",
+      "http_search_encoded_apostrophe",
+      "http_search_repeated_spaces",
+      "http_search_words_across_artist_title",
+      "http_search_literal_plus_preserved",
+      "http_search_percent_decoded_once",
+      "http_history_form_encoded_singer_and_words"
+    ],
+    "real_phone_retest_passed": false
+  }
 }

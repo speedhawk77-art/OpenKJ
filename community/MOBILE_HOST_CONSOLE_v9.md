@@ -78,12 +78,18 @@ Physical-device results remain separate from the automated tests.
 
 ## Verified Windows candidate
 
-[Download the mobile host console test installer](https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Maintenance-Candidate-2b83e82f5b3ec23b0b681e38a488cbe16fe3b806-40410416271-1.exe). The download is in the owner's private working draft; sign into GitHub if needed.
+[Download the mobile host console test installer](https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Maintenance-Candidate-958a56747230883675a8cc90a8d8f6296e834ec7-40419895167-1.exe). The download is in the owner's private working draft; sign into GitHub if needed.
 
-- Exact compiled source: `2b83e82f5b3ec23b0b681e38a488cbe16fe3b806`.
-- Installer SHA256: `a17a0d0b1942c4d5b6215d8185cadf40d61abaa72ca974fd0145ef95b63f61f6` (207,052,859 bytes).
-- [Windows verification run 40410416271](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40410416271) passed: 99 native host checks, 38 browser checks, 76 existing download checks, 52 maintenance checks, 22 codec checks, and 20 source plus 20 installed HTTP checks.
+- Exact compiled source: `958a56747230883675a8cc90a8d8f6296e834ec7`.
+- Installer SHA256: `d7bc5cc1316be4503ead480b6fc20fcbeee786fe9a59475b70f96bbc7e7791f5` (207,053,833 bytes).
+- [Windows verification run 40419895167](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40419895167) passed: 107 native host checks, 38 browser checks, 76 existing download checks, 52 maintenance checks, 22 codec checks, and 20 source plus 20 installed HTTP checks.
 - Native tests used a synthetic 76,010-song catalog. Browser checks covered 320/390/600/768/1024/1366-pixel layouts, two-device queue inspection, reconnect behaviour, metadata refresh, saved-singer paging and rapid tuning taps across a held network response.
 - Installer roundtrip matched all 339 programs and 9,597 notices; all 337 dependency programs are unchanged. Both EXEs retain all ten original icon sizes; the exact embedded VC redistributable remains verified.
 
 Exact assets and check names are recorded in `community/windows/data/mobile-host-console-verification-v9.json`. The matching application source and complete audit ZIP are retained with the installer. This remains a draft candidate for physical phone/tablet testing, not a public release.
+
+## Multiword remote search repair
+
+The phone uses `URLSearchParams`, which encodes spaces as `+`. Qt's generic URL query parser preserves that character, so the original host adapter searched for literal plus signs. Host GET parameters now replace raw `+` with spaces before percent decoding exactly once. Encoded literal plus signs and percent signs remain literal. Authentication and existing classic/guest routes are unchanged.
+
+Eight actual local HTTP regressions cover multiple words, percent-encoded spaces, apostrophes, repeated spaces, words across artist/title, literal plus signs, decoding exactly once, and history searches with spaced singer names. All passed in the Windows run above. Install this corrected candidate on the laptop, reopen OpenKJ, refresh the phone remote and re-enter its current PIN; retry a known title with two or more words.
