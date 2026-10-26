@@ -4,6 +4,7 @@
 #include <QIcon>
 #include <QPushButton>
 #include <QLabel>
+#include <QPlainTextEdit>
 #include <QProgressBar>
 #include <QFormLayout>
 #include <QVBoxLayout>
@@ -69,8 +70,10 @@ YouTubeDownloadDialog::YouTubeDownloadDialog(QWidget *parent) : QDialog(parent),
     });
     setupForm->addRow(tr("Install these separately once."), help); layout->addWidget(setup);
     m_progress = new QProgressBar(this); m_progress->setRange(0,1); m_progress->setValue(0); layout->addWidget(m_progress);
-    m_status = new QLabel(tr("Ready. Downloads need an internet connection."), this); m_status->setObjectName("downloadStatus");
-    m_status->setTextFormat(Qt::PlainText); m_status->setWordWrap(true); m_status->setTextInteractionFlags(Qt::TextSelectableByMouse); layout->addWidget(m_status);
+    m_status = new QPlainTextEdit(this); m_status->setObjectName("downloadStatus");
+    m_status->setReadOnly(true); m_status->setFixedHeight(90); m_status->setMaximumBlockCount(30);
+    m_status->setAccessibleName(tr("Download status"));
+    m_status->setPlainText(tr("Ready. Downloads need an internet connection.")); layout->addWidget(m_status);
     auto *buttons = new QHBoxLayout;
     m_start = new QPushButton(tr("Download video"), this); m_start->setObjectName("downloadButton");
     m_cancel = new QPushButton(tr("Cancel download"), this); m_cancel->setObjectName("cancelDownloadButton");
@@ -89,12 +92,12 @@ YouTubeDownloadDialog::YouTubeDownloadDialog(QWidget *parent) : QDialog(parent),
     connect(close, &QPushButton::clicked, this, &YouTubeDownloadDialog::reject);
     connect(m_start, &QPushButton::clicked, this, &YouTubeDownloadDialog::startDownload);
     connect(m_cancel, &QPushButton::clicked, &m_download, &YouTubeDownload::cancel);
-    connect(&m_download, &YouTubeDownload::progress, m_status, &QLabel::setText);
-    connect(&m_download, &YouTubeDownload::failed, this, [this](const QString &error) { m_status->setText(error); stopped(); });
-    connect(&m_download, &YouTubeDownload::cancelled, this, [this] { m_status->setText(tr("Download cancelled. Nothing was added to the library.")); stopped(); });
+    connect(&m_download, &YouTubeDownload::progress, m_status, &QPlainTextEdit::setPlainText);
+    connect(&m_download, &YouTubeDownload::failed, this, [this](const QString &error) { m_status->setPlainText(error); stopped(); });
+    connect(&m_download, &YouTubeDownload::cancelled, this, [this] { m_status->setPlainText(tr("Download cancelled. Nothing was added to the library.")); stopped(); });
     connect(&m_download, &YouTubeDownload::ready, this, [this](const QString &path, const QString &title, const QString &id, int duration) {
         m_path = path; m_videoId = id; m_durationMs = duration; m_title->setText(title);
-        m_status->setText(tr("Video saved and checked. Confirm its artist and title, then click Add to library.\n%1").arg(path)); stopped();
+        m_status->setPlainText(tr("Video saved and checked. Confirm its artist and title, then click Add to library.\n%1").arg(path)); stopped();
     });
     connect(m_title, &QLineEdit::textChanged, this, &YouTubeDownloadDialog::updateControls);
     connect(m_artist, &QLineEdit::textChanged, this, &YouTubeDownloadDialog::updateControls);
@@ -132,7 +135,7 @@ void YouTubeDownloadDialog::stopped() {
 }
 
 void YouTubeDownloadDialog::libraryImportFinished(bool success, const QString &message) {
-    m_status->setText(message);
+    m_status->setPlainText(message);
     if (success) { m_path.clear(); m_artist->clear(); m_title->clear(); }
     updateControls();
 }

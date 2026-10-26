@@ -184,6 +184,7 @@ jobs:
 
           maintenance-regression-evidence.json
           youtube-download-evidence.json
+          youtube-download-dialog.png
         if-no-files-found: warn
         retention-days: 30
     - name: Preserve the source-built app and exact source in the unchanged draft

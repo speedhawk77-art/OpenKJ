@@ -6,7 +6,7 @@
 #include "settings.h"
 class QLineEdit;
 class QPushButton;
-class QLabel;
+class QPlainTextEdit;
 class QProgressBar;
 
 class YouTubeDownloadDialog : public QDialog {
@@ -24,7 +24,7 @@ private:
     YouTubeDownload m_download;
     QLineEdit *m_url, *m_downloader, *m_ffmpeg, *m_deno, *m_folder, *m_artist, *m_title;
     QPushButton *m_start, *m_cancel, *m_add, *m_openFolder;
-    QLabel *m_status;
+    QPlainTextEdit *m_status;
     QProgressBar *m_progress;
     QString m_path, m_videoId;
     int m_durationMs{0};

@@ -149,6 +149,15 @@ int main(int argc, char **argv) {
             check("cancel_stops_child_helpers_too", !QFile::exists(base + "/youtube-child-survived.txt"));
         }
         {
+            QFile::remove(base + "/youtube-child-survived.txt");
+            auto job = std::make_unique<YouTubeDownload>(); bool childStarted = false;
+            QObject::connect(job.get(), &YouTubeDownload::progress, &app, [&](QString message) { if (message == "child-started") childStarted = true; });
+            job->start(request(9));
+            check("shutdown_fixture_child_started", waitFor([&] { return childStarted; }));
+            job.reset(); spin(3300);
+            check("destruction_stops_child_helpers", !QFile::exists(base + "/youtube-child-survived.txt"));
+        }
+        {
             YouTubeDownload job; int failed = 0;
             YouTubeDownloadTestAccess::timeout(job, 100);
             QObject::connect(&job, &YouTubeDownload::failed, &app, [&](QString message) { if (message.contains("15 minutes")) ++failed; });
@@ -184,8 +193,14 @@ int main(int argc, char **argv) {
             dialog.findChild<QPushButton *>("downloadButton")->click();
             check("dialog_fills_title_only_after_verification", waitFor([&] { return !dialog.findChild<QLineEdit *>("downloadTitle")->text().isEmpty(); }));
             check("completed_download_does_not_auto_import", imports == 0 && !add->isEnabled());
-            dialog.findChild<QLineEdit *>("downloadArtist")->setText("Chosen artist"); add->click();
+            dialog.findChild<QLineEdit *>("downloadArtist")->setText("Chosen artist");
+            dialog.adjustSize();
+            check("download_dialog_preview_saved", dialog.grab().save("youtube-download-dialog.png"));
+            add->click();
             check("host_explicitly_approves_library_import", imports == 1 && !add->isEnabled());
+            dialog.findChild<QLineEdit *>("youtubeUrl")->setText(request(9).url);
+            dialog.show(); dialog.findChild<QPushButton *>("downloadButton")->click(); dialog.close();
+            check("closing_dialog_cancels_starting_download", waitFor([&] { return !dialog.isVisible(); }));
         }
     } catch (const std::exception &error) { check(QString("exception: ") + error.what(), false); }
     writeFile("youtube-download-evidence.json", QJsonDocument(QJsonObject{{"passed", all}, {"live_youtube_tested", false}, {"checks", checks}}).toJson());
