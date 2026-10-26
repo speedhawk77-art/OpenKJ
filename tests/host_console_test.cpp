@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Native MainWindow, actual local HTTP server and SQLite models. No user data or hardware playback.
 #include "mainwindow.h"
-#include "ui_mainwindow.h"
+#include <QSpinBox>
 #include "remotecontrolserver.h"
 #include "hostconsole/remotevalidation.h"
 #include "idledetect.h"
@@ -22,8 +22,8 @@ struct HostConsoleTestAccess {
     static void reload(MainWindow &w){w.m_karaokeSongsModel.loadData();w.m_tableModelBreakSongs.loadDatabase();}
     static QJsonObject state(MainWindow &w,int id=0){return w.remoteHostState({{"singer_id",QString::number(id)}});}
     static QJsonObject search(MainWindow &w,QJsonObject args){return w.remoteHostSearch(args);}
-    static int key(MainWindow &w){return w.ui->spinBoxKey->value();}
-    static int tempo(MainWindow &w){return w.ui->spinBoxTempo->value();}
+    static int key(MainWindow &w){return w.findChild<QSpinBox *>("spinBoxKey")->value();}
+    static int tempo(MainWindow &w){return w.findChild<QSpinBox *>("spinBoxTempo")->value();}
     static int selected(MainWindow &w){return w.m_qModel.getSingerId();}
     static QString database(MainWindow &w){return w.m_database.databaseName();}
 };
@@ -89,7 +89,8 @@ int main(int argc,char **argv){
   check("duplicate_rename_rejected",call("rename_singer",{{"name","Mike"}},andrew).status==400);
   check("regular_tracking_requires_confirmation",call("regular_singer",{{"value",true}},andrew).status==400);
   check("regular_tracking_enabled",call("regular_singer",{{"value",true},{"confirmed",true}},andrew).status==200);
-  check("rotation_reorder",call("move_singer",{{"move_direction","up"}},mike).status==200);
+  const auto beforeMove=state().value("rotation").toArray();const int lastSinger=beforeMove.last().toObject().value("id").toInt();
+  check("rotation_reorder",call("move_singer",{{"move_direction","up"}},lastSinger).status==200&&state().value("rotation").toArray().first().toObject().value("id").toInt()==lastSinger);
   check("rotation_stale_revision_rejected",call("remove_singer",{{"confirmed",true},{"rotation_revision","old"}},andrew).status==400);
   for(int value:{-1,101})check(QString("volume_bound_")+QString::number(value),call("volume",{{"target","karaoke"},{"value",value}}).status==400);
   check("karaoke_volume_updates_native",call("volume",{{"target","karaoke"},{"value",73}}).status==200&&state().value("karaoke").toObject().value("volume").toInt()==73);

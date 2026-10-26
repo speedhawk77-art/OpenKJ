@@ -14,6 +14,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--app', type=Path, required=True)
     ap.add_argument('--report', type=Path, required=True)
+    ap.add_argument('--host-console', action='store_true', help='Also require embedded console assets and host API authentication')
     ap.add_argument('--host-downloads', action='store_true', help='Also require the three PIN-protected host download routes')
     args = ap.parse_args()
     app = args.app.resolve()
@@ -58,6 +59,15 @@ def main():
                         ('/remote','POST',b'{"cmd":"youtube_download","url":"https://youtu.be/00000000001"}',403),
                         ('/remote','POST',b'{"cmd":"youtube_cancel"}',403),
                         ('/remote','POST',b'{"cmd":"youtube_import"}',403),
+                    ]
+                if args.host_console:
+                    routes += [
+                        ('/classic','GET',None,200),
+                        ('/host-console.css','GET',None,200),
+                        ('/host-console.js','GET',None,200),
+                        ('/host/state','GET',None,403),
+                        ('/host/search','GET',None,403),
+                        ('/host/action','POST',b'{"cmd":"volume","target":"karaoke","value":10}',403),
                     ]
                 for path,method,data,expected in routes:
                     code,body=request(path,method,data)
