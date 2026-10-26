@@ -2021,7 +2021,15 @@ void RemoteControlServer::processRequest(QTcpSocket *socket, const QByteArray &h
         }
         QJsonObject args=posted;
         if (!action) {
-            for (const auto &item:QUrlQuery(url).queryItems()) if (item.first!="pin") args.insert(item.first,item.second);
+            // URLSearchParams uses form encoding: '+' is a space, while '%2B'
+            // is a literal plus. Replace before percent decoding, exactly once.
+            const auto decodeFormValue=[](const QString &value) {
+                return QUrl::fromPercentEncoding(value.toUtf8().replace('+',' '));
+            };
+            for (const auto &item:QUrlQuery(url).queryItems(QUrl::FullyEncoded)) {
+                const auto key=decodeFormValue(item.first);
+                if (key!="pin") args.insert(key,decodeFormValue(item.second));
+            }
         }
         QJsonObject result;
         if (action && m_hostAction) result=m_hostAction(cmd,args);

@@ -67,6 +67,17 @@ int main(int argc,char **argv){
   check("search_bad_offset_rejected",!HostConsoleTestAccess::search(window,{{"offset","-1"}}).value("ok").toBool());
   check("search_oversized_query_rejected",!HostConsoleTestAccess::search(window,{{"q",QString(101,'x')}}).value("ok").toBool());
   auto exact=HostConsoleTestAccess::search(window,{{"q","oneil karaoke 00000"},{"mode","all"}});check("search_apostrophe_and_words",exact.value("results").toArray().size()==1);const int songId=exact.value("results").toArray().first().toObject().value("id").toInt();
+  // Exercise the HTTP boundary, not just remoteHostSearch: browser
+  // URLSearchParams encodes spaces as '+', unlike encodeURIComponent.
+  auto httpSearch=[&](const QString &query){return http("/host/search?pin="+server->accessPin()+"&mode=all&q="+query);};
+  auto oneSong=[&](const Response &response){const auto rows=response.json.value("results").toArray();return response.status==200&&rows.size()==1&&rows.first().toObject().value("id").toInt()==songId;};
+  check("http_search_form_encoded_words",oneSong(httpSearch("oneil+karaoke+00000")));
+  check("http_search_percent_encoded_spaces",oneSong(httpSearch("oneil%20karaoke%2000000")));
+  check("http_search_encoded_apostrophe",oneSong(httpSearch("O%27Neil+Karaoke+00000")));
+  check("http_search_repeated_spaces",oneSong(httpSearch("oneil+++karaoke++00000")));
+  check("http_search_words_across_artist_title",oneSong(httpSearch("00000+oneil")));
+  check("http_search_literal_plus_preserved",httpSearch("karaoke%2B00000").json.value("results").toArray().isEmpty());
+  check("http_search_percent_decoded_once",httpSearch("karaoke%252000000").json.value("results").toArray().isEmpty());
   auto a=call("add_singer",{{"singer_name","Andrew"},{"position_hint",1}});const int andrew=a.json.value("singer_id").toInt();check("native_singer_added",a.status==200&&andrew>0);
   auto b=call("add_singer",{{"singer_name","Mike"},{"position_hint",2}});const int mike=b.json.value("singer_id").toInt();check("second_singer_added",b.status==200&&mike>0);
   check("duplicate_singer_rejected",call("add_singer",{{"singer_name","Andrew"}}).status==400);check("invalid_singer_rejected",call("add_singer",{{"singer_name",QString(71,'x')}}).status==400);
@@ -121,6 +132,8 @@ int main(int argc,char **argv){
   HostConsoleTestAccess::history(window,songPath);
   const auto history=HostConsoleTestAccess::search(window,{{"mode","history"},{"name","Andrew B"},{"offset","0"}}).value("results").toArray();
   check("native_history_search_joins_local_catalog",history.size()==1&&history.first().toObject().value("id").toInt()==songId&&history.first().toObject().value("key_change").toInt()==2);
+  const auto httpHistory=http("/host/search?pin="+server->accessPin()+"&mode=history&name=Andrew+B&q=History+Title");
+  check("http_history_form_encoded_singer_and_words",httpHistory.status==200&&httpHistory.json.value("results").toArray().size()==1&&httpHistory.json.value("results").toArray().first().toObject().value("id").toInt()==songId);
   check("saved_singer_search",!HostConsoleTestAccess::search(window,{{"mode","regulars"},{"q","Andrew"}}).value("results").toArray().isEmpty());
   sql.prepare("INSERT INTO bmsongs(artist,title,path,filename,duration,searchstring) VALUES('Break Artist','Break Track',:path,'break.mp4','180','break track')");sql.bindValue(":path",songPath);check("break_fixture_insert",sql.exec());const int breakId=sql.lastInsertId().toInt();HostConsoleTestAccess::reload(window);
   check("break_library_search",!HostConsoleTestAccess::search(window,{{"mode","break"},{"q","Break Track"}}).value("results").toArray().isEmpty());
