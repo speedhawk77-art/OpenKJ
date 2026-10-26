@@ -2000,9 +2000,20 @@ void RemoteControlServer::processRequest(QTcpSocket *socket, const QByteArray &h
         pin = posted.value(QStringLiteral("pin")).toString();
     }
     if (pin != m_pin) {
+        const auto ip=socket->peerAddress().toString();
+        const auto now=QDateTime::currentMSecsSinceEpoch();
+        if (m_failedPins.size()>2048) m_failedPins.clear();
+        auto &attempts=m_failedPins[ip];
+        if (!attempts.second || now-attempts.second>=60000) attempts={0,now};
+        if (attempts.first>=12) {
+            reply(socket,429,"Too Many Requests","application/json",jsonError("Too many incorrect PINs. Wait one minute.")); return;
+        }
+        ++attempts.first;
         reply(socket, 403, "Forbidden", "application/json", jsonError("Incorrect PIN"));
         return;
     }
+    // Correct host credentials remain usable even if another client behind the same IP mistyped.
+    m_failedPins.remove(socket->peerAddress().toString());
     if (url.path().startsWith("/host/")) {
         const bool action=url.path()=="/host/action";
         if ((action && method!="POST") || (!action && method!="GET")) {

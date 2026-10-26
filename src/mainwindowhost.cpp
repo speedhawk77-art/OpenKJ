@@ -40,7 +40,7 @@ QJsonObject MainWindow::remoteHostState(const QJsonObject &args) {
     for (int i=0;i<static_cast<int>(m_rotModel.singerCount());++i) {
         const auto &s=m_rotModel.getSingerAtPosition(i); const auto c=counts.value(s.id);
         singers.append(QJsonObject{{"id",s.id},{"name",s.name},{"position",i},{"regular",s.regular},
-            {"current",s.id==m_rotModel.currentSinger()},{"songs",c.first},{"waiting",c.second}});
+            {"current",s.id==m_rotModel.currentSinger()},{"top",s.id==m_settings.lastRunRotationTopSingerId()},{"songs",c.first},{"waiting",c.second}});
     }
     QSqlQuery q; q.prepare("SELECT q.qsongid,q.song,s.artist,s.title,q.played,q.keychg,q.position,s.duration,s.discid "
                           "FROM queuesongs q JOIN dbsongs s ON s.songid=q.song WHERE q.singer=:id ORDER BY q.position LIMIT 2001");
@@ -231,7 +231,7 @@ QJsonObject MainWindow::remoteHostAction(const QString &command,const QJsonObjec
         } else if(command=="regular_singer") {
             if(!confirmed()||!args.value("value").isBool())return error(tr("Confirm the regular singer change"));
             if(args.value("value").toBool())m_rotModel.singerMakeRegular(singerId);else m_rotModel.singerDisableRegularTracking(singerId);
-        } else m_rotModel.setRotationTopSingerId(singerId);
+        } else {m_rotModel.setRotationTopSingerId(singerId);m_rotModel.layoutChanged();}
         return done();
     }
     if(command=="queue_move"||command=="queue_remove"||command=="queue_key"||command=="queue_played"||command=="queue_clear") {

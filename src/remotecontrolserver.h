@@ -55,6 +55,7 @@ private:
 
     QHash<QTcpSocket *, QByteArray> m_pending;
     QString m_pin;
+    QHash<QString,QPair<int,qint64>> m_failedPins;
     std::function<QJsonObject(const QJsonObject &)> m_hostState, m_hostSearch;
     std::function<QJsonObject(const QString &, const QJsonObject &)> m_hostAction;
     std::function<QJsonObject()> m_statusProvider;

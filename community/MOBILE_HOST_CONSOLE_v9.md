@@ -33,7 +33,9 @@ in OpenKJ and served locally. No browser audio/video, lyrics preview or desktop 
 
 ## Safety and compatibility
 
-All host APIs require the startup PIN. Mutations require POST and the current host
+All host APIs require the startup PIN. Repeated wrong PIN attempts are limited
+per client address; a valid PIN remains usable. Invalid credentials stop browser
+auto-retries until the host enters a PIN again. Mutations require POST and the current host
 session. Stable IDs and the displayed revision protect queue/rotation/settings edits
 against other devices. Song changes invalidate outstanding seek/tuning revisions.
 The phone confirms disruptive actions; the native adapter suppresses only the duplicate

@@ -42,7 +42,7 @@ jobs:
         $ErrorActionPreference = 'Stop'
         $ProgressPreference = 'SilentlyContinue'
         $msi = Join-Path $pwd 'gstreamer-devel-1.26.9.msi'
-        curl.exe -fLsS --retry 3 --retry-all-errors --retry-delay 5 -o $msi 'https://gstreamer.freedesktop.org/data/pkg/windows/1.26.9/mingw/gstreamer-1.0-devel-mingw-x86_64-1.26.9.msi'
+        curl.exe -fLsS --retry 3 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 300 --speed-limit 1024 --speed-time 60 -o $msi 'https://gstreamer.freedesktop.org/data/pkg/windows/1.26.9/mingw/gstreamer-1.0-devel-mingw-x86_64-1.26.9.msi'
         if ($LASTEXITCODE -ne 0) { throw 'SDK download failed' }
         if ((Get-FileHash $msi -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'e88e22054411fa5424e9e58266a2ec17d0cae098eafe785b79338c131315234c') { throw 'GStreamer SDK checksum mismatch' }
         $p = Start-Process msiexec.exe -ArgumentList "/i `"$msi`" /qn /norestart ADDLOCAL=ALL" -Wait -PassThru
@@ -54,7 +54,7 @@ jobs:
         $ErrorActionPreference = 'Stop'
         $ProgressPreference = 'SilentlyContinue'
         $msi = Join-Path $pwd 'gstreamer-runtime-1.26.9.msi'
-        curl.exe -fLsS --retry 3 --retry-all-errors --retry-delay 5 -o $msi 'https://gstreamer.freedesktop.org/data/pkg/windows/1.26.9/mingw/gstreamer-1.0-mingw-x86_64-1.26.9.msi'
+        curl.exe -fLsS --retry 3 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 300 --speed-limit 1024 --speed-time 60 -o $msi 'https://gstreamer.freedesktop.org/data/pkg/windows/1.26.9/mingw/gstreamer-1.0-mingw-x86_64-1.26.9.msi'
         if ($LASTEXITCODE -ne 0) { throw 'Runtime download failed' }
         if ((Get-FileHash $msi -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'f06f729f965deaff5d499a7feb596a001c25badbc8e9d5a791d0f23a530d66ab') { throw 'GStreamer runtime checksum mismatch' }
         $p = Start-Process msiexec.exe -ArgumentList "/i `"$msi`" /qn /norestart ADDLOCAL=ALL" -Wait -PassThru
@@ -84,6 +84,7 @@ jobs:
       run: cmake -S . -B source-build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSPDLOG_USE_BUNDLED=ON -DOPENKJ_BUILD_CODEC_TESTS=ON
         '-DCMAKE_POLICY_VERSION_MINIMUM=3.5' -DOPENKJ_BUILD_MAINTENANCE_TESTS=ON
     - name: Compile source without replacing any release binary
+      id: compile
       shell: pwsh
       run: cmake --build source-build --parallel 4
     - name: Compile the launcher from this same recorded source commit
@@ -135,6 +136,7 @@ jobs:
         if ($LASTEXITCODE -ne 0) { throw 'Download-first integration tests failed' }
         Copy-Item youtube-download-evidence.json audit-reports/OpenKJ-v9-YouTube-Download-First.json
     - name: Verify native host APIs and independent queues against the real MainWindow
+      if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
       shell: pwsh
       run: |
         $ErrorActionPreference = 'Stop'
@@ -146,6 +148,7 @@ jobs:
         if ($LASTEXITCODE -ne 0) { throw 'Native host console regression tests failed' }
         Copy-Item host-console-native-evidence.json audit-reports/OpenKJ-v9-Host-Console-Native.json
     - name: Verify real browser interactions and phone-tablet viewports with simulated host data
+      if: ${{ !cancelled() }}
       shell: pwsh
       run: |
         $ErrorActionPreference = 'Stop'

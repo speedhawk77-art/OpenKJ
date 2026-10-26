@@ -69,6 +69,12 @@ static int fakeDownloader(const QStringList &args) {
         QThread::sleep(20); return 0;
     }
     const auto base = QCoreApplication::applicationDirPath();
+    if (mode == 10) {
+        // Parent releases this successful fixture only AFTER the overlapping request is tested.
+        QElapsedTimer deadline; deadline.start();
+        while (!QFile::exists(base + "/youtube-busy-release") && deadline.elapsed() < 10000) QThread::msleep(5);
+        if (!QFile::exists(base + "/youtube-busy-release")) return 11;
+    }
     writeFile(output, mode == 3 ? QByteArray(128, 'x') : readFile(base + (mode == 4 ? "/youtube-silent.mp4" : "/youtube-fixture.mp4")));
     if (mode == 8) return 0;
     if (mode == 7) { writeFile(metadata, "{invalid"); return 0; }
@@ -256,9 +262,11 @@ int main(int argc, char **argv) {
             check("host_page_contains_download_controls", http("/").bytes.contains("youtubeStart"));
             check("guest_command_cannot_reach_downloader", http("/public/request", {{"cmd", "youtube_download"}, {"url", request(1).url}}, true).status==400 && commands==0 && !dialog.remoteStatus().value("busy").toBool());
             check("host_rejects_non_youtube_link", call("youtube_download", {{"url", "file:///secret"}}).status==400);
-            check("host_cannot_override_helper_paths", call("youtube_download", {{"url", request(1).url}, {"downloader", "not-installed"}, {"folder", "not-a-folder"}}).status==200);
+            QFile::remove(base + "/youtube-busy-release");
+            check("host_cannot_override_helper_paths", call("youtube_download", {{"url", request(10).url}, {"downloader", "not-installed"}, {"folder", "not-a-folder"}}).status==200);
             auto session=dialog.remoteStatus().value("session").toString();
             check("host_and_desktop_share_busy_download", call("youtube_download", {{"url", request(1).url}}).status==400 && dialog.remoteStatus().value("session").toString()==session);
+            writeFile(base + "/youtube-busy-release", "continue");
             check("host_download_completes_without_auto_import", waitFor([&] { return dialog.remoteStatus().value("ready").toBool(); }) && imports==0);
             auto state=http("/status?pin="+server.accessPin()).json.value("youtube_download").toObject();
             check("host_progress_contains_no_local_file_paths", state.value("ready").toBool() && !state.contains("path") && !state.contains("downloader") && !state.value("message").toString().contains(output.path()));

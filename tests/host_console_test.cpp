@@ -51,6 +51,10 @@ int main(int argc,char **argv){
   for(auto endpoint:{"/host/state","/host/search","/host/action"})check(QString("host_requires_pin_")+endpoint,http(endpoint).status==403);
   check("host_mutations_require_post",http("/host/action?pin="+server->accessPin()+"&cmd=add_singer").status==405);
   check("host_read_requires_get",http("/host/state",{{"pin",server->accessPin()}},true).status==405);
+  state();bool pinLimit=true;
+  for(int i=0;i<12;++i)pinLimit=pinLimit&&http("/host/state?pin=wrong").status==403;
+  check("incorrect_pin_attempts_throttled",pinLimit&&http("/host/state?pin=wrong").status==429);
+  check("correct_pin_survives_failed_attempts",state().value("ok").toBool());
   check("invalid_host_session_rejected",call("volume",{{"target","karaoke"},{"value",10},{"session","old"}}).status==400);
   check("unknown_host_command_rejected",call("run_shell",{{"path","arbitrary.exe"}}).status==400);
   auto initial=state();check("full_catalog_count",initial.value("library_count").toInt()==76010);
