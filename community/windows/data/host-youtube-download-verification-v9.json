@@ -1,0 +1,126 @@
+{
+  "verified_date": "2026-10-26",
+  "compiled_source_commit": "1c00f52abce09eeab960e493f83cf09154645fcc",
+  "application_sha256": "389bfc4eee810465952d2ba7eab840463164109df741fd62c034621b09f505e1",
+  "workflow": {
+    "run_id": 40307225564,
+    "attempt": 2,
+    "conclusion": "success",
+    "url": "https://github.com/speedhawk77-art/OpenKJ/actions/runs/40307225564"
+  },
+  "checks": {
+    "download_remote_import": 76,
+    "maintenance": 52,
+    "optional_codec": 22,
+    "source_http": 14,
+    "installed_http": 14,
+    "installed_program_hashes": 339,
+    "installed_notice_hashes": 9597,
+    "unchanged_dependency_programs": 337,
+    "original_icon_sizes_per_executable": 10,
+    "install_exit_code": 0,
+    "embedded_vc_sha256": "843068991daaa1f73ad9f6239bce4d0f6a07a51f18c37ea2a867e9beca71295c"
+  },
+  "official_downloader_contract": {
+    "run_id": 40305573740,
+    "source_commit": "5a158401ce0643e583df89759ae85a8c6aa5c1d7",
+    "passed": true,
+    "controller_source_unchanged_in_compiled_commit": true
+  },
+  "remote_dom_test": {
+    "passed": true,
+    "engine": "jsdom 30.1.3",
+    "physical_phone_tested": false,
+    "checks": [
+      {
+        "name": "hidden_before_pin",
+        "passed": true
+      },
+      {
+        "name": "visible_after_auth_status",
+        "passed": true
+      },
+      {
+        "name": "import_disabled_until_ready",
+        "passed": true
+      },
+      {
+        "name": "start_posts_url_with_pin",
+        "passed": true
+      },
+      {
+        "name": "busy_controls_and_progress",
+        "passed": true
+      },
+      {
+        "name": "ready_title_is_text",
+        "passed": true
+      },
+      {
+        "name": "artist_enables_explicit_import",
+        "passed": true
+      },
+      {
+        "name": "polling_preserves_host_edits",
+        "passed": true
+      },
+      {
+        "name": "import_posts_current_session_and_metadata",
+        "passed": true
+      },
+      {
+        "name": "import_prefills_normal_queue_search",
+        "passed": true
+      },
+      {
+        "name": "wrong_pin_hides_host_downloads",
+        "passed": true
+      },
+      {
+        "name": "no_javascript_errors",
+        "passed": true
+      }
+    ]
+  },
+  "manual_testing": {
+    "preceding_desktop_candidate_confirmed_by_user": [
+      "live download",
+      "library import",
+      "playback",
+      "tempo changes",
+      "key changes"
+    ],
+    "new_phone_controls_tested": false
+  },
+  "public_release_approved": false,
+  "assets": [
+    {
+      "id": 677840921,
+      "name": "OpenKJ-v9-Application-Source-1c00f52abce09eeab960e493f83cf09154645fcc.zip",
+      "bytes": 2448747,
+      "sha256": "ee7ecd0ea125b74dc9160c3613dd0891a68b5fafacd3bb38a9a2da69f87f996f",
+      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Application-Source-1c00f52abce09eeab960e493f83cf09154645fcc.zip"
+    },
+    {
+      "id": 677840403,
+      "name": "OpenKJ-v9-Maintenance-Candidate-1c00f52abce09eeab960e493f83cf09154645fcc-40307225564-2.exe",
+      "bytes": 207008360,
+      "sha256": "1aa84c65dfd1da90aeeddf9f74072bdc4123617b298355883a588ae414ae0de7",
+      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Maintenance-Candidate-1c00f52abce09eeab960e493f83cf09154645fcc-40307225564-2.exe"
+    },
+    {
+      "id": 677840243,
+      "name": "OpenKJ-v9-Maintenance-Candidate-Audit-40307225564-2.zip",
+      "bytes": 821603,
+      "sha256": "89067bb6fc985701bf0c6b9a57dfa0b413c22c34dc71ddcd3d68dd519ad2f85a",
+      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Maintenance-Candidate-Audit-40307225564-2.zip"
+    },
+    {
+      "id": 677827658,
+      "name": "OpenKJ-v9-Source-Built-App-1c00f52abce09eeab960e493f83cf09154645fcc.zip",
+      "bytes": 3949550,
+      "sha256": "1d7bc28e348f0c55716d2cb6121997eed83ab947c99f1032f6c2b1bda9fc9543",
+      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Source-Built-App-1c00f52abce09eeab960e493f83cf09154645fcc.zip"
+    }
+  ]
+}

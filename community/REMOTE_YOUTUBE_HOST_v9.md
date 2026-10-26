@@ -51,3 +51,23 @@ test folder: set NODE_PATH to that folder's node_modules, then run
 `node community/windows/TEST_HOST_REMOTE_UI_V9.cjs <report.json>`. It checks actual
 embedded page interactions with a simulated server; it does not test browser layout
 or real phone/laptop connectivity.
+
+## Verified host-remote installer
+
+Windows verification [run 40307225564, attempt 2](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40307225564)
+passed for exact source `1c00f52abce09eeab960e493f83cf09154645fcc`.
+
+- 76 download/remote/import checks, 52 maintenance checks and 22 optional-codec checks passed.
+- Both source and installed apps passed all 14 HTTP checks; 12 local DOM interaction checks also passed.
+- The installer installed successfully, matched all 339 program and 9,597 notice hashes,
+  retained the exact embedded VC redistributable, and preserved all ten original icon sizes in both executables.
+- [Download the host-remote test installer](https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Maintenance-Candidate-1c00f52abce09eeab960e493f83cf09154645fcc-40307225564-2.exe).
+- Installer SHA256: `1aa84c65dfd1da90aeeddf9f74072bdc4123617b298355883a588ae414ae0de7`.
+
+The installer remains in the private working draft. Sign into the repository owner's GitHub account
+if necessary to access that download. Close OpenKJ before installing, reopen it, refresh the phone's
+usual remote page and enter the new session PIN. Test start, progress, cancel, metadata import,
+then normal singer queue/playback from the phone. Physical phone testing and public release approval
+remain outstanding. Exact asset identities and evidence are retained in
+`community/windows/data/host-youtube-download-verification-v9.json`.
+
