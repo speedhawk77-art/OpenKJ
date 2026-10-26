@@ -659,6 +659,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&m_mediaBackendKar,&MediaBackend::stateChanged,this,[this](MediaBackend::State){++m_hostPlaybackRevision;++m_hostLibraryRevision;});
     connect(&m_mediaBackendBm,&MediaBackend::stateChanged,this,[this](MediaBackend::State){++m_hostPlaybackRevision;});
     connect(&m_historySongsModel,&QAbstractItemModel::modelReset,this,[this](){++m_hostLibraryRevision;});
+    // This existing model announces database reloads with layoutChanged, not only modelReset.
+    connect(&m_karaokeSongsModel,&QAbstractItemModel::layoutChanged,this,[this](){++m_hostLibraryRevision;});
     connect(&m_karaokeSongsModel,&QAbstractItemModel::modelReset,this,[this](){++m_hostLibraryRevision;});
     connect(&m_karaokeSongsModel,&QAbstractItemModel::dataChanged,this,[this](){++m_hostLibraryRevision;});
     m_remoteServer = new RemoteControlServer(this);
