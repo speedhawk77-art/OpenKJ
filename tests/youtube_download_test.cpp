@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Real controller, file validation, dialog and library import; synthetic helper/media only.
 #include "youtubedownload.h"
+#include "youtubehelperpaths.h"
 #include "remotecontrolserver.h"
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
@@ -112,6 +113,23 @@ int main(int argc, char **argv) {
         writeFile(base + "/youtube-silent.mp4", QByteArray::fromBase64(readFile("community/windows/blue-h264.mp4.b64")));
         QTemporaryDir output;
         const auto program = QCoreApplication::applicationFilePath();
+        QTemporaryDir helperInstall;
+        const auto helperDir=helperInstall.path()+"/helpers/youtube";QDir().mkpath(helperDir);
+        const QString suffix=
+#ifdef Q_OS_WIN
+            ".exe";
+#else
+            "";
+#endif
+        for(const auto &tool:{QString("yt-dlp"),QString("ffmpeg"),QString("deno")}) {
+            const auto path=helperDir+"/"+tool+suffix;writeFile(path,"synthetic path-only fixture");
+            QFile::setPermissions(path,QFile::ReadOwner|QFile::WriteOwner|QFile::ExeOwner);
+            const auto key=tool=="yt-dlp"?QString("downloader"):tool;
+            check("bundled_helper_discovered_"+tool,YouTubeHelpers::resolve(key,tool,{},helperInstall.path())==path);
+        }
+        check("valid_custom_helper_preserved",YouTubeHelpers::resolve("downloader","yt-dlp",{{"downloader",program}},helperInstall.path())==program);
+        check("missing_custom_helper_falls_back_to_bundle",YouTubeHelpers::resolve("downloader","yt-dlp",{{"downloader",helperInstall.path()+"/missing.exe"}},helperInstall.path())==helperDir+"/yt-dlp"+suffix);
+        check("unresolved_custom_helper_remains_visible",YouTubeHelpers::resolve("downloader","openkj-nonexistent-helper",{{"downloader",helperInstall.path()+"/missing.exe"}},helperInstall.path())==helperInstall.path()+"/missing.exe");
         auto request = [&](int mode) { return YouTubeDownload::Request{
             "https://www.youtube.com/watch?v=" + QString("%1").arg(mode, 11, 10, QChar('0')),
             program, program, program, output.path()}; };

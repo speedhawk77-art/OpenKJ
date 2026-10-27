@@ -13,6 +13,9 @@ name: Build and verify OpenKJ v9 mobile host console
     - community/windows/VERIFY_WINDOWS_ICONS_V9.py
     - community/windows/PACK_SOURCE_BUILT_APP_V9.py
     - community/windows/PROBE_APPLICATION_HTTP_V9.py
+    - community/windows/helpers/**
+    - community/windows/VERIFY_INSTALLER_ROUNDTRIP_V9.py
+    - community/windows/MAKE_SINGLE_FILE_INSTALLER.py
   workflow_dispatch: null
 permissions:
   contents: write
@@ -21,6 +24,100 @@ concurrency:
   group: openkj-v9-host-console-candidate
   cancel-in-progress: true
 jobs:
+  helper-bundle:
+    name: Build and audit bundled YouTube helpers
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+    - name: Cache checksum-verified helper source inputs
+      uses: actions/cache@v4
+      with:
+        path: helper-cache
+        key: youtube-helpers-x64-v1-${{ hashFiles('community/windows/helpers/inputs.json','community/windows/helpers/notices.json') }}
+    - name: Select the Qt 5.15.2-compatible MSVC 14.44 toolset
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+        # MSVC 14.51 removed stdext iterators still used by Qt 5.15.2.
+        # The hosted VS2026 image also provides the supported 14.44 toolset.
+        $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+        $vs = (& $vswhere -products '*' -latest -format json | ConvertFrom-Json | Select-Object -First 1)
+        $tools = Join-Path $vs.installationPath 'Common7\Tools'
+        $module = Join-Path $tools 'Microsoft.VisualStudio.DevShell.dll'
+        if (!(Test-Path $module)) { $module = Join-Path $tools 'vsdevshell\Microsoft.VisualStudio.DevShell.dll' }
+        Import-Module $module
+        Enter-VsDevShell -VsInstanceId $vs.instanceId -SkipAutomaticLocation -DevCmdArguments '-arch=x64 -host_arch=x64 -vcvars_ver=14.44' | Out-Null
+        if (!$env:VCToolsVersion.StartsWith('14.44.')) { throw "Wrong MSVC toolset: $env:VCToolsVersion" }
+        foreach ($name in @('Path','INCLUDE','LIB','LIBPATH','VCToolsInstallDir','VCToolsVersion','VCINSTALLDIR','VSINSTALLDIR','VisualStudioVersion','VSCMD_VER','VSCMD_ARG_HOST_ARCH','VSCMD_ARG_TGT_ARCH','WindowsSdkDir','WindowsSDKVersion','WindowsSDKLibVersion','UniversalCRTSdkDir','UCRTVersion')) {
+          $value = [Environment]::GetEnvironmentVariable($name,'Process')
+          if ($value) { Add-Content -LiteralPath $env:GITHUB_ENV -Value "$name=$value" }
+        }
+        Write-Host "Selected MSVC $env:VCToolsVersion"
+    - name: Install GNU make for the isolated FFmpeg source build
+      shell: pwsh
+      run: |-
+        $ErrorActionPreference = 'Stop'
+        choco install make --version=4.4.1 --yes --no-progress
+        if ($LASTEXITCODE -ne 0) { throw 'Pinned make installation failed' }
+    - name: Check helper inventory and installer privacy guards
+      shell: pwsh
+      run: python tests/test_youtube_helper_packaging.py
+    - name: Build private helpers and preserve original notices and sources
+      shell: pwsh
+      run: |-
+        $ErrorActionPreference = 'Stop'
+        python community/windows/helpers/BUILD_HELPERS_V9.py --work helper-build --cache helper-cache
+        if ($LASTEXITCODE -ne 0) { throw 'Helper source build/audit failed' }
+    - name: Exercise the exact bundled tools with local synthetic media
+      shell: pwsh
+      run: |-
+        $ErrorActionPreference = 'Stop'
+        python -c "import base64;from pathlib import Path;Path('helper-fixture.mp4').write_bytes(base64.b64decode(Path('tests/fixtures/youtube-av.mp4.b64').read_bytes()))"
+        python community/windows/helpers/PROBE_HELPERS_V9.py --root helper-build/payload --manifest helper-build/helper-manifest.json --fixture helper-fixture.mp4 --report helper-build/helper-probe.json
+        if ($LASTEXITCODE -ne 0) { throw 'Bundled helper probes failed' }
+    - name: Preserve the verified helper bundle and audit
+      uses: actions/upload-artifact@v4
+      with:
+        name: OpenKJ-v9-YouTube-Helpers
+        path: |-
+          helper-build/helper-bundle.zip
+          helper-build/helper-manifest.json
+          helper-build/helper-probe.json
+        if-no-files-found: error
+        retention-days: 30
+        compression-level: 0
+    - name: Preserve matching helper sources
+      uses: actions/upload-artifact@v4
+      with:
+        name: OpenKJ-v9-YouTube-Helper-Sources
+        path: helper-build/helper-sources.zip
+        if-no-files-found: error
+        retention-days: 30
+        compression-level: 0
+    - name: Retain exact helper sources beside the private test installer
+      env:
+        GH_TOKEN: ${{ github.token }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        name="OpenKJ-v9-YouTube-Helper-Sources-${GITHUB_SHA}.zip"
+        file='helper-build/helper-sources.zip'
+        expected="sha256:$(sha256sum "$file" | awk '{print $1}')"
+        release="$(gh api "repos/${GITHUB_REPOSITORY}/releases/421204266")"
+        printf '%s' "$release" | jq -e '.draft==true and .published_at==null' >/dev/null
+        count="$(printf '%s' "$release" | jq --arg name "$name" '[.assets[]|select(.name==$name)]|length')"
+        if [ "$count" -eq 0 ]; then
+          curl -fLsS -X POST -H "Authorization: Bearer ${GH_TOKEN}" -H 'Content-Type: application/zip' --data-binary "@$file" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/421204266/assets?name=${name}" > uploaded-helper-sources.json
+          jq -e --arg pin "$expected" '.digest==$pin and .state=="uploaded"' uploaded-helper-sources.json >/dev/null
+        elif [ "$count" -eq 1 ]; then
+          actual="$(printf '%s' "$release" | jq -r --arg name "$name" '.assets[]|select(.name==$name)|.digest')"
+          test "$actual" = "$expected"
+        else
+          exit 3
+        fi
   maintenance-build-verify:
     if: github.repository == 'speedhawk77-art/OpenKJ'
     runs-on: windows-2025
@@ -81,8 +178,7 @@ jobs:
         Write-Host "Selected MSVC $env:VCToolsVersion"
     - name: Configure current source with the exact spdlog submodule
       shell: pwsh
-      run: cmake -S . -B source-build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSPDLOG_USE_BUNDLED=ON -DOPENKJ_BUILD_CODEC_TESTS=ON
-        '-DCMAKE_POLICY_VERSION_MINIMUM=3.5' -DOPENKJ_BUILD_MAINTENANCE_TESTS=ON
+      run: cmake -S . -B source-build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSPDLOG_USE_BUNDLED=ON -DOPENKJ_BUILD_CODEC_TESTS=ON '-DCMAKE_POLICY_VERSION_MINIMUM=3.5' -DOPENKJ_BUILD_MAINTENANCE_TESTS=ON
     - name: Compile source without replacing any release binary
       id: compile
       shell: pwsh
@@ -418,6 +514,18 @@ jobs:
           --candidate candidate --original 'extracted/{app}' \
           --output cisco-experiment --fixture community/windows/blue-h264.mp4.b64 \
           --report audit-reports/OpenKJ-v9-Cisco-Compatibility-Experiment.json
+    - name: Download separately verified YouTube helpers
+      uses: actions/download-artifact@v4
+      with:
+        name: OpenKJ-v9-YouTube-Helpers
+        path: helper-download
+    - name: Add only the attested helpers and recheck every original dependency
+      shell: bash
+      run: |
+        set -euo pipefail
+        python community/windows/helpers/VERIFY_HELPERS_V9.py --candidate candidate --bundle helper-download/helper-bundle.zip --report audit-reports/OpenKJ-v9-YouTube-Helper-Bundle.json
+        python community/windows/VERIFY_MAINTENANCE_RUNTIME_V9.py --candidate candidate --attestation audit-reports/OpenKJ-v9-Source-Candidate.json --helper-manifest audit-reports/OpenKJ-v9-YouTube-Helper-Bundle.json
+        cp helper-download/helper-probe.json audit-reports/OpenKJ-v9-YouTube-Helper-Build-Probe.json
     - name: Build and verify a separate test installer on the isolated runner
       shell: bash
       run: |
@@ -425,7 +533,13 @@ jobs:
         python community/windows/VERIFY_INSTALLER_ROUNDTRIP_V9.py \
           --candidate candidate --work installer-roundtrip --unpacker unpacker/innounp.exe \
           --report audit-reports/OpenKJ-v9-Installer-Roundtrip.json \
-          --source-attestation audit-reports/OpenKJ-v9-Source-Candidate.json
+          --source-attestation audit-reports/OpenKJ-v9-Source-Candidate.json \
+          --helper-manifest audit-reports/OpenKJ-v9-YouTube-Helper-Bundle.json
+    - name: Recheck installed helper hashes and local media merging
+      shell: bash
+      run: |
+        set -euo pipefail
+        python community/windows/helpers/PROBE_HELPERS_V9.py --root installer-roundtrip/installed --manifest audit-reports/OpenKJ-v9-YouTube-Helper-Bundle.json --fixture source-build/youtube-fixture.mp4 --report audit-reports/OpenKJ-v9-Installed-YouTube-Helpers.json
     - name: Probe installed application startup and localhost HTTP routes
       shell: bash
       run: |
@@ -508,3 +622,5 @@ jobs:
           exit 3
         fi
         gh api "repos/${GITHUB_REPOSITORY}/releases/421204266" | jq -e --arg name "$name" --arg pin "$expected" '.draft==true and .published_at==null and ([.assets[]|select(.name==$name and .digest==$pin)]|length)==1' >/dev/null
+    needs:
+    - helper-bundle
