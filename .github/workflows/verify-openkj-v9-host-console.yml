@@ -526,6 +526,17 @@ jobs:
         python community/windows/helpers/VERIFY_HELPERS_V9.py --candidate candidate --bundle helper-download/helper-bundle.zip --report audit-reports/OpenKJ-v9-YouTube-Helper-Bundle.json
         python community/windows/VERIFY_MAINTENANCE_RUNTIME_V9.py --candidate candidate --attestation audit-reports/OpenKJ-v9-Source-Candidate.json --helper-manifest audit-reports/OpenKJ-v9-YouTube-Helper-Bundle.json
         cp helper-download/helper-probe.json audit-reports/OpenKJ-v9-YouTube-Helper-Build-Probe.json
+    - name: Audit added helper programs for omitted codec imports
+      shell: python
+      run: |
+        import json,sys
+        from pathlib import Path
+        sys.path.insert(0,'community/windows')
+        from AUDIT_CANDIDATE_IMPORTS_V9 import scan,codec_edges
+        rows=scan(Path('candidate/helpers/youtube'))
+        edges=codec_edges(rows)
+        assert not edges, 'A helper imports an omitted OpenH264 component'
+        Path('audit-reports/OpenKJ-v9-YouTube-Helper-Imports.json').write_text(json.dumps({'passed':True,'programs':rows,'openh264_imports':edges,'dynamic_loading_checked':False},indent=2)+'\n')
     - name: Build and verify a separate test installer on the isolated runner
       shell: bash
       run: |
