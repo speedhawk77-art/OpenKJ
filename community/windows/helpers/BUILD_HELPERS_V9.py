@@ -58,6 +58,9 @@ def main():
     if set(p.name for p in tools.glob('*.exe'))!={'deno.exe'}:raise RuntimeError('Unexpected Deno archive inventory')
     shutil.copy2(cache/'yt-dlp.pyz',tools/'yt-dlp.pyz')
     shutil.copy2(tools/'python/LICENSE.txt',notices/'CPython-LICENSE.txt')
+    license_file=HERE.parents[2]/'LICENSE'
+    if not license_file.is_file():license_file=HERE/'OpenKJ-Helper-Launcher-GPL-3.0.txt'
+    for folder in (notices,sources):shutil.copy2(license_file,folder/'OpenKJ-Helper-Launcher-GPL-3.0.txt')
     with zipfile.ZipFile(cache/'yt-dlp_win.zip') as z:
         (notices/'Upstream-yt-dlp-Third-Party-Notices.txt').write_bytes(z.read('_internal/THIRD_PARTY_LICENSES.txt'))
     # This superset is labelled explicitly: the official zip app does not bundle
@@ -131,7 +134,9 @@ def main():
         for m in t:
             if not m.isfile():continue
             rel=safe_name(m.name);target=ffsource/str(PurePosixPath(*rel.parts[1:]));target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(t.extractfile(m).read())
-    config=['--toolchain=msvc','--arch=x86_64','--disable-everything','--disable-autodetect','--disable-network','--disable-doc','--disable-debug','--disable-shared','--enable-static','--disable-x86asm','--disable-avdevice','--disable-swresample','--disable-swscale','--enable-ffmpeg','--enable-ffprobe','--enable-protocol=file,pipe','--enable-demuxer=mov','--enable-muxer=mp4,mov,ipod','--enable-parser=h264,aac','--enable-bsf=aac_adtstoasc,extract_extradata,h264_mp4toannexb','--enable-filter=null,anull','--extra-cflags=-MT']
+    # MOV's internal coded-bitstream table needs an enabled AV1 metadata parser.
+    # A zero-entry table triggers an MSVC optimiser failure; no decoder/encoder is enabled.
+    config=['--toolchain=msvc','--arch=x86_64','--disable-everything','--disable-autodetect','--disable-network','--disable-doc','--disable-debug','--disable-shared','--enable-static','--disable-x86asm','--disable-avdevice','--disable-swresample','--disable-swscale','--enable-ffmpeg','--enable-ffprobe','--enable-protocol=file,pipe','--enable-demuxer=mov','--enable-muxer=mp4,mov,ipod','--enable-parser=h264,aac,av1','--enable-bsf=aac_adtstoasc,extract_extradata,h264_mp4toannexb','--enable-filter=null,anull','--extra-cflags=-MT']
     # MSYS2 make/sh preserve the quoting needed by MSVC dependency generation.
     # Build tools are never copied into the installed helper bundle.
     env=dict(os.environ);vc=Path(os.environ['VCToolsInstallDir'])/'bin/Hostx64/x64'
