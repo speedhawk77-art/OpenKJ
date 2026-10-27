@@ -78,11 +78,11 @@ Physical-device results remain separate from the automated tests.
 
 ## Verified Windows candidate
 
-[Download the mobile host console test installer](https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Maintenance-Candidate-958a56747230883675a8cc90a8d8f6296e834ec7-40419895167-1.exe). The download is in the owner's private working draft; sign into GitHub if needed.
+[Download the mobile host console test installer](https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Maintenance-Candidate-c066c410270bdc964dcccf1d4a1f4cf34f6d4d51-40423095732-1.exe). The download is in the owner's private working draft; sign into GitHub if needed.
 
-- Exact compiled source: `958a56747230883675a8cc90a8d8f6296e834ec7`.
-- Installer SHA256: `d7bc5cc1316be4503ead480b6fc20fcbeee786fe9a59475b70f96bbc7e7791f5` (207,053,833 bytes).
-- [Windows verification run 40419895167](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40419895167) passed: 107 native host checks, 38 browser checks, 76 existing download checks, 52 maintenance checks, 22 codec checks, and 20 source plus 20 installed HTTP checks.
+- Exact compiled source: `c066c410270bdc964dcccf1d4a1f4cf34f6d4d51`.
+- Installer SHA256: `fba2dcd40c077f0cbb240e76072195a7e3d025128ac7e70cc562c2a9d29b973f` (207,057,938 bytes).
+- [Windows verification run 40423095732](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40423095732) passed: 111 native host checks, 46 browser checks, 76 existing download checks, 52 maintenance checks, 22 codec checks, and 20 source plus 20 installed HTTP checks.
 - Native tests used a synthetic 76,010-song catalog. Browser checks covered 320/390/600/768/1024/1366-pixel layouts, two-device queue inspection, reconnect behaviour, metadata refresh, saved-singer paging and rapid tuning taps across a held network response.
 - Installer roundtrip matched all 339 programs and 9,597 notices; all 337 dependency programs are unchanged. Both EXEs retain all ten original icon sizes; the exact embedded VC redistributable remains verified.
 
@@ -93,3 +93,9 @@ Exact assets and check names are recorded in `community/windows/data/mobile-host
 The phone uses `URLSearchParams`, which encodes spaces as `+`. Qt's generic URL query parser preserves that character, so the original host adapter searched for literal plus signs. Host GET parameters now replace raw `+` with spaces before percent decoding exactly once. Encoded literal plus signs and percent signs remain literal. Authentication and existing classic/guest routes are unchanged.
 
 Eight actual local HTTP regressions cover multiple words, percent-encoded spaces, apostrophes, repeated spaces, words across artist/title, literal plus signs, decoding exactly once, and history searches with spaced singer names. All passed in the Windows run above. Install this corrected candidate on the laptop, reopen OpenKJ, refresh the phone remote and re-enter its current PIN; retry a known title with two or more words.
+
+## Familiar singer rotation controls
+
+Each singer card now shows their next unplayed artist/title and a direct **Play** button, like the classic remote. The current performer also shows **Now singing** with artist/title and a performing/paused indicator. Empty queues show **No unplayed song** with Play disabled. The current-song display clears when playback stops and updates when playback metadata changes without a rotation edit.
+
+Play asks for confirmation before replacing current playback. It targets the tapped singer's stable ID without switching the phone's inspected queue; Queue still opens that singer's full queue. Four additional native checks and eight browser checks verify the summaries, played/cleared queues, confirmed playback target, cancelled playback, empty-queue controls and live playback updates. On the phone, open Singers, check current/next song text, cancel one Play request, then try a known working song using its singer's Play button. This candidate also includes the multiword search repair above.

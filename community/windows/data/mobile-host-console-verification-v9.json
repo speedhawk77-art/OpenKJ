@@ -2,18 +2,18 @@
   "verified_date": "2026-10-26",
   "repository": "speedhawk77-art/OpenKJ",
   "branch": "feature/mobile-host-console",
-  "compiled_source_commit": "958a56747230883675a8cc90a8d8f6296e834ec7",
-  "application_sha256": "42bc086e6224a016952f8ab559d7cfb97eb1439109787a9c211454b1da5aecfb",
+  "compiled_source_commit": "c066c410270bdc964dcccf1d4a1f4cf34f6d4d51",
+  "application_sha256": "3d1098282614672eb913bf47a2b143029aa0de353810157181731096765622e0",
   "pull_request": "https://github.com/speedhawk77-art/OpenKJ/pull/2",
   "workflow": {
-    "run_id": 40419895167,
+    "run_id": 40423095732,
     "attempt": 1,
     "conclusion": "success",
-    "url": "https://github.com/speedhawk77-art/OpenKJ/actions/runs/40419895167"
+    "url": "https://github.com/speedhawk77-art/OpenKJ/actions/runs/40423095732"
   },
   "checks": {
-    "native_host": 107,
-    "browser": 38,
+    "native_host": 111,
+    "browser": 46,
     "legacy_youtube_download": 76,
     "maintenance": 52,
     "optional_codec": 22,
@@ -75,7 +75,9 @@
     "invalid_singer_rejected",
     "fractional_singer_id_rejected",
     "independent_queue_inspection",
+    "rotation_empty_singer_has_no_next_song",
     "native_song_added",
+    "rotation_next_song_matches_native_queue",
     "fractional_song_rejected",
     "missing_song_rejected",
     "queue_state_uses_stable_ids",
@@ -85,6 +87,7 @@
     "cross_singer_queue_id_rejected",
     "song_removal_needs_confirmation",
     "queue_mark_played",
+    "rotation_played_song_is_not_up_next",
     "queue_played_requires_boolean",
     "queue_mark_unplayed",
     "queue_second_add",
@@ -94,6 +97,7 @@
     "queue_edit_does_not_select_on_laptop",
     "queue_clear_needs_confirmation",
     "queue_clear_uses_native_model",
+    "rotation_cleared_queue_has_no_next_song",
     "native_singer_rename",
     "duplicate_rename_rejected",
     "regular_tracking_requires_confirmation",
@@ -151,6 +155,14 @@
     "live_playback_status",
     "selected_singer_queue_loaded",
     "tablet_three_panels",
+    "rotation_shows_current_and_next_songs",
+    "rotation_shows_other_singers_next_song",
+    "rotation_play_cancel_does_not_interrupt",
+    "rotation_play_uses_clicked_singer_without_selecting_queue",
+    "rotation_empty_queue_disables_play",
+    "rotation_paused_retains_current_song",
+    "rotation_stopped_clears_current_song_without_rotation_edit",
+    "rotation_song_change_refreshes_without_rotation_edit",
     "external_title_is_text",
     "laptop_metadata_updates_visible_search",
     "song_add_posts_stable_singer_id",
@@ -186,44 +198,44 @@
   ],
   "evidence_artifacts": [
     {
-      "id": 12697738011,
+      "id": 12699461532,
       "name": "OpenKJ-v9-Maintenance-Build-Evidence",
-      "bytes": 774147
+      "bytes": 764623
     },
     {
-      "id": 12697733709,
+      "id": 12698308815,
       "name": "OpenKJ-v9-Maintenance-Audit",
-      "bytes": 429894
+      "bytes": 430065
     }
   ],
   "assets": [
     {
-      "id": 679835713,
-      "name": "OpenKJ-v9-Application-Source-958a56747230883675a8cc90a8d8f6296e834ec7.zip",
-      "bytes": 2505692,
-      "sha256": "e1960266c6b108714ded238bd9dcce17ebac1d20f1574fb3f5624cc01db3e36f",
-      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Application-Source-958a56747230883675a8cc90a8d8f6296e834ec7.zip"
+      "id": 679901490,
+      "name": "OpenKJ-v9-Application-Source-c066c410270bdc964dcccf1d4a1f4cf34f6d4d51.zip",
+      "bytes": 2507387,
+      "sha256": "5b0aa539d9d7441e3489d2e32627a19e7f8bfc5716f52b6ca644d4b952c2668d",
+      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Application-Source-c066c410270bdc964dcccf1d4a1f4cf34f6d4d51.zip"
     },
     {
-      "id": 679835383,
-      "name": "OpenKJ-v9-Maintenance-Candidate-958a56747230883675a8cc90a8d8f6296e834ec7-40419895167-1.exe",
-      "bytes": 207053833,
-      "sha256": "d7bc5cc1316be4503ead480b6fc20fcbeee786fe9a59475b70f96bbc7e7791f5",
-      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Maintenance-Candidate-958a56747230883675a8cc90a8d8f6296e834ec7-40419895167-1.exe"
+      "id": 679901113,
+      "name": "OpenKJ-v9-Maintenance-Candidate-Audit-40423095732-1.zip",
+      "bytes": 824036,
+      "sha256": "d1b5c3837c0cdfce7dd138768361777dd3a0c8e899d806a0d091712ffb703c81",
+      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Maintenance-Candidate-Audit-40423095732-1.zip"
     },
     {
-      "id": 679835289,
-      "name": "OpenKJ-v9-Maintenance-Candidate-Audit-40419895167-1.zip",
-      "bytes": 823875,
-      "sha256": "1a4dc1b353649d716ee8b68be46a615ea03d1a1305444b3bfe718eb13b5a948e",
-      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Maintenance-Candidate-Audit-40419895167-1.zip"
+      "id": 679901215,
+      "name": "OpenKJ-v9-Maintenance-Candidate-c066c410270bdc964dcccf1d4a1f4cf34f6d4d51-40423095732-1.exe",
+      "bytes": 207057938,
+      "sha256": "fba2dcd40c077f0cbb240e76072195a7e3d025128ac7e70cc562c2a9d29b973f",
+      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Maintenance-Candidate-c066c410270bdc964dcccf1d4a1f4cf34f6d4d51-40423095732-1.exe"
     },
     {
-      "id": 679828921,
-      "name": "OpenKJ-v9-Source-Built-App-958a56747230883675a8cc90a8d8f6296e834ec7.zip",
-      "bytes": 4058889,
-      "sha256": "3db124c51bbf496571224999e524f3f8e910a6c087fb4a3e711e0996b957f36b",
-      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Source-Built-App-958a56747230883675a8cc90a8d8f6296e834ec7.zip"
+      "id": 679890544,
+      "name": "OpenKJ-v9-Source-Built-App-c066c410270bdc964dcccf1d4a1f4cf34f6d4d51.zip",
+      "bytes": 4061541,
+      "sha256": "43ebbf7acb8d679d865672e96326ee075ac34d3926b7ae0856d40d6b4e92f192",
+      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Source-Built-App-c066c410270bdc964dcccf1d4a1f4cf34f6d4d51.zip"
     }
   ],
   "manual_testing": {
@@ -251,6 +263,31 @@
       "http_search_literal_plus_preserved",
       "http_search_percent_decoded_once",
       "http_history_form_encoded_singer_and_words"
+    ],
+    "real_phone_retest_passed": false
+  },
+  "rotation_update": {
+    "behavior": "Restore classic rotation cards with current performer/song, each singer's next unplayed song and confirmed direct Play without changing the inspected queue.",
+    "live_updates": "Refresh current-song labels on playback state or metadata changes even without a rotation edit; next-song summaries participate in the rotation revision.",
+    "native_checks": [
+      "rotation_empty_singer_has_no_next_song",
+      "rotation_next_song_matches_native_queue",
+      "rotation_played_song_is_not_up_next",
+      "rotation_cleared_queue_has_no_next_song",
+      "rotation_reorder",
+      "rotation_stale_revision_rejected",
+      "rotation_clear_confirmation_required",
+      "rotation_clear_native"
+    ],
+    "browser_checks": [
+      "rotation_shows_current_and_next_songs",
+      "rotation_shows_other_singers_next_song",
+      "rotation_play_cancel_does_not_interrupt",
+      "rotation_play_uses_clicked_singer_without_selecting_queue",
+      "rotation_empty_queue_disables_play",
+      "rotation_paused_retains_current_song",
+      "rotation_stopped_clears_current_song_without_rotation_edit",
+      "rotation_song_change_refreshes_without_rotation_edit"
     ],
     "real_phone_retest_passed": false
   }
