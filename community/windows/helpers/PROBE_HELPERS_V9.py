@@ -29,7 +29,7 @@ def main():
         # Replace only the temporary zip-app fixture to test the real launcher's
         # Windows argument quoting and pipe forwarding without any network access.
         shutil.copytree(tools/'python',d/'python');shutil.copy2(tools/'yt-dlp.exe',d/'yt-dlp.exe')
-        with zipfile.ZipFile(d/'yt-dlp.pyz','w') as z:z.writestr('__main__.py','import json,sys\nprint(json.dumps(sys.argv[1:]))\n')
+        with zipfile.ZipFile(d/'yt-dlp.pyz','w') as z:z.writestr('__main__.py','import json,sys\nprint(json.dumps(sys.argv[1:],ensure_ascii=False))\n')
         args=['two words','quote"inside','trailing\\','ampersand & percent %','$(nothing) `literal`','雪']
         check('launcher_preserves_arguments_in_spaced_path',json.loads(run([d/'yt-dlp.exe',*args]))==args)
     check('bundled_ejs_imports_from_zipapp',run([tools/'python/python.exe','-I','-c',"import sys;sys.path.insert(0,sys.argv[1]);import yt_dlp_ejs;from yt_dlp_ejs._version import __version__;print(__version__)",tools/'yt-dlp.pyz']).strip()=='0.8.0')

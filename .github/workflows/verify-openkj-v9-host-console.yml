@@ -56,12 +56,14 @@ jobs:
           if ($value) { Add-Content -LiteralPath $env:GITHUB_ENV -Value "$name=$value" }
         }
         Write-Host "Selected MSVC $env:VCToolsVersion"
-    - name: Install GNU make for the isolated FFmpeg source build
-      shell: pwsh
-      run: |-
-        $ErrorActionPreference = 'Stop'
-        choco install make --version=4.4.1 --yes --no-progress
-        if ($LASTEXITCODE -ne 0) { throw 'Pinned make installation failed' }
+    - name: Install POSIX build tools for the MSVC FFmpeg build
+      id: msys
+      uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e
+      with:
+        msystem: MSYS
+        path-type: inherit
+        install: make
+        update: false
     - name: Check helper inventory and installer privacy guards
       shell: pwsh
       run: python tests/test_youtube_helper_packaging.py
@@ -71,6 +73,8 @@ jobs:
         $ErrorActionPreference = 'Stop'
         python community/windows/helpers/BUILD_HELPERS_V9.py --work helper-build --cache helper-cache
         if ($LASTEXITCODE -ne 0) { throw 'Helper source build/audit failed' }
+      env:
+        OPENKJ_MSYS2: ${{ steps.msys.outputs.msys2-location }}
     - name: Exercise the exact bundled tools with local synthetic media
       shell: pwsh
       run: |-

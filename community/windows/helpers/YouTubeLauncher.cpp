@@ -24,7 +24,7 @@ int wmain() {
     const std::wstring module(path.data(),length);const auto root=module.substr(0,module.find_last_of(L"\\/"));
     const auto python=root+L"\\python\\python.exe", app=root+L"\\yt-dlp.pyz";
     int argc=0;auto argv=CommandLineToArgvW(GetCommandLineW(),&argc);if(!argv)return 126;
-    std::wstring command=quote(python.c_str())+L" -I "+quote(app.c_str());
+    std::wstring command=quote(python.c_str())+L" -I -X utf8 "+quote(app.c_str());
     for(int i=1;i<argc;++i)command+=L" "+quote(argv[i]);LocalFree(argv);
     STARTUPINFOW startup{};startup.cb=sizeof(startup);startup.dwFlags=STARTF_USESTDHANDLES;
     startup.hStdInput=GetStdHandle(STD_INPUT_HANDLE);startup.hStdOutput=GetStdHandle(STD_OUTPUT_HANDLE);startup.hStdError=GetStdHandle(STD_ERROR_HANDLE);

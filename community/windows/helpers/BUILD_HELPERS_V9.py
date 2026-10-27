@@ -132,10 +132,14 @@ def main():
             if not m.isfile():continue
             rel=safe_name(m.name);target=ffsource/str(PurePosixPath(*rel.parts[1:]));target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(t.extractfile(m).read())
     config=['--toolchain=msvc','--arch=x86_64','--disable-everything','--disable-autodetect','--disable-network','--disable-doc','--disable-debug','--disable-shared','--enable-static','--disable-x86asm','--disable-avdevice','--disable-swresample','--disable-swscale','--enable-ffmpeg','--enable-ffprobe','--enable-protocol=file,pipe','--enable-demuxer=mov','--enable-muxer=mp4,mov,ipod','--enable-parser=h264,aac','--enable-bsf=aac_adtstoasc,extract_extradata,h264_mp4toannexb','--enable-filter=null,anull','--extra-cflags=-MT']
-    # Native Windows make plus Git's sh, with MSVC link.exe ahead of coreutils link.
-    env=dict(os.environ);vc=Path(os.environ['VCToolsInstallDir'])/'bin/Hostx64/x64';env['PATH']=str(vc)+os.pathsep+env['PATH']
-    subprocess.run([str(Path(os.environ['ProgramFiles'])/'Git/bin/bash.exe'),'configure',*config],cwd=ffsource,env=env,check=True)
-    subprocess.run(['make','-j4'],cwd=ffsource,env=env,check=True)
+    # MSYS2 make/sh preserve the quoting needed by MSVC dependency generation.
+    # Build tools are never copied into the installed helper bundle.
+    env=dict(os.environ);vc=Path(os.environ['VCToolsInstallDir'])/'bin/Hostx64/x64'
+    msys=Path(os.environ['OPENKJ_MSYS2'])/'usr/bin'
+    env['PATH']=str(vc)+os.pathsep+str(msys)+os.pathsep+env['PATH']
+    env['MSYSTEM']='MSYS';env['MSYS2_PATH_TYPE']='inherit'
+    subprocess.run([str(msys/'bash.exe'),'configure',*config],cwd=ffsource,env=env,check=True)
+    subprocess.run([str(msys/'make.exe'),'-j4'],cwd=ffsource,env=env,check=True)
     for name in ['ffmpeg.exe','ffprobe.exe']:shutil.copy2(ffsource/name,tools/name)
     cfg=(ffsource/'ffbuild/config.mak').read_text()
     if re.search(r'^CONFIG_(GPL|NONFREE|VERSION3)=yes$',cfg,re.M):raise RuntimeError('Unapproved FFmpeg licence configuration')
