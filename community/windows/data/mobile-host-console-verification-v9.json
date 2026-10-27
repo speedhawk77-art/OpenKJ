@@ -1,20 +1,20 @@
 {
-  "verified_date": "2026-10-26",
+  "verified_date": "2026-10-27",
   "repository": "speedhawk77-art/OpenKJ",
   "branch": "feature/mobile-host-console",
-  "compiled_source_commit": "c066c410270bdc964dcccf1d4a1f4cf34f6d4d51",
-  "application_sha256": "3d1098282614672eb913bf47a2b143029aa0de353810157181731096765622e0",
+  "compiled_source_commit": "108c89718e78830f3977d779320626f9f9b0ced5",
+  "application_sha256": "b3e754890a11000609040debb67c857ea30889d8ad16cc35cadd76c3d42d3aab",
   "pull_request": "https://github.com/speedhawk77-art/OpenKJ/pull/2",
   "workflow": {
-    "run_id": 40423095732,
+    "run_id": 40486360620,
     "attempt": 1,
     "conclusion": "success",
-    "url": "https://github.com/speedhawk77-art/OpenKJ/actions/runs/40423095732"
+    "url": "https://github.com/speedhawk77-art/OpenKJ/actions/runs/40486360620"
   },
   "checks": {
     "native_host": 111,
     "browser": 46,
-    "legacy_youtube_download": 76,
+    "legacy_youtube_download": 82,
     "maintenance": 52,
     "optional_codec": 22,
     "source_http": 20,
@@ -29,11 +29,17 @@
       1366
     ],
     "unchanged_dependency_programs": 337,
-    "installed_program_hashes_matched": 339,
-    "installed_notice_hashes_matched": 9597,
+    "installed_program_hashes_matched": 376,
+    "installed_notice_hashes_matched": 11703,
     "original_icon_sizes_verified_per_executable": 10,
     "embedded_vc_sha256": "843068991daaa1f73ad9f6239bce4d0f6a07a51f18c37ea2a867e9beca71295c",
-    "installer_roundtrip_passed": true
+    "installer_roundtrip_passed": true,
+    "additional_helper_programs": 37,
+    "helper_file_hashes_matched": 2148,
+    "additional_helper_notices": 2106,
+    "helper_build": 11,
+    "helper_installed": 11,
+    "helper_packaging_unit": 8
   },
   "native_check_names": [
     "isolated_profile_database",
@@ -198,58 +204,81 @@
   ],
   "evidence_artifacts": [
     {
-      "id": 12699461532,
+      "id": 12726675290,
       "name": "OpenKJ-v9-Maintenance-Build-Evidence",
-      "bytes": 764623
+      "bytes": 765013
     },
     {
-      "id": 12698308815,
+      "id": 12725609511,
       "name": "OpenKJ-v9-Maintenance-Audit",
-      "bytes": 430065
+      "bytes": 581012
+    },
+    {
+      "id": 12724384594,
+      "name": "OpenKJ-v9-YouTube-Helpers",
+      "bytes": 64311368
+    },
+    {
+      "id": 12724329777,
+      "name": "OpenKJ-v9-YouTube-Helper-Sources",
+      "bytes": 326537997
     }
   ],
   "assets": [
     {
-      "id": 679901490,
-      "name": "OpenKJ-v9-Application-Source-c066c410270bdc964dcccf1d4a1f4cf34f6d4d51.zip",
-      "bytes": 2507387,
-      "sha256": "5b0aa539d9d7441e3489d2e32627a19e7f8bfc5716f52b6ca644d4b952c2668d",
-      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Application-Source-c066c410270bdc964dcccf1d4a1f4cf34f6d4d51.zip"
+      "id": 681247502,
+      "name": "OpenKJ-v9-Application-Source-108c89718e78830f3977d779320626f9f9b0ced5.zip",
+      "bytes": 2529057,
+      "sha256": "411e70f9f9671555622c6c701fd98ba6743f853984196e406bceabd47a851c1f",
+      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Application-Source-108c89718e78830f3977d779320626f9f9b0ced5.zip"
     },
     {
-      "id": 679901113,
-      "name": "OpenKJ-v9-Maintenance-Candidate-Audit-40423095732-1.zip",
-      "bytes": 824036,
-      "sha256": "d1b5c3837c0cdfce7dd138768361777dd3a0c8e899d806a0d091712ffb703c81",
-      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Maintenance-Candidate-Audit-40423095732-1.zip"
+      "id": 681246815,
+      "name": "OpenKJ-v9-Maintenance-Candidate-108c89718e78830f3977d779320626f9f9b0ced5-40486360620-1.exe",
+      "bytes": 251580173,
+      "sha256": "f0b4874f2864fc9387c94c90ac16c8200ac947c2baa630f30dd235f0ca22a81f",
+      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Maintenance-Candidate-108c89718e78830f3977d779320626f9f9b0ced5-40486360620-1.exe"
     },
     {
-      "id": 679901215,
-      "name": "OpenKJ-v9-Maintenance-Candidate-c066c410270bdc964dcccf1d4a1f4cf34f6d4d51-40423095732-1.exe",
-      "bytes": 207057938,
-      "sha256": "fba2dcd40c077f0cbb240e76072195a7e3d025128ac7e70cc562c2a9d29b973f",
-      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Maintenance-Candidate-c066c410270bdc964dcccf1d4a1f4cf34f6d4d51-40423095732-1.exe"
+      "id": 681246625,
+      "name": "OpenKJ-v9-Maintenance-Candidate-Audit-40486360620-1.zip",
+      "bytes": 973994,
+      "sha256": "5573b7dcebb4db0a8093fddc94d80a2ad7773d4bbcee1a07fbbf717184f60e0f",
+      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Maintenance-Candidate-Audit-40486360620-1.zip"
     },
     {
-      "id": 679890544,
-      "name": "OpenKJ-v9-Source-Built-App-c066c410270bdc964dcccf1d4a1f4cf34f6d4d51.zip",
-      "bytes": 4061541,
-      "sha256": "43ebbf7acb8d679d865672e96326ee075ac34d3926b7ae0856d40d6b4e92f192",
-      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Source-Built-App-c066c410270bdc964dcccf1d4a1f4cf34f6d4d51.zip"
+      "id": 681233662,
+      "name": "OpenKJ-v9-Source-Built-App-108c89718e78830f3977d779320626f9f9b0ced5.zip",
+      "bytes": 4084011,
+      "sha256": "343956dfa01829d1e598fbfcf0187fa6ba933e84e60855b2e973267a51333d38",
+      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Source-Built-App-108c89718e78830f3977d779320626f9f9b0ced5.zip"
+    },
+    {
+      "id": 681208333,
+      "name": "OpenKJ-v9-YouTube-Helper-Sources-108c89718e78830f3977d779320626f9f9b0ced5.zip",
+      "bytes": 326537847,
+      "sha256": "7ec3d1610057fbc7311d22aa59c58a5a723e1a031bca5d1519009ed897e55537",
+      "url": "https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-YouTube-Helper-Sources-108c89718e78830f3977d779320626f9f9b0ced5.zip"
     }
   ],
   "manual_testing": {
     "previous_host_youtube_candidate_confirmed_by_user": true,
     "new_console_real_phone_tested": false,
     "new_console_real_tablet_tested": false,
-    "new_console_physical_playback_tested": false
+    "new_console_physical_playback_tested": false,
+    "previous_console_candidate_confirmed_by_user": true,
+    "previous_console_source_commit": "c066c410270bdc964dcccf1d4a1f4cf34f6d4d51",
+    "previous_console_multiword_search_and_rotation_confirmed_by_user": true,
+    "bundled_helpers_live_youtube_download_tested": false,
+    "current_installer_physically_tested": false
   },
   "public_release_approved": false,
   "notes": [
     "All code and installer assets are stored in the existing GitHub fork.",
     "Classic remote remains at /classic; guest and QR routes retain their original roles.",
     "Hardware, file-path and codec-consent setup remains on the laptop.",
-    "The private working draft contains historical assets; this verification selects only the exact assets listed here."
+    "The private working draft contains historical assets; this verification selects only the exact assets listed here.",
+    "Run 40486360620 retained every original dependency hash before and after adding the separately attested helper files; added helper imports were scanned for omitted OpenH264 components."
   ],
   "search_fix": {
     "cause": "Browser URLSearchParams encodes spaces as '+', which QUrlQuery does not automatically convert to spaces.",
@@ -290,5 +319,122 @@
       "rotation_song_change_refreshes_without_rotation_edit"
     ],
     "real_phone_retest_passed": false
+  },
+  "youtube_check_names": [
+    "bundled_helper_discovered_yt-dlp",
+    "bundled_helper_discovered_ffmpeg",
+    "bundled_helper_discovered_deno",
+    "valid_custom_helper_preserved",
+    "missing_custom_helper_falls_back_to_bundle",
+    "unresolved_custom_helper_remains_visible",
+    "accept_single_video_https://youtu.be/00000000001?si=x",
+    "accept_single_video_https://www.youtube.com/watch?v=00000000001&list=ignored",
+    "accept_single_video_https://m.youtube.com/shorts/00000000001",
+    "accept_single_video_http://youtube.com/live/00000000001",
+    "reject_non_video_file:///etc/passwd",
+    "reject_non_video_https://youtube.com.evil.invalid/watch?v=00000000001",
+    "reject_non_video_https://user@youtube.com/watch?v=00000000001",
+    "reject_non_video_https://youtube.com/playlist?list=00000000001",
+    "reject_non_video_--exec touch",
+    "reject_non_video_https://youtube.com:8443/watch?v=00000000001",
+    "missing_helper_is_actionable",
+    "download_starts",
+    "second_download_rejected_while_busy",
+    "completed_audio_video_verified",
+    "ui_event_loop_remains_responsive",
+    "filename_sanitized",
+    "downloaded_bytes_preserved",
+    "same_controller_can_download_again",
+    "existing_song_never_overwritten",
+    "reject_failed_or_invalid_download_2",
+    "no_partial_song_published_2",
+    "reject_failed_or_invalid_download_3",
+    "no_partial_song_published_3",
+    "reject_failed_or_invalid_download_4",
+    "no_partial_song_published_4",
+    "reject_failed_or_invalid_download_5",
+    "no_partial_song_published_5",
+    "reject_failed_or_invalid_download_6",
+    "no_partial_song_published_6",
+    "reject_failed_or_invalid_download_7",
+    "no_partial_song_published_7",
+    "reject_failed_or_invalid_download_8",
+    "no_partial_song_published_8",
+    "cancel_stops_download",
+    "cancel_stops_child_helpers_too",
+    "shutdown_fixture_child_started",
+    "destruction_stops_child_helpers",
+    "watchdog_stops_stalled_download",
+    "library_fixture_open",
+    "library_fixture_schema",
+    "completed_video_added_as_local_song",
+    "watched_folder_import_is_deduplicated",
+    "import_keeps_play_history_and_chosen_metadata",
+    "invalid_import_rejected",
+    "dialog_requires_completed_download_before_import",
+    "dialog_fills_title_only_after_verification",
+    "completed_download_does_not_auto_import",
+    "download_dialog_preview_saved",
+    "host_explicitly_approves_library_import",
+    "closing_dialog_cancels_starting_download",
+    "host_http_server_listens",
+    "host_download_requires_pin_youtube_download",
+    "host_download_requires_post_youtube_download",
+    "host_download_requires_pin_youtube_cancel",
+    "host_download_requires_post_youtube_cancel",
+    "host_download_requires_pin_youtube_import",
+    "host_download_requires_post_youtube_import",
+    "host_download_wrong_pin_denied",
+    "guest_page_has_no_download_controls",
+    "host_page_contains_download_controls",
+    "guest_command_cannot_reach_downloader",
+    "host_rejects_non_youtube_link",
+    "host_cannot_override_helper_paths",
+    "host_and_desktop_share_busy_download",
+    "host_download_completes_without_auto_import",
+    "host_progress_contains_no_local_file_paths",
+    "host_stale_import_rejected",
+    "host_empty_artist_rejected",
+    "host_oversized_title_rejected",
+    "host_control_characters_rejected",
+    "host_explicit_import_updates_real_library",
+    "host_repeat_import_cannot_duplicate",
+    "host_can_start_next_download",
+    "host_stale_cancel_cannot_stop_new_download",
+    "host_can_cancel_active_download",
+    "host_and_desktop_show_same_cancellation"
+  ],
+  "helper_check_names": [
+    "bundled_downloader_version",
+    "bundled_deno_version",
+    "bundled_deno_javascript",
+    "bundled_ffmpeg_version",
+    "bundled_ffprobe_version",
+    "ffmpeg_has_no_gpl_or_nonfree",
+    "merger_has_no_network_protocols",
+    "merger_preserves_h264_and_aac",
+    "merged_media_has_duration",
+    "launcher_preserves_arguments_in_spaced_path",
+    "bundled_ejs_imports_from_zipapp"
+  ],
+  "helper_bundle": {
+    "versions": {
+      "yt-dlp": "2026.10.26",
+      "ffmpeg": "8.1.3",
+      "deno": "2.9.8",
+      "python": "3.14.9"
+    },
+    "source_commit": "108c89718e78830f3977d779320626f9f9b0ced5",
+    "deno_registry_source_packages_preserved": 1048,
+    "ffmpeg_gpl": false,
+    "ffmpeg_nonfree": false,
+    "all_programs_windows_x64": true,
+    "ffmpeg_network_protocols": false,
+    "original_playback_dependencies_replaced": false,
+    "custom_paths_preserved": true,
+    "fresh_install_auto_discovery": true,
+    "use_bundled_helpers_button": true,
+    "launcher_unicode_quoting_and_spaced_path_tested": true,
+    "embedded_codec_policy_unchanged": true
   }
 }

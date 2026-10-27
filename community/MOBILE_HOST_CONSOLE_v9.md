@@ -78,13 +78,13 @@ Physical-device results remain separate from the automated tests.
 
 ## Verified Windows candidate
 
-[Download the mobile host console test installer](https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Maintenance-Candidate-c066c410270bdc964dcccf1d4a1f4cf34f6d4d51-40423095732-1.exe). The download is in the owner's private working draft; sign into GitHub if needed.
+[Download the mobile host console test installer](https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Maintenance-Candidate-108c89718e78830f3977d779320626f9f9b0ced5-40486360620-1.exe). The download is in the owner's private working draft; sign into GitHub if needed.
 
-- Exact compiled source: `c066c410270bdc964dcccf1d4a1f4cf34f6d4d51`.
-- Installer SHA256: `fba2dcd40c077f0cbb240e76072195a7e3d025128ac7e70cc562c2a9d29b973f` (207,057,938 bytes).
-- [Windows verification run 40423095732](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40423095732) passed: 111 native host checks, 46 browser checks, 76 existing download checks, 52 maintenance checks, 22 codec checks, and 20 source plus 20 installed HTTP checks.
+- Exact compiled source: `108c89718e78830f3977d779320626f9f9b0ced5`.
+- Installer SHA256: `f0b4874f2864fc9387c94c90ac16c8200ac947c2baa630f30dd235f0ca22a81f` (251,580,173 bytes).
+- [Windows verification run 40486360620](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40486360620) passed: 111 native host checks, 46 browser checks, 82 existing download checks, 52 maintenance checks, 22 codec checks, and 20 source plus 20 installed HTTP checks.
 - Native tests used a synthetic 76,010-song catalog. Browser checks covered 320/390/600/768/1024/1366-pixel layouts, two-device queue inspection, reconnect behaviour, metadata refresh, saved-singer paging and rapid tuning taps across a held network response.
-- Installer roundtrip matched all 339 programs and 9,597 notices; all 337 dependency programs are unchanged. Both EXEs retain all ten original icon sizes; the exact embedded VC redistributable remains verified.
+- Installer roundtrip matched all 376 programs and 11,703 notices; all 337 dependency programs are unchanged. Both EXEs retain all ten original icon sizes; the exact embedded VC redistributable remains verified.
 
 Exact assets and check names are recorded in `community/windows/data/mobile-host-console-verification-v9.json`. The matching application source and complete audit ZIP are retained with the installer. This remains a draft candidate for physical phone/tablet testing, not a public release.
 
@@ -99,3 +99,11 @@ Eight actual local HTTP regressions cover multiple words, percent-encoded spaces
 Each singer card now shows their next unplayed artist/title and a direct **Play** button, like the classic remote. The current performer also shows **Now singing** with artist/title and a performing/paused indicator. Empty queues show **No unplayed song** with Play disabled. The current-song display clears when playback stops and updates when playback metadata changes without a rotation edit.
 
 Play asks for confirmation before replacing current playback. It targets the tapped singer's stable ID without switching the phone's inspected queue; Queue still opens that singer's full queue. Four additional native checks and eight browser checks verify the summaries, played/cleared queues, confirmed playback target, cancelled playback, empty-queue controls and live playback updates. On the phone, open Singers, check current/next song text, cancel one Play request, then try a known working song using its singer's Play button. This candidate also includes the multiword search repair above.
+
+## Included YouTube helpers
+
+This candidate also includes yt-dlp, FFmpeg and Deno, with automatic discovery on fresh configurations and a **Use bundled helpers** button in the laptop's download dialog. Existing valid custom paths remain selected. See [BUNDLED_YOUTUBE_HELPERS_v9.md](BUNDLED_YOUTUBE_HELPERS_v9.md) for versions, architecture, licences, matching sources and the download acceptance test.
+
+Run 40486360620 passed 8 packaging/privacy tests, 6 additional native discovery tests (82 YouTube tests total), and 11 real-tool tests both before packaging and after installation. The separately attested bundle adds 37 Windows x64 programs and 2,106 notices; all 2,148 helper files are hashed and rechecked after installation. The original 337 playback/dependency programs remain byte-identical. The matching helper-source ZIP must accompany the installer in any eventual public release.
+
+Andrew confirmed the preceding rotation/search console candidate worked. The bundled-helper candidate above still needs a live download/import check on the laptop; no live YouTube download is claimed by the offline automated tests.

@@ -52,3 +52,17 @@ playback regression checks remain required.
    usable offline.
 
 No public release is automatically promoted by building this candidate.
+
+## Verified candidate
+
+[Download the bundled-helper test installer](https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-Maintenance-Candidate-108c89718e78830f3977d779320626f9f9b0ced5-40486360620-1.exe) (251,580,173 bytes).
+
+- Exact application/helper build source: `108c89718e78830f3977d779320626f9f9b0ced5`.
+- Installer SHA256: `f0b4874f2864fc9387c94c90ac16c8200ac947c2baa630f30dd235f0ca22a81f`.
+- [Windows verification run 40486360620](https://github.com/speedhawk77-art/OpenKJ/actions/runs/40486360620) passed both jobs.
+- 111 native host checks, 46 browser checks, 82 native YouTube checks, 52 maintenance checks, 22 codec checks and 20 source plus 20 installed HTTP checks passed.
+- All 8 helper packaging/privacy tests and 11 real-helper checks before and after installation passed. Helper binaries were verified as Windows x64; static import auditing found no added OpenH264 dependency.
+- Installer roundtrip matched all 376 program files and 11,703 notice files. Every one of the original 337 dependency programs is unchanged. Original embedded VC redistributable and both program icons remain verified.
+- Matching helper sources: [OpenKJ-v9-YouTube-Helper-Sources-108c89718e78830f3977d779320626f9f9b0ced5.zip](https://github.com/speedhawk77-art/OpenKJ/releases/download/untagged-1680625e7f315aeedaac/OpenKJ-v9-YouTube-Helper-Sources-108c89718e78830f3977d779320626f9f9b0ced5.zip). SHA256: `7ec3d1610057fbc7311d22aa59c58a5a723e1a031bca5d1519009ed897e55537`.
+
+The owner must sign into GitHub to download private draft assets. Exact asset IDs, hashes and check names are recorded in `community/windows/data/mobile-host-console-verification-v9.json`. A physical live YouTube download with the bundled copies is pending; prior console/search/rotation testing is already confirmed by the user.
