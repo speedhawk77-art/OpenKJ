@@ -135,6 +135,10 @@ def keep_file(relative: Path) -> bool:
         return False
     if lowname.startswith(('openkj-remote-v9-setup', 'openkj-remote-setup', 'openkj-v9-setup', 'openkj-setup')):
         return False
+    # The separately attested CPython runtime needs this standard-library archive.
+    # Other ZIPs remain excluded from working portable folders.
+    if relative.as_posix().lower() == 'helpers/youtube/python/python314.zip':
+        return True
     if name.startswith('.') or Path(name).suffix.lower() in SKIP_EXTENSIONS:
         return False
     return True

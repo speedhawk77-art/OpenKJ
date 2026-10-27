@@ -8,9 +8,14 @@ def main():
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--candidate',type=Path,required=True)
     ap.add_argument('--attestation',type=Path,required=True)
+    ap.add_argument('--helper-manifest',type=Path,help='Separate exact helper inventory; baseline dependencies remain immutable')
     a=ap.parse_args()
     baseline=json.loads(Path(__file__).with_name('data').joinpath('tested-runtime-v9.json').read_text())['runtime_sha256']
     current=bins(a.candidate)
+    if a.helper_manifest:
+        from helpers.VERIFY_HELPERS_V9 import verify
+        helper_files=verify(a.candidate,json.loads(a.helper_manifest.read_text()))
+        current={n:h for n,h in current.items() if n not in helper_files}
     evidence=json.loads(a.attestation.read_text())
     permitted={'openkj.exe':evidence['executable_sha256'],'OpenKJ-Remote.exe':evidence['launcher_sha256']}
     if len(current)!=339 or set(current)!=set(baseline):raise RuntimeError('Maintenance runtime inventory changed')

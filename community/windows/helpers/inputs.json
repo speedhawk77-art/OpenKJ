@@ -1,0 +1,65 @@
+{
+  "versions": {
+    "yt-dlp": "2026.10.26",
+    "python": "3.14.9",
+    "deno": "2.9.8",
+    "ffmpeg": "8.1.3"
+  },
+  "downloads": [
+    {
+      "name": "yt-dlp.pyz",
+      "url": "https://github.com/yt-dlp/yt-dlp/releases/download/2026.10.26/yt-dlp",
+      "sha256": "e51e69e89489f199530f13d32a4342da3ddb2cf34842f364603a066db05afbf3"
+    },
+    {
+      "name": "yt-dlp.tar.gz",
+      "url": "https://github.com/yt-dlp/yt-dlp/releases/download/2026.10.26/yt-dlp.tar.gz",
+      "sha256": "21f942d258d25cc4e60b4982a25c423460f0bebb835f38e6dfd1fcb140087f95"
+    },
+    {
+      "name": "yt-dlp_win.zip",
+      "url": "https://github.com/yt-dlp/yt-dlp/releases/download/2026.10.26/yt-dlp_win.zip",
+      "sha256": "fd51b212cf8380c7a52ee08c0d6be7f3c59b2f2c832eaf7b45acfae6eab57419"
+    },
+    {
+      "name": "python-3.14.9-embed-amd64.zip",
+      "url": "https://www.python.org/ftp/python/3.14.9/python-3.14.9-embed-amd64.zip",
+      "sha256": "3c01d7cfc666f746a6f064f60fb2156ab0ec464d3d738ab796371a46a9bb24a2"
+    },
+    {
+      "name": "Python-3.14.9.tar.xz",
+      "url": "https://www.python.org/ftp/python/3.14.9/Python-3.14.9.tar.xz",
+      "sha256": "e02d9ac21cebda6e46435369744a92c65cc7cd8669697694122cf97ffacd1e53"
+    },
+    {
+      "name": "deno-windows.zip",
+      "url": "https://github.com/denoland/deno/releases/download/v2.9.8/deno-x86_64-pc-windows-msvc.zip",
+      "sha256": "cba84b26e0df5ae7f74fc66b86a95b866872a86292ebd84fa1e959927edd93bf"
+    },
+    {
+      "name": "deno_src.tar.gz",
+      "url": "https://github.com/denoland/deno/releases/download/v2.9.8/deno_src.tar.gz",
+      "sha256": "b57d0281c1647effc735f242ba52bc409747fc6ed6ad4946e76f062c67e113eb"
+    },
+    {
+      "name": "ffmpeg-8.1.3.tar.xz",
+      "url": "https://ffmpeg.org/releases/ffmpeg-8.1.3.tar.xz",
+      "sha256": "7138d28c96d9d3e3af4ee3d8cad72741f8ffb40da90c1112235dea3ecd3178a3"
+    },
+    {
+      "name": "yt_dlp_ejs-0.8.0.tar.gz",
+      "url": "https://files.pythonhosted.org/packages/d3/e6/cceb9530e8f4e5940f6f7822d90e9d94f1b85343329a16baaf47bbbb3de1/yt_dlp_ejs-0.8.0.tar.gz",
+      "sha256": "d5fa1639f63b5c4af8d932495f60689d5370f1a095782c944f7f62a303eb104e"
+    },
+    {
+      "name": "meriyah-6.1.4.tgz",
+      "url": "https://registry.npmjs.org/meriyah/-/meriyah-6.1.4.tgz",
+      "sha256": "c0f105d9fb01bb48c76ea6ee382e6099277b95e3f351fb99b67ddfb79d6088b8"
+    },
+    {
+      "name": "astring-1.9.0.tgz",
+      "url": "https://registry.npmjs.org/astring/-/astring-1.9.0.tgz",
+      "sha256": "422cca9707aca293e85eb54fdbbc5a0a167ad415236a325ff342e720e67afb49"
+    }
+  ]
+}

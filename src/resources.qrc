@@ -1,4 +1,9 @@
 <RCC>
+    <qresource prefix="/host-console">
+        <file alias="index.html">hostconsole/index.html</file>
+        <file alias="host.css">hostconsole/host.css</file>
+        <file alias="host.js">hostconsole/host.js</file>
+    </qresource>
     <qresource prefix="/optional-codec">
         <file alias="BINARY_LICENSE.txt">../community/licenses/openh264/CISCO-BINARY-LICENSE.txt</file>
     </qresource>

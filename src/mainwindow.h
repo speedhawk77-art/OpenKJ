@@ -77,6 +77,11 @@ class MainWindow : public QMainWindow {
 Q_OBJECT
 
 private:
+    friend struct HostConsoleTestAccess;
+    bool m_remoteConfirmedAction{false};
+    QString m_hostSession;
+    int m_hostPlaybackRevision{0};
+    int m_hostLibraryRevision{0};
     QPointer<YouTubeDownloadDialog> m_youtubeDownloadDialog;
     Settings m_settings;
     RemoteControlServer *m_remoteServer{nullptr};
@@ -194,6 +199,9 @@ private slots:
     void remoteBreakNext();
     void remoteBreakPrevious();
     void ensureYouTubeDownloadDialog();
+    QJsonObject remoteHostState(const QJsonObject &args);
+    QJsonObject remoteHostSearch(const QJsonObject &args);
+    QJsonObject remoteHostAction(const QString &command, const QJsonObject &args);
     QJsonObject remoteLibraryStatus();
     QJsonObject remoteSongSearch(const QString &query);
     QJsonObject remoteLibraryAction(const QString &command, const QJsonObject &args);

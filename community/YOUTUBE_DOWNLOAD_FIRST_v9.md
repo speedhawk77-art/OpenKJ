@@ -6,6 +6,15 @@ and lets the host confirm its artist/title before adding it to the normal librar
 It does not start playback, add a singer, change a queue or accept remote download
 commands. Existing local playback and the phone remote operate as before.
 
+## Bundled helpers in the mobile host installer
+
+New Windows mobile-host candidates include all helpers and find them automatically.
+Existing custom helper paths are preserved; choose **Use bundled helpers** in the
+laptop's YouTube dialog to switch to the included copies. See
+[BUNDLED_YOUTUBE_HELPERS_v9.md](BUNDLED_YOUTUBE_HELPERS_v9.md) for versions, source and
+test details. The separate-install instructions below remain for older/portable
+builds and custom helper upgrades.
+
 ## One-time helper setup on Windows
 
 Install these helpers separately from their original projects. They are not

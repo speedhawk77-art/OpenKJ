@@ -14,7 +14,7 @@ def writezip(path,items):
             z.writestr(i,p.read_bytes())
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--expected-http-checks",type=int,choices=(11,14),default=11)
+    parser.add_argument("--expected-http-checks",type=int,choices=(11,14,20),default=11)
     args=parser.parse_args()
     evidence=Path('source-build-evidence.json');data=json.loads(evidence.read_text())
     assert data['source_commit']==os.environ['GITHUB_SHA']

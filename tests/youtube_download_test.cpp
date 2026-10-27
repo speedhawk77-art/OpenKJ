@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Real controller, file validation, dialog and library import; synthetic helper/media only.
 #include "youtubedownload.h"
+#include "youtubehelperpaths.h"
 #include "remotecontrolserver.h"
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
@@ -69,6 +70,12 @@ static int fakeDownloader(const QStringList &args) {
         QThread::sleep(20); return 0;
     }
     const auto base = QCoreApplication::applicationDirPath();
+    if (mode == 10) {
+        // Parent releases this successful fixture only AFTER the overlapping request is tested.
+        QElapsedTimer deadline; deadline.start();
+        while (!QFile::exists(base + "/youtube-busy-release") && deadline.elapsed() < 10000) QThread::msleep(5);
+        if (!QFile::exists(base + "/youtube-busy-release")) return 11;
+    }
     writeFile(output, mode == 3 ? QByteArray(128, 'x') : readFile(base + (mode == 4 ? "/youtube-silent.mp4" : "/youtube-fixture.mp4")));
     if (mode == 8) return 0;
     if (mode == 7) { writeFile(metadata, "{invalid"); return 0; }
@@ -106,6 +113,23 @@ int main(int argc, char **argv) {
         writeFile(base + "/youtube-silent.mp4", QByteArray::fromBase64(readFile("community/windows/blue-h264.mp4.b64")));
         QTemporaryDir output;
         const auto program = QCoreApplication::applicationFilePath();
+        QTemporaryDir helperInstall;
+        const auto helperDir=helperInstall.path()+"/helpers/youtube";QDir().mkpath(helperDir);
+        const QString suffix=
+#ifdef Q_OS_WIN
+            ".exe";
+#else
+            "";
+#endif
+        for(const auto &tool:{QString("yt-dlp"),QString("ffmpeg"),QString("deno")}) {
+            const auto path=helperDir+"/"+tool+suffix;writeFile(path,"synthetic path-only fixture");
+            QFile::setPermissions(path,QFile::ReadOwner|QFile::WriteOwner|QFile::ExeOwner);
+            const auto key=tool=="yt-dlp"?QString("downloader"):tool;
+            check("bundled_helper_discovered_"+tool,YouTubeHelpers::resolve(key,tool,{},helperInstall.path())==path);
+        }
+        check("valid_custom_helper_preserved",YouTubeHelpers::resolve("downloader","yt-dlp",{{"downloader",program}},helperInstall.path())==program);
+        check("missing_custom_helper_falls_back_to_bundle",YouTubeHelpers::resolve("downloader","yt-dlp",{{"downloader",helperInstall.path()+"/missing.exe"}},helperInstall.path())==helperDir+"/yt-dlp"+suffix);
+        check("unresolved_custom_helper_remains_visible",YouTubeHelpers::resolve("downloader","openkj-nonexistent-helper",{{"downloader",helperInstall.path()+"/missing.exe"}},helperInstall.path())==helperInstall.path()+"/missing.exe");
         auto request = [&](int mode) { return YouTubeDownload::Request{
             "https://www.youtube.com/watch?v=" + QString("%1").arg(mode, 11, 10, QChar('0')),
             program, program, program, output.path()}; };
@@ -256,9 +280,11 @@ int main(int argc, char **argv) {
             check("host_page_contains_download_controls", http("/").bytes.contains("youtubeStart"));
             check("guest_command_cannot_reach_downloader", http("/public/request", {{"cmd", "youtube_download"}, {"url", request(1).url}}, true).status==400 && commands==0 && !dialog.remoteStatus().value("busy").toBool());
             check("host_rejects_non_youtube_link", call("youtube_download", {{"url", "file:///secret"}}).status==400);
-            check("host_cannot_override_helper_paths", call("youtube_download", {{"url", request(1).url}, {"downloader", "not-installed"}, {"folder", "not-a-folder"}}).status==200);
+            QFile::remove(base + "/youtube-busy-release");
+            check("host_cannot_override_helper_paths", call("youtube_download", {{"url", request(10).url}, {"downloader", "not-installed"}, {"folder", "not-a-folder"}}).status==200);
             auto session=dialog.remoteStatus().value("session").toString();
             check("host_and_desktop_share_busy_download", call("youtube_download", {{"url", request(1).url}}).status==400 && dialog.remoteStatus().value("session").toString()==session);
+            writeFile(base + "/youtube-busy-release", "continue");
             check("host_download_completes_without_auto_import", waitFor([&] { return dialog.remoteStatus().value("ready").toBool(); }) && imports==0);
             auto state=http("/status?pin="+server.accessPin()).json.value("youtube_download").toObject();
             check("host_progress_contains_no_local_file_paths", state.value("ready").toBool() && !state.contains("path") && !state.contains("downloader") && !state.value("message").toString().contains(output.path()));

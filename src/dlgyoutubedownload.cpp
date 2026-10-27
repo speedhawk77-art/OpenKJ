@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "dlgyoutubedownload.h"
+#include "youtubehelperpaths.h"
 #include <QLineEdit>
 #include <QIcon>
 #include <QPushButton>
@@ -50,14 +51,7 @@ YouTubeDownloadDialog::YouTubeDownloadDialog(QWidget *parent) : QDialog(parent),
     m_folder->setObjectName("downloadFolder"); form->addRow(tr("Save videos in"), browseRow(m_folder, true)); layout->addLayout(form);
     auto *setup = new QGroupBox(tr("One-time setup"), this); auto *setupForm = new QFormLayout(setup);
     auto tool = [this, &options](const QString &key, const QString &program) {
-        const auto adjacent = QDir(QFileInfo(options.value("downloader").toString()).absolutePath()).filePath(program
-#ifdef Q_OS_WIN
-            + ".exe"
-#endif
-        );
-        auto found = QStandardPaths::findExecutable(program);
-        if (found.isEmpty() && QFileInfo(adjacent).isFile()) found = adjacent;
-        return new QLineEdit(options.value(key, found).toString(), this);
+        return new QLineEdit(YouTubeHelpers::resolve(key,program,options), this);
     };
     m_downloader = tool("downloader", "yt-dlp"); m_downloader->setObjectName("downloaderPath");
     m_ffmpeg = tool("ffmpeg", "ffmpeg"); m_ffmpeg->setObjectName("ffmpegPath");
@@ -67,9 +61,16 @@ YouTubeDownloadDialog::YouTubeDownloadDialog(QWidget *parent) : QDialog(parent),
     setupForm->addRow(tr("YouTube helper (Deno)"), browseRow(m_deno, false));
     auto *help = new QPushButton(tr("Helper setup instructions"), setup);
     connect(help, &QPushButton::clicked, this, [] {
-        QDesktopServices::openUrl(QUrl("https://github.com/speedhawk77-art/OpenKJ/blob/feature/youtube-download-first/community/YOUTUBE_DOWNLOAD_FIRST_v9.md"));
+        QDesktopServices::openUrl(QUrl("https://github.com/speedhawk77-art/OpenKJ/blob/feature/mobile-host-console/community/YOUTUBE_DOWNLOAD_FIRST_v9.md"));
     });
-    setupForm->addRow(tr("Install these separately once."), help); layout->addWidget(setup);
+    m_useBundled = new QPushButton(tr("Use bundled helpers"), setup);m_useBundled->setObjectName("useBundledHelpers");
+    connect(m_useBundled,&QPushButton::clicked,this,[this] {
+        m_downloader->setText(YouTubeHelpers::bundled("yt-dlp"));
+        m_ffmpeg->setText(YouTubeHelpers::bundled("ffmpeg"));
+        m_deno->setText(YouTubeHelpers::bundled("deno"));
+    });
+    setupForm->addRow(tr("Included with the Windows installer"),m_useBundled);
+    setupForm->addRow(tr("Custom helper setup"), help); layout->addWidget(setup);
     m_progress = new QProgressBar(this); m_progress->setRange(0,1); m_progress->setValue(0); layout->addWidget(m_progress);
     m_status = new QPlainTextEdit(this); m_status->setObjectName("downloadStatus");
     m_status->setReadOnly(true); m_status->setFixedHeight(90); m_status->setMaximumBlockCount(30);
@@ -130,6 +131,7 @@ void YouTubeDownloadDialog::updateControls() {
     const auto busy = m_download.isBusy();
     for (auto *field : {m_url, m_folder, m_downloader, m_ffmpeg, m_deno}) field->setEnabled(!busy);
     for (auto *button : findChildren<QPushButton *>("downloadBrowse")) button->setEnabled(!busy);
+    m_useBundled->setEnabled(!busy&&!YouTubeHelpers::bundled("yt-dlp").isEmpty()&&!YouTubeHelpers::bundled("ffmpeg").isEmpty()&&!YouTubeHelpers::bundled("deno").isEmpty());
     m_start->setEnabled(!busy); m_cancel->setEnabled(busy);
     m_artist->setEnabled(!busy && !m_path.isEmpty()); m_title->setEnabled(!busy && !m_path.isEmpty());
     m_add->setEnabled(!busy && !m_path.isEmpty() && !m_artist->text().trimmed().isEmpty() && !m_title->text().trimmed().isEmpty());

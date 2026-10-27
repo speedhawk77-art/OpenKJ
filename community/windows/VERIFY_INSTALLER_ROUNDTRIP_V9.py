@@ -20,6 +20,7 @@ def main():
     for name in ('candidate', 'work', 'report', 'unpacker'):
         ap.add_argument('--' + name, type=Path, required=True)
     ap.add_argument('--source-attestation', type=Path, help='Verified source-built candidate manifest (339 runtime files)')
+    ap.add_argument('--helper-manifest',type=Path,help='Separately pinned helper file inventory')
     args = ap.parse_args()
     root = args.candidate.resolve(); work = args.work.resolve()
     if work.exists(): raise RuntimeError('Refusing to reuse installer test directory')
@@ -49,7 +50,14 @@ def main():
     attestation = json.loads(args.source_attestation.read_text()) if args.source_attestation else None
     if attestation and (attestation['current_build_source_attested'] is not True or attestation['executable_sha256'] != sha256(root/'openkj.exe') or attestation['launcher_sha256'] != sha256(root/'OpenKJ-Remote.exe') or attestation['cisco_binary_bundled'] is not False):
         raise RuntimeError('Source application attestation mismatch')
-    expected_count = 339 if attestation else 338
+    helper_count=0
+    if args.helper_manifest:
+        if not attestation:raise RuntimeError('Helpers require an attested source app')
+        from helpers.VERIFY_HELPERS_V9 import verify
+        helpers=json.loads(args.helper_manifest.read_text())
+        helper_count=len(verify(root,helpers))
+        verify(installed,helpers)
+    expected_count = (339 if attestation else 338)+helper_count
     expected = bins(root); actual = bins(installed)
     generated = {k for k in actual if k not in expected}
     if len(expected) != expected_count or len(generated) != 1 or not next(iter(generated)).lower().startswith('unins'):
@@ -72,6 +80,7 @@ def main():
         'candidate_source_commit': os.environ.get('GITHUB_SHA'),
         'application_binary_build_commit_attested': bool(attestation),
         'application_source_commit': attestation['source_commit'] if attestation else None,
+        'helper_binary_hash_matches':helper_count,
         'physical_playback_tested': False, 'release_approved': False, 'passed': True}
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(data, indent=2) + '\n', encoding='utf-8')
